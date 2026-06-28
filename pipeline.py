@@ -1,0 +1,610 @@
+import argparse
+import csv
+import subprocess
+import sys
+import shutil
+import os
+import zipfile
+import json
+import random
+import tempfile
+from pathlib import Path
+from datetime import datetime
+
+# For outgroup download
+from download_outgroup import download_ncbi_fasta
+
+# Imports for the tree and ecosim steps
+from move_largest_numeric import move_largest_numeric_to_top
+from run_trees import make_trees_batch
+from reroot_tree import reroot_tree_by_first_fasta
+from Rarefaction_fasta_creation import create_rarefaction_fastas
+from run_ecosim import run_ecosim_batch
+from parsing import summarize_ecotypes_in_folder
+
+# Platform-independent path configuration for EcoSim
+def _resolve_ecosim_paths():
+    jar_env = os.environ.get("ECOSIM_JAR")
+    if jar_env:
+        jar_path = os.path.expanduser(jar_env)
+    else:
+        # Check standard default candidate locations
+        candidates = [
+            os.path.abspath("ecosim.jar"),
+            os.path.expanduser("~/Downloads/ecosim-main/ecosim.jar"),
+            "/Users/gfedolfi/ecosim/build/ecosim.jar"
+        ]
+        jar_path = candidates[1]  # Default to ~/Downloads if none exist
+        for candidate in candidates:
+            if os.path.exists(candidate):
+                jar_path = candidate
+                break
+
+    dir_env = os.environ.get("ECOSIM_DIR")
+    dir_path = os.path.expanduser(dir_env) if dir_env else os.path.dirname(jar_path) or "."
+    return jar_path, dir_path
+
+ECOSIM_JAR, ECOSIM_DIR = _resolve_ecosim_paths()
+
+def write_error_log(error_file, error_message):
+    """Write error message to a log file with timestamp."""
+    with open(error_file, "a") as f:
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        f.write(f"[{timestamp}] {error_message}\n")
+
+def setup_directories(base_dir: Path):
+    input_dir = base_dir / "input"
+    bakta_dir = base_dir / "intermediate_bakta"
+    roary_dir = base_dir / "output_roary"
+    
+    for d in [input_dir, bakta_dir, roary_dir]:
+        d.mkdir(parents=True, exist_ok=True)
+        
+    return input_dir, bakta_dir, roary_dir
+
+def get_random_accessions(species_name, sample_size=200):
+    cmd = [
+        "datasets", "summary", "genome", "taxon", species_name,
+        "--assembly-level", "chromosome,complete",
+        "--as-json-lines"
+    ]
+
+    try:
+        result = subprocess.run(cmd, check=True, capture_output=True, text=True)
+    except subprocess.CalledProcessError:
+        print(f"Failed to fetch assembly list for {species_name}")
+        return []
+
+    accessions = []
+    for line in result.stdout.splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            record = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+
+        accession = record.get("accession") or record.get("assembly_accession")
+        if accession:
+            accessions.append(accession)
+
+    # Preserve first-seen order while removing duplicate accessions.
+    accessions = list(dict.fromkeys(accessions))
+    if not accessions:
+        return []
+
+    if len(accessions) <= sample_size:
+        print(
+            f"Found {len(accessions)} distinct assemblies (fewer than or equal to {sample_size}); downloading all."
+        )
+        return accessions
+
+    selected = random.sample(accessions, sample_size)
+    print(f"Selected {sample_size} random distinct assemblies out of {len(accessions)} total.")
+    return selected
+
+def download_accessions_zip(accessions, zip_filename):
+    with tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".txt") as temp_file:
+        for accession in accessions:
+            temp_file.write(f"{accession}\n")
+        accession_file = temp_file.name
+
+    cmd = [
+        "datasets", "download", "genome", "accession",
+        "--inputfile", accession_file,
+        "--include", "genome",
+        "--filename", zip_filename
+    ]
+
+    try:
+        subprocess.run(cmd, check=True)
+        return True
+    except subprocess.CalledProcessError:
+        return False
+    finally:
+        if os.path.exists(accession_file):
+            os.remove(accession_file)
+
+def process_species_genome(species_name, sample_size, output_dir):
+    zip_filename = f"{species_name.replace(' ', '_')}.zip"
+    
+    print(f"\n============================================================")
+    print(f"--- Downloading genomes for {species_name} ---")
+    print(f"============================================================\n")
+
+    selected_accessions = get_random_accessions(species_name, sample_size)
+    if not selected_accessions:
+        print(f"No chromosome/complete assemblies found for {species_name}")
+        sys.exit(1)
+
+    if not download_accessions_zip(selected_accessions, zip_filename):
+        print(f"Failed to download selected assemblies for {species_name}")
+        sys.exit(1)
+
+    extract_path = "temp_ext"
+    with zipfile.ZipFile(zip_filename, 'r') as zip_ref:
+        zip_ref.extractall(extract_path)
+
+    data_path = os.path.join(extract_path, "ncbi_dataset", "data")
+    
+    if os.path.exists(data_path):
+        os.makedirs(output_dir, exist_ok=True)
+        for root, dirs, files in os.walk(data_path):
+            for file in files:
+                if file.endswith(".fna"):
+                    old_file_path = os.path.join(root, file)
+                    accession = os.path.basename(root)
+                    new_file_path = os.path.join(output_dir, f"{accession}.fna")
+                    shutil.move(old_file_path, new_file_path)
+                    print(f"Moved: {accession}.fna to {output_dir}/")
+
+    if os.path.exists(zip_filename):
+        os.remove(zip_filename)
+    if os.path.exists(extract_path):
+        shutil.rmtree(extract_path)
+        
+    print(f"Download complete. Files are in {output_dir}/\n")
+
+def find_fasta_files(input_dir: Path):
+    extensions = ("*.fasta", "*.fa", "*.fna")
+    files = []
+    for ext in extensions:
+        files.extend(input_dir.glob(ext))
+    return files
+
+def find_gff_files(bakta_dir: Path):
+    """Recursively find all .gff3 files in the bakta directory."""
+    return list(bakta_dir.glob("**/*.gff3"))
+
+def run_bakta(fasta_file: Path, bakta_dir: Path, db_path: str, threads: int):
+    sample_name = fasta_file.stem
+    output_dir = bakta_dir / sample_name
+    expected_gff = output_dir / f"{sample_name}.gff3"
+
+    if expected_gff.exists():
+        print(f"Skipping {fasta_file.name}: Bakta output already exists at {expected_gff}")
+        return expected_gff
+    
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    cmd = [
+        "conda", "run", "-n", "bakta_env", "bakta",
+        "--db", str(db_path),
+        "--output", str(output_dir),
+        "--prefix", sample_name,
+        "--threads", str(threads),
+        "--force",
+        str(fasta_file)
+    ]
+    
+    print(f"============================================================")
+    print(f"Running Bakta on {fasta_file.name}...")
+    print(f"Command: {' '.join(cmd)}")
+    print(f"============================================================")
+    
+    try:
+        subprocess.run(cmd, check=True)
+        print(f"Successfully processed {fasta_file.name}\n")
+        return expected_gff
+    except subprocess.CalledProcessError as e:
+        print(f"Error running Bakta on {fasta_file.name}: {e}\n", file=sys.stderr)
+        return None
+
+def run_roary(gff_files: list[Path], roary_dir: Path, threads: int, error_log=None):
+    if not gff_files:
+        error_msg = "No GFF3 files found to run Roary."
+        print(error_msg, file=sys.stderr)
+        if error_log:
+            write_error_log(error_log, f"SKIP: {error_msg}")
+        return
+    
+    run_output_dir = roary_dir / "results"
+    
+    if error_log is None:
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        error_log = str(roary_dir / f"roary_errors_{timestamp}.log")
+    
+    # Initialize error log
+    try:
+        os.makedirs(os.path.dirname(error_log), exist_ok=True)
+        open(error_log, "w").close()
+    except Exception as e:
+        print(f"Warning: Could not initialize error log at {error_log}: {e}")
+    
+    if run_output_dir.exists():
+        print(f"Removing previous Roary results directory at {run_output_dir}...")
+        shutil.rmtree(run_output_dir)
+
+    # Roary's internal Perl scripts break on paths with spaces.
+    # Stage GFF3 files and output dir in a space-free temporary directory.
+    with tempfile.TemporaryDirectory(prefix="roary_") as tmp_dir:
+        tmp_gff_dir = os.path.join(tmp_dir, "gff_inputs")
+        tmp_out_dir = os.path.join(tmp_dir, "roary_out")
+        os.makedirs(tmp_gff_dir)
+
+        # Copy GFF3 files into the space-free temp input dir
+        tmp_gff_files = []
+        for gff in gff_files:
+            dest = os.path.join(tmp_gff_dir, gff.name)
+            shutil.copy2(str(gff), dest)
+            tmp_gff_files.append(dest)
+
+        cmd = [
+            "conda", "run", "-n", "roary_env", "roary",
+            "-f", tmp_out_dir,
+            "-e", "-n", "-v",  # Core gene alignment with verbose output
+            "-p", str(threads)
+        ]
+        cmd.extend(tmp_gff_files)
+
+        print(f"============================================================")
+        print(f"Running Roary on {len(gff_files)} files...")
+        print(f"Command: roary -f {run_output_dir} -e -n -v -p {threads} *.gff3")
+        print(f"============================================================")
+
+        try:
+            result = subprocess.run(cmd, check=True, capture_output=True, text=True)
+            # Move results from temp dir to intended output location
+            shutil.move(tmp_out_dir, str(run_output_dir))
+            success_msg = f"Successfully ran Roary! Results available in: {run_output_dir}"
+            print(f"\n✅ {success_msg}")
+            write_error_log(error_log, success_msg)
+        except subprocess.CalledProcessError as e:
+            error_msg = f"Roary failed with exit code {e.returncode}"
+            if e.stderr:
+                error_msg += f" | stderr: {e.stderr[:500]}"
+            print(f"\n❌ {error_msg}", file=sys.stderr)
+            write_error_log(error_log, error_msg)
+            print(f"Error log: {error_log}")
+            sys.exit(1)
+        except Exception as e:
+            error_msg = f"Exception running Roary: {str(e)}"
+            print(f"\n❌ {error_msg}", file=sys.stderr)
+            write_error_log(error_log, error_msg)
+            print(f"Error log: {error_log}")
+            sys.exit(1)
+
+
+def run_tree_pipeline(input_fasta, start_step, outgroup_id, base_dir, output_tree_name=None, threads=12):
+    if not os.path.exists(input_fasta):
+        print(f" Error: Input fasta '{input_fasta}' does not exist.")
+        sys.exit(1)
+
+    species_name = os.path.basename(input_fasta).replace(".fasta", "").replace(".aln", "")
+    print("\n==========================================")
+    print(f" Starting Tree Pipeline for {species_name} at Step {start_step}")
+    print("==========================================\n")
+
+    # Define directories and files
+    temp_tree_rdy = os.path.join(base_dir, f"pipeline_temp_{species_name}", "tree_rdy_fastas")
+    temp_trees_final = os.path.join(base_dir, f"pipeline_temp_{species_name}", "trees_final")
+    final_rerooted_dir = os.path.join(base_dir, "rerooted_trees")
+    rarefaction_out_dir = os.path.join(base_dir, f"rarefaction_fastas_{species_name}")
+    ecosim_out_dir = os.path.join(base_dir, f"ecosim_output_{species_name}")
+
+    os.makedirs(temp_tree_rdy, exist_ok=True)
+    os.makedirs(temp_trees_final, exist_ok=True)
+    os.makedirs(final_rerooted_dir, exist_ok=True)
+
+    sorted_fasta = os.path.join(temp_tree_rdy, f"{species_name}_sorted.fasta")
+    unrooted_tree = os.path.join(temp_trees_final, f"{species_name}_sorted_tree.nwk")
+    final_tree_name = f"{output_tree_name}.nwk" if output_tree_name else f"{species_name}.nwk"
+    rerooted_tree = os.path.join(final_rerooted_dir, final_tree_name)
+    aligned_fasta = os.path.join(temp_tree_rdy, f"{species_name}_aligned.fasta")
+
+    # --- Step 4: Move largest numeric outgroup to top ---
+    if start_step <= 4:
+        print(f"--- 4. Placing outgroup at the top ---")
+        moved_ok = move_largest_numeric_to_top(input_fasta, sorted_fasta, target_id=outgroup_id)
+        if not moved_ok:
+            print("Tree pipeline requires a Roary core-gene alignment with equal-length sequences.")
+            print("Please inspect the Roary output in output_roary/results/core_gene_alignment.aln.")
+            sys.exit(1)
+    else:
+        print("--- Skipping Step 4: Using existing sorted FASTA ---")
+
+    # --- Step 5: Run FastTree ---
+    if start_step <= 5:
+        if os.path.exists(unrooted_tree) and os.path.getsize(unrooted_tree) > 0:
+            print(f"\n--- Skipping Step 5: Existing tree found for {species_name} ---")
+        else:
+            print(f"\n--- 5. Building unrooted tree using FastTree ---")
+            make_trees_batch(final_folder=temp_tree_rdy, tree_folder=temp_trees_final)
+
+            if not os.path.exists(unrooted_tree) or os.path.getsize(unrooted_tree) == 0:
+                print("FastTree failed to produce an output tree. Exiting pipeline.")
+                sys.exit(1)
+    else:
+        print("\n--- Skipping Step 5: Using existing unrooted tree ---")
+
+    # --- Step 6: Reroot Tree ---
+    if start_step <= 6:
+        print(f"\n--- 6. Rerooting tree using outgroup ---")
+        reroot_tree_by_first_fasta(
+            sorted_fasta,
+            unrooted_tree,
+            rerooted_tree,
+            outgroup_name=outgroup_id,
+        )
+        if not os.path.exists(rerooted_tree):
+            print("Rerooting tree failed. Exiting pipeline.")
+            sys.exit(1)
+    else:
+        print("\n--- Skipping Step 6: Using existing rerooted tree ---")
+
+    # --- Step 7: Rarefaction Fasta Creation ---
+    if start_step <= 7:
+        print(f"\n--- 7. Creating Rarefaction FASTAs ---")
+        create_rarefaction_fastas(input_fasta=sorted_fasta, output_folder=rarefaction_out_dir)
+    else:
+        print("\n--- Skipping Step 7: Using existing rarefaction FASTAs ---")
+
+    # --- Step 8: Run EcoSim ---
+    if start_step <= 8:
+        print(f"\n--- 8. Running EcoSim ---")
+        if os.path.exists(ECOSIM_JAR):
+            run_ecosim_batch(
+                fasta_dir=rarefaction_out_dir,
+                full_tree_path=rerooted_tree,
+                output_dir=ecosim_out_dir,
+                ecosim_jar=ECOSIM_JAR,
+                ecosim_dir=ECOSIM_DIR,
+                memory_gb=12
+            )
+        else:
+            print(f"EcoSim jar not found at {ECOSIM_JAR}")
+            print(f"   Set environment variable: export ECOSIM_JAR=/Users/gfedolfi/ecosim/build/ecosim.jar")
+    else:
+        print("\n--- Skipping Step 8 ---")
+
+    # --- Step 9: Parse Results ---
+    if start_step <= 9:
+        print(f"\n--- 9. Parsing EcoSim Output ---")
+        summary = summarize_ecotypes_in_folder(ecosim_out_dir)
+        print("\n📊 Final Ecotype Counts per File:")
+        if summary:
+            for filename, count in sorted(summary.items()):
+                print(f"{filename}: {count} ecotypes")
+        else:
+            print("No ecotypes found or error in parsing.")
+
+    print(f"\nPipeline for {species_name} completed successfully!")
+    
+    # Cleanup temporary directories
+    if start_step <= 9:
+        try:
+            shutil.rmtree(os.path.join(base_dir, f"pipeline_temp_{species_name}"))
+            print("Cleaned up temporary tree directory.")
+        except Exception as e:
+            print(f"Warning: Could not clean up temporary directory pipeline_temp_{species_name}: {e}")
+
+def load_species_outgroups_from_csv(csv_path):
+    """Load species and outgroup pairs from the summary CSV, starting at row 2."""
+    rows = []
+
+    with open(csv_path, newline="", encoding="utf-8-sig") as csv_file:
+        reader = csv.reader(csv_file)
+        next(reader, None)  # skip header row
+
+        for row_number, row in enumerate(reader, start=2):
+            if not row or all(not cell.strip() for cell in row):
+                continue
+
+            species_name = row[0].strip() if len(row) > 0 else ""
+            outgroup_name = row[3].strip() if len(row) > 3 else ""
+
+            if not species_name:
+                continue
+
+            rows.append((row_number, species_name, outgroup_name))
+
+    return rows
+
+def run_pipeline_for_species(species_name, outgroup_name, args):
+    """Run the full pipeline for one species/outgroup pair."""
+    # Create a subfolder for this run using the species name (spaces replaced with underscores)
+    run_folder = Path(args.workdir).resolve() / species_name.replace(" ", "_")
+    run_folder.mkdir(parents=True, exist_ok=True)
+    print(f"Base repository directory: {run_folder}")
+
+    base_dir = run_folder
+    input_dir, bakta_dir, roary_dir = setup_directories(base_dir)
+
+    if args.setup_only:
+        print("Setup complete. Place your .fasta files into the input directory and run the script again without the --setup-only flag.")
+        return
+
+    core_alignment_path = None
+    outgroup_fasta_path = None
+
+    # --- Step 1: Download ---
+    if args.start_step <= 1:
+        if not shutil.which("datasets"):
+            print("Error: NCBI 'datasets' CLI tool not found. Please install it (e.g. via conda) and ensure it's in your PATH.", file=sys.stderr)
+            sys.exit(1)
+        process_species_genome(species_name, args.sample_size, str(input_dir))
+
+    # --- Outgroup Download (if requested) ---
+    if outgroup_name:
+        print(f"\n--- Downloading outgroup genome: {outgroup_name} ---")
+        outgroup_fasta_path = download_ncbi_fasta(outgroup_name, str(input_dir))
+        if not outgroup_fasta_path:
+            print(f"Error: Could not download outgroup genome for {outgroup_name}", file=sys.stderr)
+            sys.exit(1)
+        print(f"Outgroup genome downloaded to {outgroup_fasta_path}")
+
+    # --- Step 2: Bakta ---
+    if args.start_step <= 2:
+        if not args.db:
+            print("Error: --db (Bakta database path) is required if starting at Step 1 or 2.", file=sys.stderr)
+            sys.exit(1)
+
+        fasta_files = find_fasta_files(input_dir)
+        if not fasta_files:
+            print(f"No FASTA files found in {input_dir}. Please add some '.fasta', '.fa', or '.fna' files or run Step 1.")
+            sys.exit(1)
+
+        # Ensure deterministic ordering and cap the number of files Bakta will process
+        fasta_files = sorted(fasta_files)
+        max_files = 201
+        if len(fasta_files) > max_files:
+            print(f"Found {len(fasta_files)} FASTA files; limiting to first {max_files} for Bakta processing.")
+            fasta_files = fasta_files[:max_files]
+
+        print(f"Found {len(fasta_files)} FASTA files to process.")
+        for i, fasta in enumerate(fasta_files):
+            print(f"\n[Tally] Processed {i+1}/{len(fasta_files)} files: {fasta.name}")
+            run_bakta(fasta, bakta_dir, args.db, args.threads)
+
+    # --- Step 3: Roary ---
+    if args.start_step <= 3:
+        gff_files = find_gff_files(bakta_dir)
+        if not gff_files:
+            print(f"No GFF3 files found in {bakta_dir}. Cannot run Roary.", file=sys.stderr)
+            sys.exit(1)
+
+        # Ensure deterministic ordering and cap the number of GFF files Roary will process
+        gff_files = sorted(gff_files)
+        max_files = 201
+        if len(gff_files) > max_files:
+            print(f"Found {len(gff_files)} GFF3 files; limiting to first {max_files} for Roary processing.")
+            gff_files = gff_files[:max_files]
+
+        # Setup error logging for Roary
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        error_log = str(roary_dir / f"roary_errors_{timestamp}.log")
+        
+        run_roary(gff_files, roary_dir, args.threads, error_log)
+        core_alignment_path = roary_dir / "results" / "core_gene_alignment.aln"
+    else:
+        # If starting from step 4+, require an input fasta or use a default one if it exists
+        if args.input_fasta:
+            core_alignment_path = Path(args.input_fasta)
+        else:
+            default_path = roary_dir / "results" / "core_gene_alignment.aln"
+            if default_path.exists():
+                core_alignment_path = default_path
+            else:
+                core_alignment_path = None
+
+    # --- Steps 4-9: Tree Pipeline ---
+    if args.start_step <= 9:
+        if not core_alignment_path or not core_alignment_path.exists():
+            print(f"\nError: Could not find core gene alignment file. Please provide --input-fasta or run previous steps.")
+            sys.exit(1)
+        run_tree_pipeline(
+            input_fasta=str(core_alignment_path),
+            start_step=max(4, args.start_step),
+            outgroup_id="outgroup" if outgroup_fasta_path else None,
+            base_dir=str(base_dir),
+            output_tree_name=species_name,
+            threads=args.threads
+        )
+
+def run_csv_batch(csv_path, args):
+    """Run the pipeline for every species/outgroup row in the CSV file."""
+    rows = load_species_outgroups_from_csv(csv_path)
+    if not rows:
+        print(f"No species rows found in CSV file: {csv_path}", file=sys.stderr)
+        sys.exit(1)
+
+    print(f"Loaded {len(rows)} species row(s) from {csv_path}")
+
+    succeeded = 0
+    failed = 0
+
+    for row_number, species_name, outgroup_name in rows:
+        print("\n" + "=" * 80)
+        print(f"Row {row_number}: {species_name}")
+        print(f"Outgroup: {outgroup_name or '(none specified)'}")
+        print("=" * 80)
+
+        try:
+            run_pipeline_for_species(species_name, outgroup_name, args)
+            succeeded += 1
+        except SystemExit as exc:
+            failed += 1
+            code = exc.code if isinstance(exc.code, int) else 1
+            print(f"\nRow {row_number} failed with exit code {code}; continuing to next row.")
+        except Exception as exc:
+            failed += 1
+            print(f"\nRow {row_number} failed: {exc}; continuing to next row.")
+
+    print("\n" + "=" * 80)
+    print(f"CSV batch complete. Succeeded: {succeeded}, Failed: {failed}")
+    print("=" * 80)
+
+def main():
+    parser = argparse.ArgumentParser(
+        description="A complete end-to-end pipeline from downloading genomes to phylogenetic trees and EcoSim."
+    )
+
+    parser.add_argument("--csv-file", help="CSV file with Species Name and Outgroup columns to process row by row from row 2 onward.")
+    
+    # Download Step arguments
+    parser.add_argument("--species", help="Species name to download from NCBI (e.g., 'Treponema paraluiscuniculi'). Required if starting at Step 1.")
+    parser.add_argument("--sample-size", type=int, default=200, help="Number of random distinct assemblies to download if starting at Step 1 (default: 200)")
+    
+    # Bakta/Roary arguments
+    parser.add_argument("-d", "--db", help="Path to the Bakta database. Required if starting at Step 2.")
+    parser.add_argument("-w", "--workdir", default=".", help="Base directory for the pipeline (default: current directory)")
+    
+    cpu_count = os.cpu_count() or 1
+    default_threads = min(12, cpu_count)
+    parser.add_argument("-t", "--threads", type=int, default=default_threads, help=f"Number of threads to use for both Bakta and Roary (default: {default_threads})")
+    
+    # Control flow arguments
+    parser.add_argument("--start-step", type=int, default=1, choices=range(1, 10), 
+                        help="Step to start at (1=Download, 2=Bakta, 3=Roary, 4=Sort, 5=FastTree, 6=Reroot, 7=Rarefaction, 8=EcoSim, 9=Parse)")
+    
+    # Tree arguments
+    parser.add_argument("--input-fasta", help="Optional: Path to core gene alignment FASTA. Required if starting from Step 4 or later.")
+    parser.add_argument("--outgroup-id", default=None, help="Optional outgroup ID to force rooting (supports GCA/GCF and .fna/.fasta suffixes)")
+    
+    parser.add_argument("--setup-only", action="store_true", help="Only create the directory structure and exit")
+
+    # Outgroup genome argument
+    parser.add_argument("--outgroup", help="NCBI accession or species name for outgroup genome to download and use as outgroup.")
+    
+    args = parser.parse_args()
+
+    # Cap threads to physical CPU count to avoid Bakta/Roary crashes
+    max_cpus = os.cpu_count() or 1
+    if args.threads > max_cpus:
+        print(f"Warning: Requested threads ({args.threads}) exceeds available CPU cores ({max_cpus}). Capping threads to {max_cpus}.")
+        args.threads = max_cpus
+
+    if args.csv_file:
+        run_csv_batch(args.csv_file, args)
+        return
+    
+
+    if not args.species:
+        print("Error: --species is required unless --csv-file is provided.", file=sys.stderr)
+        sys.exit(1)
+
+    run_pipeline_for_species(args.species, args.outgroup, args)
+
+if __name__ == "__main__":
+    main()

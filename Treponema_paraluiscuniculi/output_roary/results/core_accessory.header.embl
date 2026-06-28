@@ -1,0 +1,4031 @@
+ID   Genome standard; DNA; PRO; 1234 BP.
+XX
+FH   Key             Location/Qualifiers
+FH
+FT   feature         632
+FT                   /label=hypothetical protein
+FT                   /locus_tag=hypothetical protein
+FT                   /colour=2
+FT   feature         176
+FT                   /label=Pyruvate carboxylase subunit B
+FT                   /locus_tag=Pyruvate carboxylase subunit B
+FT                   /colour=2
+FT   feature         854
+FT                   /label=phoU
+FT                   /locus_tag=phoU
+FT                   /colour=2
+FT   misc_feature    292
+FT                   /label=group_866
+FT                   /locus_tag=group_866
+FT                   /colour=2
+FT   misc_feature    513
+FT                   /label=group_677
+FT                   /locus_tag=group_677
+FT                   /colour=2
+FT   feature         595
+FT                   /label=mreB
+FT                   /locus_tag=mreB
+FT                   /colour=2
+FT   misc_feature    753
+FT                   /label=group_563
+FT                   /locus_tag=group_563
+FT                   /colour=2
+FT   feature         895
+FT                   /label=Enolase
+FT                   /locus_tag=Enolase
+FT                   /colour=2
+FT   misc_feature    335
+FT                   /label=group_113
+FT                   /locus_tag=group_113
+FT                   /colour=2
+FT   misc_feature    431
+FT                   /label=group_65
+FT                   /locus_tag=group_65
+FT                   /colour=2
+FT   misc_feature    324
+FT                   /label=group_66
+FT                   /locus_tag=group_66
+FT                   /colour=2
+FT   feature         463
+FT                   /label=Uncharacterized protein TP_0374
+FT                   /locus_tag=Uncharacterized protein TP_0374
+FT                   /colour=2
+FT   feature         643
+FT                   /label=4-hydroxy-3-methylbut-2-enyl diphosphate reductase
+FT                   /locus_tag=4-hydroxy-3-methylbut-2-enyl diphosphate reductase
+FT                   /colour=2
+FT   misc_feature    233
+FT                   /label=group_211
+FT                   /locus_tag=group_211
+FT                   /colour=2
+FT   misc_feature    584
+FT                   /label=group_837
+FT                   /locus_tag=group_837
+FT                   /colour=2
+FT   feature         226
+FT                   /label=BCCT family transporter
+FT                   /locus_tag=BCCT family transporter
+FT                   /colour=2
+FT   misc_feature    927
+FT                   /label=group_530
+FT                   /locus_tag=group_530
+FT                   /colour=2
+FT   feature         659
+FT                   /label=N-acetylneuraminate synthase
+FT                   /locus_tag=N-acetylneuraminate synthase
+FT                   /colour=2
+FT   feature         153
+FT                   /label=Chaperonin GroEL
+FT                   /locus_tag=Chaperonin GroEL
+FT                   /colour=2
+FT   misc_feature    619
+FT                   /label=group_122
+FT                   /locus_tag=group_122
+FT                   /colour=2
+FT   feature         181
+FT                   /label=Single-stranded DNA-binding protein
+FT                   /locus_tag=Single-stranded DNA-binding protein
+FT                   /colour=2
+FT   misc_feature    301
+FT                   /label=group_203
+FT                   /locus_tag=group_203
+FT                   /colour=2
+FT   misc_feature    710
+FT                   /label=group_13
+FT                   /locus_tag=group_13
+FT                   /colour=7
+FT   feature         36
+FT                   /label=Flavin-dependent thymidylate synthase
+FT                   /locus_tag=Flavin-dependent thymidylate synthase
+FT                   /colour=2
+FT   misc_feature    346
+FT                   /label=group_201
+FT                   /locus_tag=group_201
+FT                   /colour=2
+FT   feature         791
+FT                   /label=lysM
+FT                   /locus_tag=lysM
+FT                   /colour=2
+FT   feature         21
+FT                   /label=radA
+FT                   /locus_tag=radA
+FT                   /colour=2
+FT   feature         566
+FT                   /label=tRNA (guanine-N(7)-)-methyltransferase
+FT                   /locus_tag=tRNA (guanine-N(7)-)-methyltransferase
+FT                   /colour=2
+FT   misc_feature    979
+FT                   /label=group_595
+FT                   /locus_tag=group_595
+FT                   /colour=2
+FT   feature         90
+FT                   /label=Large ribosomal subunit protein bL34
+FT                   /locus_tag=Large ribosomal subunit protein bL34
+FT                   /colour=3
+FT   feature         315
+FT                   /label=Large ribosomal subunit protein uL14
+FT                   /locus_tag=Large ribosomal subunit protein uL14
+FT                   /colour=2
+FT   feature         847
+FT                   /label=HD-GYP domain-containing protein
+FT                   /locus_tag=HD-GYP domain-containing protein
+FT                   /colour=2
+FT   feature         12
+FT                   /label=Tpr protein L
+FT                   /locus_tag=Tpr protein L
+FT                   /colour=2
+FT   misc_feature    271
+FT                   /label=group_917
+FT                   /locus_tag=group_917
+FT                   /colour=2
+FT   feature         486
+FT                   /label=Uncharacterized protein TP_0352
+FT                   /locus_tag=Uncharacterized protein TP_0352
+FT                   /colour=2
+FT   misc_feature    393
+FT                   /label=group_678
+FT                   /locus_tag=group_678
+FT                   /colour=2
+FT   misc_feature    42
+FT                   /label=group_235
+FT                   /locus_tag=group_235
+FT                   /colour=2
+FT   feature         358
+FT                   /label=DNA-directed RNA polymerase subunit beta'
+FT                   /locus_tag=DNA-directed RNA polymerase subunit beta'
+FT                   /colour=2
+FT   feature         4
+FT                   /label=Antigen TpF1
+FT                   /locus_tag=Antigen TpF1
+FT                   /colour=2
+FT   misc_feature    479
+FT                   /label=group_400
+FT                   /locus_tag=group_400
+FT                   /colour=2
+FT   feature         581
+FT                   /label=TIGR03545 family protein
+FT                   /locus_tag=TIGR03545 family protein
+FT                   /colour=2
+FT   feature         208
+FT                   /label=Cyclic nucleotide-binding domain-containing protein
+FT                   /locus_tag=Cyclic nucleotide-binding domain-containing protein
+FT                   /colour=2
+FT   feature         492
+FT                   /label=Lipoprotein
+FT                   /locus_tag=Lipoprotein
+FT                   /colour=2
+FT   feature         539
+FT                   /label=Uncharacterized protein TP_0437
+FT                   /locus_tag=Uncharacterized protein TP_0437
+FT                   /colour=2
+FT   misc_feature    397
+FT                   /label=group_447
+FT                   /locus_tag=group_447
+FT                   /colour=2
+FT   misc_feature    763
+FT                   /label=group_987
+FT                   /locus_tag=group_987
+FT                   /colour=2
+FT   feature         474
+FT                   /label=cheA
+FT                   /locus_tag=cheA
+FT                   /colour=2
+FT   feature         877
+FT                   /label=FAD:protein FMN transferase
+FT                   /locus_tag=FAD:protein FMN transferase
+FT                   /colour=2
+FT   feature         861
+FT                   /label=putative nucleoside-triphosphate diphosphatase
+FT                   /locus_tag=putative nucleoside-triphosphate diphosphatase
+FT                   /colour=2
+FT   feature         739
+FT                   /label=ybeY
+FT                   /locus_tag=ybeY
+FT                   /colour=2
+FT   feature         610
+FT                   /label=Trk family potassium (K+) transporter, membrane protein
+FT                   /locus_tag=Trk family potassium (K+) transporter, membrane protein
+FT                   /colour=2
+FT   misc_feature    808
+FT                   /label=group_490
+FT                   /locus_tag=group_490
+FT                   /colour=2
+FT   feature         339
+FT                   /label=Uncharacterized protein TP_0222
+FT                   /locus_tag=Uncharacterized protein TP_0222
+FT                   /colour=2
+FT   feature         392
+FT                   /label=WecB/TagA/CpsF family glycosyl transferase
+FT                   /locus_tag=WecB/TagA/CpsF family glycosyl transferase
+FT                   /colour=2
+FT   feature         425
+FT                   /label=AGCS family alanine or glycine:sodium (Na+) or proton (H+) symporter
+FT                   /locus_tag=AGCS family alanine or glycine:sodium (Na+) or proton (H+) symporter
+FT                   /colour=2
+FT   feature         910
+FT                   /label=Tyrosine--tRNA ligase
+FT                   /locus_tag=Tyrosine--tRNA ligase
+FT                   /colour=2
+FT   misc_feature    239
+FT                   /label=group_109
+FT                   /locus_tag=group_109
+FT                   /colour=2
+FT   misc_feature    563
+FT                   /label=group_18
+FT                   /locus_tag=group_18
+FT                   /colour=2
+FT   feature         85
+FT                   /label=Uncharacterized protein TP_0956
+FT                   /locus_tag=Uncharacterized protein TP_0956
+FT                   /colour=2
+FT   misc_feature    570
+FT                   /label=group_19
+FT                   /locus_tag=group_19
+FT                   /colour=2
+FT   misc_feature    122
+FT                   /label=group_54
+FT                   /locus_tag=group_54
+FT                   /colour=3
+FT   misc_feature    631
+FT                   /label=group_260
+FT                   /locus_tag=group_260
+FT                   /colour=2
+FT   feature         654
+FT                   /label=DUF1007 domain-containing protein
+FT                   /locus_tag=DUF1007 domain-containing protein
+FT                   /colour=2
+FT   misc_feature    257
+FT                   /label=group_34
+FT                   /locus_tag=group_34
+FT                   /colour=7
+FT   feature         531
+FT                   /label=V-type ATP synthase subunit I 1
+FT                   /locus_tag=V-type ATP synthase subunit I 1
+FT                   /colour=2
+FT   misc_feature    872
+FT                   /label=group_145
+FT                   /locus_tag=group_145
+FT                   /colour=2
+FT   misc_feature    875
+FT                   /label=group_701
+FT                   /locus_tag=group_701
+FT                   /colour=2
+FT   feature         13
+FT                   /label=Uncharacterized protein TP_1029
+FT                   /locus_tag=Uncharacterized protein TP_1029
+FT                   /colour=2
+FT   feature         548
+FT                   /label=4-hydroxy-3-methylbut-2-en-1-yl diphosphate synthase (flavodoxin)
+FT                   /locus_tag=4-hydroxy-3-methylbut-2-en-1-yl diphosphate synthase (flavodoxin)
+FT                   /colour=2
+FT   misc_feature    126
+FT                   /label=group_47
+FT                   /locus_tag=group_47
+FT                   /colour=7
+FT   feature         115
+FT                   /label=Flavodoxin
+FT                   /locus_tag=Flavodoxin
+FT                   /colour=2
+FT   feature         201
+FT                   /label=Sigma-54 factor interaction domain-containing protein
+FT                   /locus_tag=Sigma-54 factor interaction domain-containing protein
+FT                   /colour=2
+FT   feature         160
+FT                   /label=pfoR
+FT                   /locus_tag=pfoR
+FT                   /colour=2
+FT   misc_feature    418
+FT                   /label=group_3
+FT                   /locus_tag=group_3
+FT                   /colour=2
+FT   feature         848
+FT                   /label=ftsH
+FT                   /locus_tag=ftsH
+FT                   /colour=2
+FT   feature         471
+FT                   /label=Response regulatory domain-containing protein
+FT                   /locus_tag=Response regulatory domain-containing protein
+FT                   /colour=2
+FT   misc_feature    987
+FT                   /label=group_369
+FT                   /locus_tag=group_369
+FT                   /colour=2
+FT   misc_feature    969
+FT                   /label=group_845
+FT                   /locus_tag=group_845
+FT                   /colour=2
+FT   feature         263
+FT                   /label=Thiamine ABC transporter, permease protein, putative
+FT                   /locus_tag=Thiamine ABC transporter, permease protein, putative
+FT                   /colour=2
+FT   misc_feature    986
+FT                   /label=group_402
+FT                   /locus_tag=group_402
+FT                   /colour=2
+FT   feature         652
+FT                   /label=DAACS family dicarboxylate/amino acid:sodium (Na+) or proton (H+) symporter
+FT                   /locus_tag=DAACS family dicarboxylate/amino acid:sodium (Na+) or proton (H+) symporter
+FT                   /colour=2
+FT   feature         63
+FT                   /label=ycfH
+FT                   /locus_tag=ycfH
+FT                   /colour=2
+FT   misc_feature    862
+FT                   /label=group_518
+FT                   /locus_tag=group_518
+FT                   /colour=2
+FT   feature         246
+FT                   /label=Exodeoxyribonuclease III
+FT                   /locus_tag=Exodeoxyribonuclease III
+FT                   /colour=2
+FT   feature         142
+FT                   /label=Tetratricopeptide repeat protein
+FT                   /locus_tag=Tetratricopeptide repeat protein
+FT                   /colour=2
+FT   feature         618
+FT                   /label=DNA-directed DNA polymerase III gamma and tau subunits
+FT                   /locus_tag=DNA-directed DNA polymerase III gamma and tau subunits
+FT                   /colour=2
+FT   misc_feature    815
+FT                   /label=group_962
+FT                   /locus_tag=group_962
+FT                   /colour=2
+FT   feature         213
+FT                   /label=Phosphate acetyltransferase
+FT                   /locus_tag=Phosphate acetyltransferase
+FT                   /colour=2
+FT   feature         308
+FT                   /label=Large ribosomal subunit protein uL2
+FT                   /locus_tag=Large ribosomal subunit protein uL2
+FT                   /colour=2
+FT   misc_feature    867
+FT                   /label=group_621
+FT                   /locus_tag=group_621
+FT                   /colour=2
+FT   misc_feature    675
+FT                   /label=group_258
+FT                   /locus_tag=group_258
+FT                   /colour=2
+FT   feature         16
+FT                   /label=Oligoendopeptidase, M3 family
+FT                   /locus_tag=Oligoendopeptidase, M3 family
+FT                   /colour=2
+FT   misc_feature    776
+FT                   /label=group_888
+FT                   /locus_tag=group_888
+FT                   /colour=2
+FT   feature         575
+FT                   /label=Glucose-6-phosphate isomerase
+FT                   /locus_tag=Glucose-6-phosphate isomerase
+FT                   /colour=2
+FT   misc_feature    491
+FT                   /label=group_492
+FT                   /locus_tag=group_492
+FT                   /colour=2
+FT   feature         442
+FT                   /label=flgC
+FT                   /locus_tag=flgC
+FT                   /colour=2
+FT   feature         76
+FT                   /label=Efflux RND transporter periplasmic adaptor subunit
+FT                   /locus_tag=Efflux RND transporter periplasmic adaptor subunit
+FT                   /colour=2
+FT   misc_feature    983
+FT                   /label=group_106
+FT                   /locus_tag=group_106
+FT                   /colour=2
+FT   feature         876
+FT                   /label=S-adenosylmethionine synthase
+FT                   /locus_tag=S-adenosylmethionine synthase
+FT                   /colour=2
+FT   misc_feature    294
+FT                   /label=group_372
+FT                   /locus_tag=group_372
+FT                   /colour=2
+FT   feature         557
+FT                   /label=DUF4139 domain-containing protein
+FT                   /locus_tag=DUF4139 domain-containing protein
+FT                   /colour=2
+FT   misc_feature    167
+FT                   /label=group_713
+FT                   /locus_tag=group_713
+FT                   /colour=2
+FT   misc_feature    147
+FT                   /label=group_310
+FT                   /locus_tag=group_310
+FT                   /colour=2
+FT   feature         981
+FT                   /label=Large ribosomal subunit protein bL19
+FT                   /locus_tag=Large ribosomal subunit protein bL19
+FT                   /colour=2
+FT   feature         236
+FT                   /label=UvrABC system protein B
+FT                   /locus_tag=UvrABC system protein B
+FT                   /colour=2
+FT   feature         288
+FT                   /label=troR
+FT                   /locus_tag=troR
+FT                   /colour=2
+FT   feature         677
+FT                   /label=lolD
+FT                   /locus_tag=lolD
+FT                   /colour=2
+FT   misc_feature    98
+FT                   /label=group_351
+FT                   /locus_tag=group_351
+FT                   /colour=2
+FT   feature         131
+FT                   /label=Beta sliding clamp
+FT                   /locus_tag=Beta sliding clamp
+FT                   /colour=2
+FT   feature         869
+FT                   /label=lptB
+FT                   /locus_tag=lptB
+FT                   /colour=2
+FT   feature         190
+FT                   /label=clpB
+FT                   /locus_tag=clpB
+FT                   /colour=2
+FT   feature         626
+FT                   /label=V-type ATP synthase alpha chain 2
+FT                   /locus_tag=V-type ATP synthase alpha chain 2
+FT                   /colour=2
+FT   feature         574
+FT                   /label=putative transcriptional regulatory protein DET0444
+FT                   /locus_tag=putative transcriptional regulatory protein DET0444
+FT                   /colour=2
+FT   misc_feature    834
+FT                   /label=group_778
+FT                   /locus_tag=group_778
+FT                   /colour=2
+FT   feature         606
+FT                   /label=Alkyl hydroperoxide reductase C
+FT                   /locus_tag=Alkyl hydroperoxide reductase C
+FT                   /colour=2
+FT   feature         312
+FT                   /label=Large ribosomal subunit protein uL16
+FT                   /locus_tag=Large ribosomal subunit protein uL16
+FT                   /colour=2
+FT   feature         274
+FT                   /label=rnfC
+FT                   /locus_tag=rnfC
+FT                   /colour=2
+FT   misc_feature    266
+FT                   /label=group_10
+FT                   /locus_tag=group_10
+FT                   /colour=2
+FT   misc_feature    256
+FT                   /label=group_46
+FT                   /locus_tag=group_46
+FT                   /colour=6
+FT   misc_feature    589
+FT                   /label=group_711
+FT                   /locus_tag=group_711
+FT                   /colour=2
+FT   feature         326
+FT                   /label=Small ribosomal subunit protein uS13
+FT                   /locus_tag=Small ribosomal subunit protein uS13
+FT                   /colour=2
+FT   feature         350
+FT                   /label=Large ribosomal subunit protein bL33
+FT                   /locus_tag=Large ribosomal subunit protein bL33
+FT                   /colour=2
+FT   misc_feature    124
+FT                   /label=group_14
+FT                   /locus_tag=group_14
+FT                   /colour=2
+FT   feature         245
+FT                   /label=ychF
+FT                   /locus_tag=ychF
+FT                   /colour=2
+FT   feature         309
+FT                   /label=Small ribosomal subunit protein uS19
+FT                   /locus_tag=Small ribosomal subunit protein uS19
+FT                   /colour=2
+FT   misc_feature    468
+FT                   /label=group_94
+FT                   /locus_tag=group_94
+FT                   /colour=2
+FT   feature         283
+FT                   /label=ruvB
+FT                   /locus_tag=ruvB
+FT                   /colour=2
+FT   feature         333
+FT                   /label=dnaJ
+FT                   /locus_tag=dnaJ
+FT                   /colour=2
+FT   feature         913
+FT                   /label=Threonine--tRNA ligase
+FT                   /locus_tag=Threonine--tRNA ligase
+FT                   /colour=2
+FT   feature         458
+FT                   /label=DNA 3'-5' helicase
+FT                   /locus_tag=DNA 3'-5' helicase
+FT                   /colour=2
+FT   feature         78
+FT                   /label=putative macrolide ABC superfamily ATP binding cassette transporter, ABC/membrane protein
+FT                   /locus_tag=putative macrolide ABC superfamily ATP binding cassette transporter, ABC/membrane protein
+FT                   /colour=2
+FT   misc_feature    86
+FT                   /label=group_435
+FT                   /locus_tag=group_435
+FT                   /colour=2
+FT   feature         286
+FT                   /label=troC
+FT                   /locus_tag=troC
+FT                   /colour=2
+FT   feature         228
+FT                   /label=ATP-dependent 6-phosphofructokinase
+FT                   /locus_tag=ATP-dependent 6-phosphofructokinase
+FT                   /colour=2
+FT   feature         432
+FT                   /label=HAD family hydrolase
+FT                   /locus_tag=HAD family hydrolase
+FT                   /colour=2
+FT   feature         898
+FT                   /label=Membrane lipoprotein TpN32
+FT                   /locus_tag=Membrane lipoprotein TpN32
+FT                   /colour=2
+FT   feature         148
+FT                   /label=Peptidase M16C associated domain-containing protein
+FT                   /locus_tag=Peptidase M16C associated domain-containing protein
+FT                   /colour=2
+FT   feature         799
+FT                   /label=flhA
+FT                   /locus_tag=flhA
+FT                   /colour=2
+FT   feature         152
+FT                   /label=UDP-N-acetylglucosamine 1-carboxyvinyltransferase
+FT                   /locus_tag=UDP-N-acetylglucosamine 1-carboxyvinyltransferase
+FT                   /colour=2
+FT   feature         278
+FT                   /label=Thioesterase family protein
+FT                   /locus_tag=Thioesterase family protein
+FT                   /colour=2
+FT   feature         794
+FT                   /label=RNA polymerase sigma factor
+FT                   /locus_tag=RNA polymerase sigma factor
+FT                   /colour=2
+FT   feature         95
+FT                   /label=Peptidyl-prolyl cis-trans isomerase
+FT                   /locus_tag=Peptidyl-prolyl cis-trans isomerase
+FT                   /colour=2
+FT   feature         231
+FT                   /label=RNA polymerase sigma-54 factor
+FT                   /locus_tag=RNA polymerase sigma-54 factor
+FT                   /colour=2
+FT   misc_feature    500
+FT                   /label=group_623
+FT                   /locus_tag=group_623
+FT                   /colour=2
+FT   feature         205
+FT                   /label=pilZ
+FT                   /locus_tag=pilZ
+FT                   /colour=2
+FT   misc_feature    364
+FT                   /label=group_500
+FT                   /locus_tag=group_500
+FT                   /colour=2
+FT   feature         731
+FT                   /label=Histidine--tRNA ligase
+FT                   /locus_tag=Histidine--tRNA ligase
+FT                   /colour=2
+FT   feature         532
+FT                   /label=V-type ATPase, K subunit
+FT                   /locus_tag=V-type ATPase, K subunit
+FT                   /colour=2
+FT   feature         533
+FT                   /label=Type III pantothenate kinase
+FT                   /locus_tag=Type III pantothenate kinase
+FT                   /colour=2
+FT   feature         537
+FT                   /label=17 kDa lipoprotein
+FT                   /locus_tag=17 kDa lipoprotein
+FT                   /colour=2
+FT   misc_feature    512
+FT                   /label=group_420
+FT                   /locus_tag=group_420
+FT                   /colour=2
+FT   feature         70
+FT                   /label=ILT iron/lead superfamily transporter
+FT                   /locus_tag=ILT iron/lead superfamily transporter
+FT                   /colour=2
+FT   misc_feature    484
+FT                   /label=group_360
+FT                   /locus_tag=group_360
+FT                   /colour=2
+FT   misc_feature    766
+FT                   /label=group_64
+FT                   /locus_tag=group_64
+FT                   /colour=2
+FT   misc_feature    199
+FT                   /label=group_446
+FT                   /locus_tag=group_446
+FT                   /colour=2
+FT   feature         262
+FT                   /label=ABC transporter domain-containing protein
+FT                   /locus_tag=ABC transporter domain-containing protein
+FT                   /colour=2
+FT   feature         865
+FT                   /label=Uncharacterized protein TP_0783
+FT                   /locus_tag=Uncharacterized protein TP_0783
+FT                   /colour=2
+FT   misc_feature    222
+FT                   /label=group_1
+FT                   /locus_tag=group_1
+FT                   /colour=2
+FT   feature         399
+FT                   /label=Glycosyltransferase
+FT                   /locus_tag=Glycosyltransferase
+FT                   /colour=2
+FT   feature         798
+FT                   /label=flhF
+FT                   /locus_tag=flhF
+FT                   /colour=2
+FT   feature         433
+FT                   /label=Glutamate racemase
+FT                   /locus_tag=Glutamate racemase
+FT                   /colour=2
+FT   misc_feature    816
+FT                   /label=group_757
+FT                   /locus_tag=group_757
+FT                   /colour=2
+FT   feature         327
+FT                   /label=Small ribosomal subunit protein uS11
+FT                   /locus_tag=Small ribosomal subunit protein uS11
+FT                   /colour=2
+FT   feature         444
+FT                   /label=xerC
+FT                   /locus_tag=xerC
+FT                   /colour=2
+FT   misc_feature    30
+FT                   /label=group_540
+FT                   /locus_tag=group_540
+FT                   /colour=2
+FT   feature         822
+FT                   /label=Sugar ABC superfamily ATP binding cassette transporter, binding protein
+FT                   /locus_tag=Sugar ABC superfamily ATP binding cassette transporter, binding protein
+FT                   /colour=2
+FT   misc_feature    207
+FT                   /label=group_393
+FT                   /locus_tag=group_393
+FT                   /colour=2
+FT   misc_feature    390
+FT                   /label=group_90
+FT                   /locus_tag=group_90
+FT                   /colour=2
+FT   feature         636
+FT                   /label=Anti-sigma factor antagonist
+FT                   /locus_tag=Anti-sigma factor antagonist
+FT                   /colour=2
+FT   feature         802
+FT                   /label=fliQ
+FT                   /locus_tag=fliQ
+FT                   /colour=2
+FT   misc_feature    277
+FT                   /label=group_671
+FT                   /locus_tag=group_671
+FT                   /colour=2
+FT   feature         441
+FT                   /label=fliE
+FT                   /locus_tag=fliE
+FT                   /colour=2
+FT   misc_feature    434
+FT                   /label=group_397
+FT                   /locus_tag=group_397
+FT                   /colour=2
+FT   feature         681
+FT                   /label=Leucine--tRNA ligase
+FT                   /locus_tag=Leucine--tRNA ligase
+FT                   /colour=2
+FT   feature         225
+FT                   /label=DNA polymerase I
+FT                   /locus_tag=DNA polymerase I
+FT                   /colour=2
+FT   misc_feature    338
+FT                   /label=group_796
+FT                   /locus_tag=group_796
+FT                   /colour=2
+FT   misc_feature    709
+FT                   /label=group_859
+FT                   /locus_tag=group_859
+FT                   /colour=7
+FT   misc_feature    248
+FT                   /label=group_922
+FT                   /locus_tag=group_922
+FT                   /colour=2
+FT   feature         599
+FT                   /label=rodA
+FT                   /locus_tag=rodA
+FT                   /colour=2
+FT   feature         587
+FT                   /label=Methyl-accepting chemotaxis protein
+FT                   /locus_tag=Methyl-accepting chemotaxis protein
+FT                   /colour=2
+FT   misc_feature    968
+FT                   /label=group_273
+FT                   /locus_tag=group_273
+FT                   /colour=2
+FT   misc_feature    934
+FT                   /label=group_42
+FT                   /locus_tag=group_42
+FT                   /colour=5
+FT   feature         694
+FT                   /label=Phosphatidate cytidylyltransferase
+FT                   /locus_tag=Phosphatidate cytidylyltransferase
+FT                   /colour=2
+FT   feature         673
+FT                   /label=Uncharacterized protein TP_0577
+FT                   /locus_tag=Uncharacterized protein TP_0577
+FT                   /colour=2
+FT   feature         565
+FT                   /label=Uncharacterized lipoprotein TP_0462/TP_0463
+FT                   /locus_tag=Uncharacterized lipoprotein TP_0462/TP_0463
+FT                   /colour=6
+FT   misc_feature    829
+FT                   /label=group_765
+FT                   /locus_tag=group_765
+FT                   /colour=2
+FT   feature         415
+FT                   /label=Small ribosomal subunit protein uS4
+FT                   /locus_tag=Small ribosomal subunit protein uS4
+FT                   /colour=2
+FT   misc_feature    247
+FT                   /label=group_529
+FT                   /locus_tag=group_529
+FT                   /colour=2
+FT   misc_feature    712
+FT                   /label=group_877
+FT                   /locus_tag=group_877
+FT                   /colour=4
+FT   feature         75
+FT                   /label=Uncharacterized protein TP_0966
+FT                   /locus_tag=Uncharacterized protein TP_0966
+FT                   /colour=2
+FT   misc_feature    838
+FT                   /label=group_24
+FT                   /locus_tag=group_24
+FT                   /colour=2
+FT   misc_feature    183
+FT                   /label=group_663
+FT                   /locus_tag=group_663
+FT                   /colour=2
+FT   feature         215
+FT                   /label=dnaK
+FT                   /locus_tag=dnaK
+FT                   /colour=2
+FT   misc_feature    792
+FT                   /label=group_242
+FT                   /locus_tag=group_242
+FT                   /colour=2
+FT   feature         883
+FT                   /label=ugpC
+FT                   /locus_tag=ugpC
+FT                   /colour=2
+FT   misc_feature    103
+FT                   /label=group_265
+FT                   /locus_tag=group_265
+FT                   /colour=2
+FT   misc_feature    749
+FT                   /label=group_807
+FT                   /locus_tag=group_807
+FT                   /colour=2
+FT   misc_feature    149
+FT                   /label=group_583
+FT                   /locus_tag=group_583
+FT                   /colour=2
+FT   misc_feature    723
+FT                   /label=group_506
+FT                   /locus_tag=group_506
+FT                   /colour=2
+FT   misc_feature    558
+FT                   /label=group_761
+FT                   /locus_tag=group_761
+FT                   /colour=2
+FT   feature         211
+FT                   /label=RNA polymerase sigma-24 factor (RpoE)
+FT                   /locus_tag=RNA polymerase sigma-24 factor (RpoE)
+FT                   /colour=2
+FT   feature         704
+FT                   /label=SUF system FeS cluster assembly SufBD core domain-containing protein
+FT                   /locus_tag=SUF system FeS cluster assembly SufBD core domain-containing protein
+FT                   /colour=2
+FT   feature         716
+FT                   /label=OmpA-like domain-containing protein
+FT                   /locus_tag=OmpA-like domain-containing protein
+FT                   /colour=2
+FT   misc_feature    299
+FT                   /label=group_206
+FT                   /locus_tag=group_206
+FT                   /colour=2
+FT   feature         750
+FT                   /label=Fructose-1,6-bisphosphate aldolase, class II
+FT                   /locus_tag=Fructose-1,6-bisphosphate aldolase, class II
+FT                   /colour=2
+FT   feature         244
+FT                   /label=TPR repeat-containing protein TP_0123
+FT                   /locus_tag=TPR repeat-containing protein TP_0123
+FT                   /colour=2
+FT   feature         380
+FT                   /label=Deoxyribose-phosphate aldolase
+FT                   /locus_tag=Deoxyribose-phosphate aldolase
+FT                   /colour=2
+FT   feature         146
+FT                   /label=NSS family neurotransmitter:Na+ symporter
+FT                   /locus_tag=NSS family neurotransmitter:Na+ symporter
+FT                   /colour=2
+FT   feature         459
+FT                   /label=secA
+FT                   /locus_tag=secA
+FT                   /colour=2
+FT   feature         243
+FT                   /label=Phosphoenolpyruvate carboxykinase [GTP]
+FT                   /locus_tag=Phosphoenolpyruvate carboxykinase [GTP]
+FT                   /colour=2
+FT   feature         607
+FT                   /label=Elongation factor 4
+FT                   /locus_tag=Elongation factor 4
+FT                   /colour=2
+FT   feature         230
+FT                   /label=Uncharacterized protein TP_0110
+FT                   /locus_tag=Uncharacterized protein TP_0110
+FT                   /colour=2
+FT   feature         302
+FT                   /label=Coproporphyrinogen dehydrogenase
+FT                   /locus_tag=Coproporphyrinogen dehydrogenase
+FT                   /colour=2
+FT   misc_feature    462
+FT                   /label=group_675
+FT                   /locus_tag=group_675
+FT                   /colour=2
+FT   misc_feature    858
+FT                   /label=group_70
+FT                   /locus_tag=group_70
+FT                   /colour=2
+FT   misc_feature    490
+FT                   /label=group_793
+FT                   /locus_tag=group_793
+FT                   /colour=2
+FT   misc_feature    154
+FT                   /label=group_479
+FT                   /locus_tag=group_479
+FT                   /colour=2
+FT   feature         634
+FT                   /label=Triosephosphate isomerase
+FT                   /locus_tag=Triosephosphate isomerase
+FT                   /colour=2
+FT   misc_feature    87
+FT                   /label=group_756
+FT                   /locus_tag=group_756
+FT                   /colour=2
+FT   misc_feature    349
+FT                   /label=group_437
+FT                   /locus_tag=group_437
+FT                   /colour=2
+FT   feature         687
+FT                   /label=DUF2147 domain-containing protein
+FT                   /locus_tag=DUF2147 domain-containing protein
+FT                   /colour=2
+FT   misc_feature    764
+FT                   /label=group_161
+FT                   /locus_tag=group_161
+FT                   /colour=2
+FT   misc_feature    705
+FT                   /label=group_782
+FT                   /locus_tag=group_782
+FT                   /colour=2
+FT   feature         93
+FT                   /label=yidC
+FT                   /locus_tag=yidC
+FT                   /colour=2
+FT   feature         926
+FT                   /label=Translation initiation factor IF-3
+FT                   /locus_tag=Translation initiation factor IF-3
+FT                   /colour=2
+FT   misc_feature    573
+FT                   /label=group_673
+FT                   /locus_tag=group_673
+FT                   /colour=2
+FT   feature         906
+FT                   /label=tRNA pseudouridine synthase A
+FT                   /locus_tag=tRNA pseudouridine synthase A
+FT                   /colour=2
+FT   feature         657
+FT                   /label=Transketolase
+FT                   /locus_tag=Transketolase
+FT                   /colour=2
+FT   misc_feature    29
+FT                   /label=group_30
+FT                   /locus_tag=group_30
+FT                   /colour=2
+FT   feature         941
+FT                   /label=UPF0164 protein TP_0865
+FT                   /locus_tag=UPF0164 protein TP_0865
+FT                   /colour=2
+FT   misc_feature    118
+FT                   /label=group_110
+FT                   /locus_tag=group_110
+FT                   /colour=2
+FT   feature         5
+FT                   /label=Hemolysin III
+FT                   /locus_tag=Hemolysin III
+FT                   /colour=2
+FT   feature         71
+FT                   /label=34 kDa membrane antigen
+FT                   /locus_tag=34 kDa membrane antigen
+FT                   /colour=2
+FT   feature         767
+FT                   /label=tRNA N6-adenosine threonylcarbamoyltransferase
+FT                   /locus_tag=tRNA N6-adenosine threonylcarbamoyltransferase
+FT                   /colour=2
+FT   misc_feature    593
+FT                   /label=group_136
+FT                   /locus_tag=group_136
+FT                   /colour=2
+FT   feature         684
+FT                   /label=HPr kinase/phosphorylase
+FT                   /locus_tag=HPr kinase/phosphorylase
+FT                   /colour=2
+FT   feature         497
+FT                   /label=UDP-N-acetylmuramate--L-alanine ligase
+FT                   /locus_tag=UDP-N-acetylmuramate--L-alanine ligase
+FT                   /colour=2
+FT   feature         371
+FT                   /label=Large ribosomal subunit protein bL31
+FT                   /locus_tag=Large ribosomal subunit protein bL31
+FT                   /colour=2
+FT   feature         578
+FT                   /label=Glucose-6-phosphate 1-dehydrogenase
+FT                   /locus_tag=Glucose-6-phosphate 1-dehydrogenase
+FT                   /colour=2
+FT   feature         538
+FT                   /label=nrnA
+FT                   /locus_tag=nrnA
+FT                   /colour=2
+FT   feature         902
+FT                   /label=Diadenylate cyclase
+FT                   /locus_tag=Diadenylate cyclase
+FT                   /colour=2
+FT   feature         830
+FT                   /label=Large ribosomal subunit protein bL21
+FT                   /locus_tag=Large ribosomal subunit protein bL21
+FT                   /colour=2
+FT   feature         506
+FT                   /label=6-phosphogluconate dehydrogenase, decarboxylating
+FT                   /locus_tag=6-phosphogluconate dehydrogenase, decarboxylating
+FT                   /colour=2
+FT   feature         881
+FT                   /label=clpA
+FT                   /locus_tag=clpA
+FT                   /colour=2
+FT   misc_feature    915
+FT                   /label=group_292
+FT                   /locus_tag=group_292
+FT                   /colour=2
+FT   feature         734
+FT                   /label=Lysine--tRNA ligase
+FT                   /locus_tag=Lysine--tRNA ligase
+FT                   /colour=2
+FT   feature         218
+FT                   /label=Uridylate kinase
+FT                   /locus_tag=Uridylate kinase
+FT                   /colour=2
+FT   feature         991
+FT                   /label=Thioredoxin
+FT                   /locus_tag=Thioredoxin
+FT                   /colour=2
+FT   misc_feature    713
+FT                   /label=group_860
+FT                   /locus_tag=group_860
+FT                   /colour=2
+FT   misc_feature    272
+FT                   /label=group_302
+FT                   /locus_tag=group_302
+FT                   /colour=2
+FT   misc_feature    975
+FT                   /label=group_318
+FT                   /locus_tag=group_318
+FT                   /colour=2
+FT   feature         611
+FT                   /label=UvrABC system protein A
+FT                   /locus_tag=UvrABC system protein A
+FT                   /colour=2
+FT   misc_feature    24
+FT                   /label=group_120
+FT                   /locus_tag=group_120
+FT                   /colour=2
+FT   feature         15
+FT                   /label=Uridine phosphorylase
+FT                   /locus_tag=Uridine phosphorylase
+FT                   /colour=2
+FT   misc_feature    307
+FT                   /label=group_96
+FT                   /locus_tag=group_96
+FT                   /colour=2
+FT   misc_feature    674
+FT                   /label=group_894
+FT                   /locus_tag=group_894
+FT                   /colour=2
+FT   feature         585
+FT                   /label=Antigen, p83/100
+FT                   /locus_tag=Antigen, p83/100
+FT                   /colour=2
+FT   feature         789
+FT                   /label=recJ
+FT                   /locus_tag=recJ
+FT                   /colour=2
+FT   feature         787
+FT                   /label=DNA-directed RNA polymerase subunit omega
+FT                   /locus_tag=DNA-directed RNA polymerase subunit omega
+FT                   /colour=2
+FT   misc_feature    313
+FT                   /label=group_425
+FT                   /locus_tag=group_425
+FT                   /colour=2
+FT   feature         25
+FT                   /label=Ribonuclease Y
+FT                   /locus_tag=Ribonuclease Y
+FT                   /colour=2
+FT   misc_feature    238
+FT                   /label=group_886
+FT                   /locus_tag=group_886
+FT                   /colour=2
+FT   misc_feature    627
+FT                   /label=group_450
+FT                   /locus_tag=group_450
+FT                   /colour=2
+FT   feature         33
+FT                   /label=Nucleoside diphosphate kinase
+FT                   /locus_tag=Nucleoside diphosphate kinase
+FT                   /colour=2
+FT   feature         841
+FT                   /label=Peptide deformylase
+FT                   /locus_tag=Peptide deformylase
+FT                   /colour=2
+FT   feature         703
+FT                   /label=sufB
+FT                   /locus_tag=sufB
+FT                   /colour=2
+FT   feature         366
+FT                   /label=Small ribosomal subunit protein bS20
+FT                   /locus_tag=Small ribosomal subunit protein bS20
+FT                   /colour=2
+FT   feature         590
+FT                   /label=Endolytic murein transglycosylase
+FT                   /locus_tag=Endolytic murein transglycosylase
+FT                   /colour=2
+FT   feature         638
+FT                   /label=Pyrophosphate--fructose 6-phosphate 1-phosphotransferase
+FT                   /locus_tag=Pyrophosphate--fructose 6-phosphate 1-phosphotransferase
+FT                   /colour=2
+FT   misc_feature    908
+FT                   /label=group_634
+FT                   /locus_tag=group_634
+FT                   /colour=2
+FT   feature         774
+FT                   /label=recG
+FT                   /locus_tag=recG
+FT                   /colour=2
+FT   feature         49
+FT                   /label=rlpA
+FT                   /locus_tag=rlpA
+FT                   /colour=2
+FT   feature         519
+FT                   /label=Signal recognition particle protein
+FT                   /locus_tag=Signal recognition particle protein
+FT                   /colour=2
+FT   misc_feature    117
+FT                   /label=group_797
+FT                   /locus_tag=group_797
+FT                   /colour=2
+FT   feature         258
+FT                   /label=Uncharacterized protein TP_0138
+FT                   /locus_tag=Uncharacterized protein TP_0138
+FT                   /colour=2
+FT   feature         496
+FT                   /label=Cytidylate kinase
+FT                   /locus_tag=Cytidylate kinase
+FT                   /colour=2
+FT   misc_feature    96
+FT                   /label=group_801
+FT                   /locus_tag=group_801
+FT                   /colour=2
+FT   feature         43
+FT                   /label=Uncharacterized protein TP_1000
+FT                   /locus_tag=Uncharacterized protein TP_1000
+FT                   /colour=2
+FT   misc_feature    547
+FT                   /label=group_577
+FT                   /locus_tag=group_577
+FT                   /colour=2
+FT   feature         265
+FT                   /label=Long-chain-fatty-acid--CoA ligase
+FT                   /locus_tag=Long-chain-fatty-acid--CoA ligase
+FT                   /colour=2
+FT   misc_feature    882
+FT                   /label=group_635
+FT                   /locus_tag=group_635
+FT                   /colour=2
+FT   misc_feature    252
+FT                   /label=group_868
+FT                   /locus_tag=group_868
+FT                   /colour=2
+FT   misc_feature    159
+FT                   /label=group_826
+FT                   /locus_tag=group_826
+FT                   /colour=2
+FT   feature         804
+FT                   /label=Flagellar protein
+FT                   /locus_tag=Flagellar protein
+FT                   /colour=2
+FT   feature         635
+FT                   /label=Phosphoglycerate kinase
+FT                   /locus_tag=Phosphoglycerate kinase
+FT                   /colour=2
+FT   misc_feature    465
+FT                   /label=group_36
+FT                   /locus_tag=group_36
+FT                   /colour=5
+FT   feature         35
+FT                   /label=Ribonucleoside-diphosphate reductase
+FT                   /locus_tag=Ribonucleoside-diphosphate reductase
+FT                   /colour=2
+FT   misc_feature    894
+FT                   /label=group_338
+FT                   /locus_tag=group_338
+FT                   /colour=2
+FT   misc_feature    923
+FT                   /label=group_436
+FT                   /locus_tag=group_436
+FT                   /colour=2
+FT   feature         254
+FT                   /label=Uncharacterized lipoprotein TP_0134
+FT                   /locus_tag=Uncharacterized lipoprotein TP_0134
+FT                   /colour=2
+FT   feature         116
+FT                   /label=S1 motif domain-containing protein
+FT                   /locus_tag=S1 motif domain-containing protein
+FT                   /colour=2
+FT   misc_feature    846
+FT                   /label=group_171
+FT                   /locus_tag=group_171
+FT                   /colour=2
+FT   feature         290
+FT                   /label=5'-methylthioadenosine/S-adenosylhomocysteine nucleosidase
+FT                   /locus_tag=5'-methylthioadenosine/S-adenosylhomocysteine nucleosidase
+FT                   /colour=2
+FT   feature         46
+FT                   /label=Signal peptide peptidase A
+FT                   /locus_tag=Signal peptide peptidase A
+FT                   /colour=2
+FT   feature         909
+FT                   /label=Uncharacterized protein TP_0833
+FT                   /locus_tag=Uncharacterized protein TP_0833
+FT                   /colour=2
+FT   feature         736
+FT                   /label=Serine--tRNA ligase
+FT                   /locus_tag=Serine--tRNA ligase
+FT                   /colour=2
+FT   misc_feature    916
+FT                   /label=group_441
+FT                   /locus_tag=group_441
+FT                   /colour=2
+FT   misc_feature    451
+FT                   /label=group_374
+FT                   /locus_tag=group_374
+FT                   /colour=2
+FT   feature         777
+FT                   /label=Uncharacterized protein TP_0690
+FT                   /locus_tag=Uncharacterized protein TP_0690
+FT                   /colour=2
+FT   feature         520
+FT                   /label=Apolipoprotein N-acyltransferase 2
+FT                   /locus_tag=Apolipoprotein N-acyltransferase 2
+FT                   /colour=2
+FT   feature         653
+FT                   /label=Aspartate--ammonia ligase
+FT                   /locus_tag=Aspartate--ammonia ligase
+FT                   /colour=2
+FT   feature         782
+FT                   /label=Biotin carboxylase
+FT                   /locus_tag=Biotin carboxylase
+FT                   /colour=2
+FT   misc_feature    113
+FT                   /label=group_391
+FT                   /locus_tag=group_391
+FT                   /colour=2
+FT   feature         374
+FT                   /label=DUF4034 domain-containing protein
+FT                   /locus_tag=DUF4034 domain-containing protein
+FT                   /colour=2
+FT   misc_feature    127
+FT                   /label=group_32
+FT                   /locus_tag=group_32
+FT                   /colour=6
+FT   feature         553
+FT                   /label=Isoleucine--tRNA ligase
+FT                   /locus_tag=Isoleucine--tRNA ligase
+FT                   /colour=2
+FT   feature         197
+FT                   /label=UDP-4-keto-6-deoxy-N-acetylglucosamine 4-aminotransferase
+FT                   /locus_tag=UDP-4-keto-6-deoxy-N-acetylglucosamine 4-aminotransferase
+FT                   /colour=2
+FT   feature         609
+FT                   /label=Bifunctional enzyme IspD/IspF
+FT                   /locus_tag=Bifunctional enzyme IspD/IspF
+FT                   /colour=2
+FT   feature         521
+FT                   /label=Putative galactokinase
+FT                   /locus_tag=Putative galactokinase
+FT                   /colour=2
+FT   feature         988
+FT                   /label=yrrB
+FT                   /locus_tag=yrrB
+FT                   /colour=2
+FT   feature         809
+FT                   /label=Motility protein B
+FT                   /locus_tag=Motility protein B
+FT                   /colour=2
+FT   feature         656
+FT                   /label=putative tRNA sulfurtransferase
+FT                   /locus_tag=putative tRNA sulfurtransferase
+FT                   /colour=2
+FT   misc_feature    527
+FT                   /label=group_640
+FT                   /locus_tag=group_640
+FT                   /colour=2
+FT   misc_feature    105
+FT                   /label=group_616
+FT                   /locus_tag=group_616
+FT                   /colour=2
+FT   misc_feature    140
+FT                   /label=group_223
+FT                   /locus_tag=group_223
+FT                   /colour=2
+FT   feature         53
+FT                   /label=AMP-activated protein kinase glycogen-binding domain-containing protein
+FT                   /locus_tag=AMP-activated protein kinase glycogen-binding domain-containing protein
+FT                   /colour=2
+FT   misc_feature    976
+FT                   /label=group_524
+FT                   /locus_tag=group_524
+FT                   /colour=2
+FT   misc_feature    372
+FT                   /label=group_74
+FT                   /locus_tag=group_74
+FT                   /colour=2
+FT   feature         863
+FT                   /label=Putative glutamine-dependent NAD(+) synthetase
+FT                   /locus_tag=Putative glutamine-dependent NAD(+) synthetase
+FT                   /colour=2
+FT   misc_feature    427
+FT                   /label=group_481
+FT                   /locus_tag=group_481
+FT                   /colour=2
+FT   misc_feature    104
+FT                   /label=group_653
+FT                   /locus_tag=group_653
+FT                   /colour=2
+FT   misc_feature    859
+FT                   /label=group_461
+FT                   /locus_tag=group_461
+FT                   /colour=2
+FT   feature         698
+FT                   /label=Small ribosomal subunit protein uS2
+FT                   /locus_tag=Small ribosomal subunit protein uS2
+FT                   /colour=2
+FT   feature         311
+FT                   /label=Small ribosomal subunit protein uS3
+FT                   /locus_tag=Small ribosomal subunit protein uS3
+FT                   /colour=2
+FT   misc_feature    164
+FT                   /label=group_267
+FT                   /locus_tag=group_267
+FT                   /colour=2
+FT   feature         905
+FT                   /label=DUF2225 domain-containing protein
+FT                   /locus_tag=DUF2225 domain-containing protein
+FT                   /colour=2
+FT   feature         514
+FT                   /label=Ribose/galactose ABC transporter, ATP-binding protein (RbsA-2)
+FT                   /locus_tag=Ribose/galactose ABC transporter, ATP-binding protein (RbsA-2)
+FT                   /colour=2
+FT   feature         827
+FT                   /label=GTPase Obg
+FT                   /locus_tag=GTPase Obg
+FT                   /colour=2
+FT   misc_feature    8
+FT                   /label=group_268
+FT                   /locus_tag=group_268
+FT                   /colour=2
+FT   feature         322
+FT                   /label=Large ribosomal subunit protein uL30
+FT                   /locus_tag=Large ribosomal subunit protein uL30
+FT                   /colour=2
+FT   feature         784
+FT                   /label=DUF2715 domain-containing protein
+FT                   /locus_tag=DUF2715 domain-containing protein
+FT                   /colour=2
+FT   feature         22
+FT                   /label=Aspartyl/glutamyl-tRNA(Asn/Gln) amidotransferase subunit B
+FT                   /locus_tag=Aspartyl/glutamyl-tRNA(Asn/Gln) amidotransferase subunit B
+FT                   /colour=2
+FT   feature         738
+FT                   /label=Magnesium/cobalt efflux protein
+FT                   /locus_tag=Magnesium/cobalt efflux protein
+FT                   /colour=2
+FT   feature         952
+FT                   /label=ABC-type uncharacterized transport system domain-containing protein
+FT                   /locus_tag=ABC-type uncharacterized transport system domain-containing protein
+FT                   /colour=2
+FT   feature         269
+FT                   /label=Alpha-amylase 1, putative
+FT                   /locus_tag=Alpha-amylase 1, putative
+FT                   /colour=2
+FT   misc_feature    555
+FT                   /label=group_758
+FT                   /locus_tag=group_758
+FT                   /colour=2
+FT   feature         202
+FT                   /label=DUF4015 domain-containing protein
+FT                   /locus_tag=DUF4015 domain-containing protein
+FT                   /colour=2
+FT   misc_feature    378
+FT                   /label=group_755
+FT                   /locus_tag=group_755
+FT                   /colour=2
+FT   feature         982
+FT                   /label=Uncharacterized protein TP_0910
+FT                   /locus_tag=Uncharacterized protein TP_0910
+FT                   /colour=2
+FT   feature         728
+FT                   /label=tRNA dimethylallyltransferase 2
+FT                   /locus_tag=tRNA dimethylallyltransferase 2
+FT                   /colour=2
+FT   misc_feature    460
+FT                   /label=group_130
+FT                   /locus_tag=group_130
+FT                   /colour=2
+FT   feature         932
+FT                   /label=UPF0164 protein TP_0858
+FT                   /locus_tag=UPF0164 protein TP_0858
+FT                   /colour=2
+FT   feature         303
+FT                   /label=Elongation factor Tu
+FT                   /locus_tag=Elongation factor Tu
+FT                   /colour=2
+FT   misc_feature    430
+FT                   /label=group_306
+FT                   /locus_tag=group_306
+FT                   /colour=2
+FT   misc_feature    268
+FT                   /label=group_11
+FT                   /locus_tag=group_11
+FT                   /colour=2
+FT   misc_feature    715
+FT                   /label=group_957
+FT                   /locus_tag=group_957
+FT                   /colour=2
+FT   feature         773
+FT                   /label=mglC
+FT                   /locus_tag=mglC
+FT                   /colour=2
+FT   feature         404
+FT                   /label=ribose-phosphate diphosphokinase
+FT                   /locus_tag=ribose-phosphate diphosphokinase
+FT                   /colour=2
+FT   feature         421
+FT                   /label=DUF368 domain-containing protein
+FT                   /locus_tag=DUF368 domain-containing protein
+FT                   /colour=2
+FT   misc_feature    129
+FT                   /label=group_2
+FT                   /locus_tag=group_2
+FT                   /colour=4
+FT   feature         647
+FT                   /label=mnmE
+FT                   /locus_tag=mnmE
+FT                   /colour=2
+FT   feature         408
+FT                   /label=rfuA
+FT                   /locus_tag=rfuA
+FT                   /colour=2
+FT   feature         701
+FT                   /label=Tpr protein H
+FT                   /locus_tag=Tpr protein H
+FT                   /colour=2
+FT   feature         192
+FT                   /label=Uncharacterized protein TP_0073
+FT                   /locus_tag=Uncharacterized protein TP_0073
+FT                   /colour=2
+FT   feature         314
+FT                   /label=Small ribosomal subunit protein uS17
+FT                   /locus_tag=Small ribosomal subunit protein uS17
+FT                   /colour=2
+FT   misc_feature    469
+FT                   /label=group_215
+FT                   /locus_tag=group_215
+FT                   /colour=2
+FT   feature         209
+FT                   /label=UDP-N-acetylenolpyruvoylglucosamine reductase
+FT                   /locus_tag=UDP-N-acetylenolpyruvoylglucosamine reductase
+FT                   /colour=2
+FT   feature         446
+FT                   /label=SMF family protein
+FT                   /locus_tag=SMF family protein
+FT                   /colour=2
+FT   misc_feature    949
+FT                   /label=group_773
+FT                   /locus_tag=group_773
+FT                   /colour=2
+FT   misc_feature    761
+FT                   /label=group_659
+FT                   /locus_tag=group_659
+FT                   /colour=2
+FT   feature         144
+FT                   /label=76K protein
+FT                   /locus_tag=76K protein
+FT                   /colour=2
+FT   feature         790
+FT                   /label=peptidoglycan glycosyltransferase
+FT                   /locus_tag=peptidoglycan glycosyltransferase
+FT                   /colour=2
+FT   feature         455
+FT                   /label=Ribosomal RNA small subunit methyltransferase H
+FT                   /locus_tag=Ribosomal RNA small subunit methyltransferase H
+FT                   /colour=2
+FT   misc_feature    179
+FT                   /label=group_496
+FT                   /locus_tag=group_496
+FT                   /colour=2
+FT   feature         466
+FT                   /label=4-diphosphocytidyl-2-C-methyl-D-erythritol kinase
+FT                   /locus_tag=4-diphosphocytidyl-2-C-methyl-D-erythritol kinase
+FT                   /colour=2
+FT   feature         929
+FT                   /label=CobQ/CobB/MinD/ParA nucleotide binding domain-containing protein
+FT                   /locus_tag=CobQ/CobB/MinD/ParA nucleotide binding domain-containing protein
+FT                   /colour=2
+FT   feature         485
+FT                   /label=Ribonuclease H
+FT                   /locus_tag=Ribonuclease H
+FT                   /colour=2
+FT   misc_feature    966
+FT                   /label=group_196
+FT                   /locus_tag=group_196
+FT                   /colour=2
+FT   misc_feature    903
+FT                   /label=group_308
+FT                   /locus_tag=group_308
+FT                   /colour=2
+FT   feature         450
+FT                   /label=ftsA
+FT                   /locus_tag=ftsA
+FT                   /colour=2
+FT   misc_feature    68
+FT                   /label=group_212
+FT                   /locus_tag=group_212
+FT                   /colour=2
+FT   misc_feature    342
+FT                   /label=group_959
+FT                   /locus_tag=group_959
+FT                   /colour=2
+FT   misc_feature    198
+FT                   /label=group_670
+FT                   /locus_tag=group_670
+FT                   /colour=2
+FT   feature         760
+FT                   /label=Glutamate--tRNA ligase
+FT                   /locus_tag=Glutamate--tRNA ligase
+FT                   /colour=2
+FT   feature         536
+FT                   /label=Acidic repeat protein
+FT                   /locus_tag=Acidic repeat protein
+FT                   /colour=4
+FT   feature         347
+FT                   /label=Primosomal protein N'
+FT                   /locus_tag=Primosomal protein N'
+FT                   /colour=2
+FT   misc_feature    793
+FT                   /label=group_276
+FT                   /locus_tag=group_276
+FT                   /colour=2
+FT   misc_feature    579
+FT                   /label=group_989
+FT                   /locus_tag=group_989
+FT                   /colour=2
+FT   feature         759
+FT                   /label=Glycine--tRNA ligase
+FT                   /locus_tag=Glycine--tRNA ligase
+FT                   /colour=2
+FT   feature         41
+FT                   /label=DUF2259 domain-containing protein
+FT                   /locus_tag=DUF2259 domain-containing protein
+FT                   /colour=2
+FT   misc_feature    630
+FT                   /label=group_875
+FT                   /locus_tag=group_875
+FT                   /colour=2
+FT   feature         360
+FT                   /label=Small ribosomal subunit protein uS7
+FT                   /locus_tag=Small ribosomal subunit protein uS7
+FT                   /colour=2
+FT   misc_feature    990
+FT                   /label=group_115
+FT                   /locus_tag=group_115
+FT                   /colour=2
+FT   misc_feature    600
+FT                   /label=group_814
+FT                   /locus_tag=group_814
+FT                   /colour=2
+FT   feature         317
+FT                   /label=Large ribosomal subunit protein uL5
+FT                   /locus_tag=Large ribosomal subunit protein uL5
+FT                   /colour=2
+FT   misc_feature    188
+FT                   /label=group_723
+FT                   /locus_tag=group_723
+FT                   /colour=2
+FT   misc_feature    237
+FT                   /label=group_867
+FT                   /locus_tag=group_867
+FT                   /colour=2
+FT   feature         72
+FT                   /label=Uncharacterized protein TP_0969
+FT                   /locus_tag=Uncharacterized protein TP_0969
+FT                   /colour=2
+FT   misc_feature    20
+FT                   /label=group_644
+FT                   /locus_tag=group_644
+FT                   /colour=2
+FT   feature         285
+FT                   /label=troB
+FT                   /locus_tag=troB
+FT                   /colour=2
+FT   feature         173
+FT                   /label=Ribonucleoside-diphosphate reductase subunit beta
+FT                   /locus_tag=Ribonucleoside-diphosphate reductase subunit beta
+FT                   /colour=2
+FT   misc_feature    594
+FT                   /label=group_763
+FT                   /locus_tag=group_763
+FT                   /colour=2
+FT   feature         733
+FT                   /label=3'-5' exonuclease
+FT                   /locus_tag=3'-5' exonuclease
+FT                   /colour=2
+FT   misc_feature    775
+FT                   /label=group_554
+FT                   /locus_tag=group_554
+FT                   /colour=2
+FT   feature         637
+FT                   /label=GTPase Era
+FT                   /locus_tag=GTPase Era
+FT                   /colour=2
+FT   misc_feature    125
+FT                   /label=group_35
+FT                   /locus_tag=group_35
+FT                   /colour=6
+FT   feature         930
+FT                   /label=HAMP domain-containing protein
+FT                   /locus_tag=HAMP domain-containing protein
+FT                   /colour=2
+FT   misc_feature    170
+FT                   /label=group_390
+FT                   /locus_tag=group_390
+FT                   /colour=2
+FT   misc_feature    454
+FT                   /label=group_218
+FT                   /locus_tag=group_218
+FT                   /colour=2
+FT   misc_feature    123
+FT                   /label=group_53
+FT                   /locus_tag=group_53
+FT                   /colour=7
+FT   feature         604
+FT                   /label=ATP-dependent Clp protease proteolytic subunit
+FT                   /locus_tag=ATP-dependent Clp protease proteolytic subunit
+FT                   /colour=2
+FT   misc_feature    935
+FT                   /label=group_28
+FT                   /locus_tag=group_28
+FT                   /colour=2
+FT   misc_feature    59
+FT                   /label=group_970
+FT                   /locus_tag=group_970
+FT                   /colour=2
+FT   feature         700
+FT                   /label=Asparagine--tRNA ligase
+FT                   /locus_tag=Asparagine--tRNA ligase
+FT                   /colour=2
+FT   feature         88
+FT                   /label=traB
+FT                   /locus_tag=traB
+FT                   /colour=2
+FT   feature         591
+FT                   /label=DNA primase
+FT                   /locus_tag=DNA primase
+FT                   /colour=2
+FT   feature         282
+FT                   /label=Proline--tRNA ligase
+FT                   /locus_tag=Proline--tRNA ligase
+FT                   /colour=2
+FT   misc_feature    662
+FT                   /label=group_591
+FT                   /locus_tag=group_591
+FT                   /colour=2
+FT   feature         678
+FT                   /label=Lipoprotein ABC superfamily ATP binding cassette transporter, membrane protein
+FT                   /locus_tag=Lipoprotein ABC superfamily ATP binding cassette transporter, membrane protein
+FT                   /colour=2
+FT   feature         81
+FT                   /label=flgG
+FT                   /locus_tag=flgG
+FT                   /colour=2
+FT   misc_feature    494
+FT                   /label=group_137
+FT                   /locus_tag=group_137
+FT                   /colour=2
+FT   feature         779
+FT                   /label=recA
+FT                   /locus_tag=recA
+FT                   /colour=2
+FT   feature         732
+FT                   /label=Phosphomannomutase (ManB)
+FT                   /locus_tag=Phosphomannomutase (ManB)
+FT                   /colour=2
+FT   misc_feature    961
+FT                   /label=group_947
+FT                   /locus_tag=group_947
+FT                   /colour=2
+FT   misc_feature    515
+FT                   /label=group_48
+FT                   /locus_tag=group_48
+FT                   /colour=4
+FT   feature         411
+FT                   /label=rfuD
+FT                   /locus_tag=rfuD
+FT                   /colour=2
+FT   feature         255
+FT                   /label=Outer membrane protein beta-barrel domain-containing protein
+FT                   /locus_tag=Outer membrane protein beta-barrel domain-containing protein
+FT                   /colour=2
+FT   misc_feature    658
+FT                   /label=group_708
+FT                   /locus_tag=group_708
+FT                   /colour=2
+FT   misc_feature    683
+FT                   /label=group_125
+FT                   /locus_tag=group_125
+FT                   /colour=2
+FT   feature         540
+FT                   /label=dITP/XTP pyrophosphatase
+FT                   /locus_tag=dITP/XTP pyrophosphatase
+FT                   /colour=2
+FT   feature         453
+FT                   /label=UDP-N-acetylmuramoyl-tripeptide--D-alanyl-D-alanine ligase
+FT                   /locus_tag=UDP-N-acetylmuramoyl-tripeptide--D-alanyl-D-alanine ligase
+FT                   /colour=2
+FT   misc_feature    569
+FT                   /label=group_929
+FT                   /locus_tag=group_929
+FT                   /colour=2
+FT   feature         280
+FT                   /label=Pyrimidine 5'-nucleotidase
+FT                   /locus_tag=Pyrimidine 5'-nucleotidase
+FT                   /colour=2
+FT   feature         752
+FT                   /label=flaA
+FT                   /locus_tag=flaA
+FT                   /colour=2
+FT   feature         943
+FT                   /label=flaB1
+FT                   /locus_tag=flaB1
+FT                   /colour=2
+FT   feature         60
+FT                   /label=aarA
+FT                   /locus_tag=aarA
+FT                   /colour=2
+FT   misc_feature    785
+FT                   /label=group_22
+FT                   /locus_tag=group_22
+FT                   /colour=2
+FT   misc_feature    517
+FT                   /label=group_876
+FT                   /locus_tag=group_876
+FT                   /colour=2
+FT   feature         141
+FT                   /label=endopeptidase La
+FT                   /locus_tag=endopeptidase La
+FT                   /colour=2
+FT   feature         1
+FT                   /label=ATP-dependent Clp protease proteolytic subunit 2
+FT                   /locus_tag=ATP-dependent Clp protease proteolytic subunit 2
+FT                   /colour=2
+FT   feature         464
+FT                   /label=tRNA(Ile)-lysidine synthase
+FT                   /locus_tag=tRNA(Ile)-lysidine synthase
+FT                   /colour=2
+FT   feature         845
+FT                   /label=Uncharacterized protein TP_0762
+FT                   /locus_tag=Uncharacterized protein TP_0762
+FT                   /colour=2
+FT   misc_feature    194
+FT                   /label=group_679
+FT                   /locus_tag=group_679
+FT                   /colour=2
+FT   misc_feature    964
+FT                   /label=group_833
+FT                   /locus_tag=group_833
+FT                   /colour=2
+FT   feature         718
+FT                   /label=Nuclease SbcCD subunit D
+FT                   /locus_tag=Nuclease SbcCD subunit D
+FT                   /colour=2
+FT   feature         978
+FT                   /label=khpA
+FT                   /locus_tag=khpA
+FT                   /colour=2
+FT   misc_feature    31
+FT                   /label=group_234
+FT                   /locus_tag=group_234
+FT                   /colour=2
+FT   feature         89
+FT                   /label=Lipase, putative
+FT                   /locus_tag=Lipase, putative
+FT                   /colour=2
+FT   feature         914
+FT                   /label=ABC transport system ATP-binding protein
+FT                   /locus_tag=ABC transport system ATP-binding protein
+FT                   /colour=2
+FT   feature         457
+FT                   /label=Uncharacterized protein TP_0381
+FT                   /locus_tag=Uncharacterized protein TP_0381
+FT                   /colour=2
+FT   feature         232
+FT                   /label=Aminopeptidase
+FT                   /locus_tag=Aminopeptidase
+FT                   /colour=2
+FT   misc_feature    187
+FT                   /label=group_339
+FT                   /locus_tag=group_339
+FT                   /colour=2
+FT   feature         502
+FT                   /label=DNA-T family bacterial competence-related DNA transformation transporter
+FT                   /locus_tag=DNA-T family bacterial competence-related DNA transformation transporter
+FT                   /colour=2
+FT   misc_feature    911
+FT                   /label=group_259
+FT                   /locus_tag=group_259
+FT                   /colour=2
+FT   feature         229
+FT                   /label=putative rRNA (Adenosine-2'-O-)-methyltransferase
+FT                   /locus_tag=putative rRNA (Adenosine-2'-O-)-methyltransferase
+FT                   /colour=2
+FT   misc_feature    977
+FT                   /label=group_984
+FT                   /locus_tag=group_984
+FT                   /colour=2
+FT   misc_feature    386
+FT                   /label=group_897
+FT                   /locus_tag=group_897
+FT                   /colour=2
+FT   misc_feature    735
+FT                   /label=group_596
+FT                   /locus_tag=group_596
+FT                   /colour=2
+FT   feature         511
+FT                   /label=Hypothetical outer membrane protein
+FT                   /locus_tag=Hypothetical outer membrane protein
+FT                   /colour=2
+FT   misc_feature    249
+FT                   /label=group_349
+FT                   /locus_tag=group_349
+FT                   /colour=2
+FT   feature         889
+FT                   /label=DNA adenine methylase
+FT                   /locus_tag=DNA adenine methylase
+FT                   /colour=2
+FT   feature         928
+FT                   /label=Phosphatidylglycerol--prolipoprotein diacylglyceryl transferase
+FT                   /locus_tag=Phosphatidylglycerol--prolipoprotein diacylglyceryl transferase
+FT                   /colour=2
+FT   feature         92
+FT                   /label=Putative membrane protein insertion efficiency factor
+FT                   /locus_tag=Putative membrane protein insertion efficiency factor
+FT                   /colour=2
+FT   feature         240
+FT                   /label=Methionine ABC superfamily ATP binding cassette transporter, membrane protein
+FT                   /locus_tag=Methionine ABC superfamily ATP binding cassette transporter, membrane protein
+FT                   /colour=2
+FT   misc_feature    556
+FT                   /label=group_935
+FT                   /locus_tag=group_935
+FT                   /colour=2
+FT   feature         922
+FT                   /label=Uncharacterized protein TP_0846
+FT                   /locus_tag=Uncharacterized protein TP_0846
+FT                   /colour=2
+FT   misc_feature    921
+FT                   /label=group_523
+FT                   /locus_tag=group_523
+FT                   /colour=2
+FT   misc_feature    40
+FT                   /label=group_493
+FT                   /locus_tag=group_493
+FT                   /colour=2
+FT   misc_feature    730
+FT                   /label=group_916
+FT                   /locus_tag=group_916
+FT                   /colour=2
+FT   misc_feature    106
+FT                   /label=group_95
+FT                   /locus_tag=group_95
+FT                   /colour=2
+FT   feature         726
+FT                   /label=DNA ligase
+FT                   /locus_tag=DNA ligase
+FT                   /colour=2
+FT   feature         778
+FT                   /label=Segregation and condensation protein A
+FT                   /locus_tag=Segregation and condensation protein A
+FT                   /colour=2
+FT   feature         143
+FT                   /label=greA
+FT                   /locus_tag=greA
+FT                   /colour=2
+FT   misc_feature    524
+FT                   /label=group_617
+FT                   /locus_tag=group_617
+FT                   /colour=2
+FT   misc_feature    48
+FT                   /label=group_134
+FT                   /locus_tag=group_134
+FT                   /colour=2
+FT   feature         545
+FT                   /label=Haloacid dehalogenase
+FT                   /locus_tag=Haloacid dehalogenase
+FT                   /colour=2
+FT   misc_feature    788
+FT                   /label=group_712
+FT                   /locus_tag=group_712
+FT                   /colour=2
+FT   feature         617
+FT                   /label=histidine kinase
+FT                   /locus_tag=histidine kinase
+FT                   /colour=2
+FT   feature         661
+FT                   /label=Uncharacterized protein TP_0564
+FT                   /locus_tag=Uncharacterized protein TP_0564
+FT                   /colour=2
+FT   feature         305
+FT                   /label=Large ribosomal subunit protein uL3
+FT                   /locus_tag=Large ribosomal subunit protein uL3
+FT                   /colour=2
+FT   feature         851
+FT                   /label=Treponemal membrane protein A
+FT                   /locus_tag=Treponemal membrane protein A
+FT                   /colour=2
+FT   feature         289
+FT                   /label=2,3-bisphosphoglycerate-dependent phosphoglycerate mutase
+FT                   /locus_tag=2,3-bisphosphoglycerate-dependent phosphoglycerate mutase
+FT                   /colour=2
+FT   misc_feature    279
+FT                   /label=group_325
+FT                   /locus_tag=group_325
+FT                   /colour=2
+FT   feature         936
+FT                   /label=Glutamine--fructose-6-phosphate aminotransferase [isomerizing]
+FT                   /locus_tag=Glutamine--fructose-6-phosphate aminotransferase [isomerizing]
+FT                   /colour=2
+FT   misc_feature    601
+FT                   /label=group_714
+FT                   /locus_tag=group_714
+FT                   /colour=2
+FT   misc_feature    951
+FT                   /label=group_162
+FT                   /locus_tag=group_162
+FT                   /colour=2
+FT   feature         498
+FT                   /label=tetrahydrofolate synthase
+FT                   /locus_tag=tetrahydrofolate synthase
+FT                   /colour=2
+FT   misc_feature    688
+FT                   /label=group_83
+FT                   /locus_tag=group_83
+FT                   /colour=2
+FT   misc_feature    50
+FT                   /label=group_587
+FT                   /locus_tag=group_587
+FT                   /colour=2
+FT   feature         163
+FT                   /label=Soluble lytic transglycosylase, putative
+FT                   /locus_tag=Soluble lytic transglycosylase, putative
+FT                   /colour=2
+FT   misc_feature    336
+FT                   /label=group_456
+FT                   /locus_tag=group_456
+FT                   /colour=2
+FT   feature         650
+FT                   /label=Putative transport protein TP_0553
+FT                   /locus_tag=Putative transport protein TP_0553
+FT                   /colour=2
+FT   misc_feature    406
+FT                   /label=group_572
+FT                   /locus_tag=group_572
+FT                   /colour=2
+FT   feature         137
+FT                   /label=Tpr protein A
+FT                   /locus_tag=Tpr protein A
+FT                   /colour=2
+FT   misc_feature    17
+FT                   /label=group_59
+FT                   /locus_tag=group_59
+FT                   /colour=2
+FT   feature         180
+FT                   /label=Small ribosomal subunit protein bS18
+FT                   /locus_tag=Small ribosomal subunit protein bS18
+FT                   /colour=2
+FT   feature         655
+FT                   /label=Nickel/cobalt efflux system
+FT                   /locus_tag=Nickel/cobalt efflux system
+FT                   /colour=2
+FT   feature         234
+FT                   /label=hflC
+FT                   /locus_tag=hflC
+FT                   /colour=2
+FT   misc_feature    362
+FT                   /label=group_652
+FT                   /locus_tag=group_652
+FT                   /colour=2
+FT   misc_feature    337
+FT                   /label=group_665
+FT                   /locus_tag=group_665
+FT                   /colour=2
+FT   misc_feature    855
+FT                   /label=group_802
+FT                   /locus_tag=group_802
+FT                   /colour=2
+FT   feature         80
+FT                   /label=flgF
+FT                   /locus_tag=flgF
+FT                   /colour=2
+FT   feature         831
+FT                   /label=Pyruvate, phosphate dikinase
+FT                   /locus_tag=Pyruvate, phosphate dikinase
+FT                   /colour=2
+FT   misc_feature    420
+FT                   /label=group_770
+FT                   /locus_tag=group_770
+FT                   /colour=2
+FT   feature         472
+FT                   /label=cheX
+FT                   /locus_tag=cheX
+FT                   /colour=2
+FT   feature         57
+FT                   /label=Aspartate--tRNA(Asp/Asn) ligase
+FT                   /locus_tag=Aspartate--tRNA(Asp/Asn) ligase
+FT                   /colour=2
+FT   feature         3
+FT                   /label=Adenine phosphoribosyltransferase
+FT                   /locus_tag=Adenine phosphoribosyltransferase
+FT                   /colour=2
+FT   misc_feature    329
+FT                   /label=group_575
+FT                   /locus_tag=group_575
+FT                   /colour=2
+FT   feature         318
+FT                   /label=Small ribosomal subunit protein uS8
+FT                   /locus_tag=Small ribosomal subunit protein uS8
+FT                   /colour=2
+FT   feature         870
+FT                   /label=Uncharacterized protein TP_0787
+FT                   /locus_tag=Uncharacterized protein TP_0787
+FT                   /colour=2
+FT   misc_feature    842
+FT                   /label=group_726
+FT                   /locus_tag=group_726
+FT                   /colour=2
+FT   feature         852
+FT                   /label=Treponemal membrane protein B
+FT                   /locus_tag=Treponemal membrane protein B
+FT                   /colour=2
+FT   feature         108
+FT                   /label=Glutamate transporter, putative
+FT                   /locus_tag=Glutamate transporter, putative
+FT                   /colour=2
+FT   feature         887
+FT                   /label=Acyl carrier protein
+FT                   /locus_tag=Acyl carrier protein
+FT                   /colour=2
+FT   feature         379
+FT                   /label=Fibronectin type-III domain-containing protein
+FT                   /locus_tag=Fibronectin type-III domain-containing protein
+FT                   /colour=2
+FT   feature         413
+FT                   /label=Uncharacterized protein TP_0304
+FT                   /locus_tag=Uncharacterized protein TP_0304
+FT                   /colour=2
+FT   feature         128
+FT                   /label=Uncharacterized protein TP_0127
+FT                   /locus_tag=Uncharacterized protein TP_0127
+FT                   /colour=6
+FT   feature         541
+FT                   /label=CheW-like domain-containing protein
+FT                   /locus_tag=CheW-like domain-containing protein
+FT                   /colour=2
+FT   feature         107
+FT                   /label=Alpha/beta hydrolase fold-3 domain-containing protein
+FT                   /locus_tag=Alpha/beta hydrolase fold-3 domain-containing protein
+FT                   /colour=2
+FT   feature         83
+FT                   /label=TRAP-T family tripartite ATP-independent periplasmic transporter, membrane protein
+FT                   /locus_tag=TRAP-T family tripartite ATP-independent periplasmic transporter, membrane protein
+FT                   /colour=2
+FT   feature         67
+FT                   /label=Ribosomal RNA small subunit methyltransferase I
+FT                   /locus_tag=Ribosomal RNA small subunit methyltransferase I
+FT                   /colour=2
+FT   feature         962
+FT                   /label=tRNA pseudouridine synthase B
+FT                   /locus_tag=tRNA pseudouridine synthase B
+FT                   /colour=2
+FT   misc_feature    864
+FT                   /label=group_487
+FT                   /locus_tag=group_487
+FT                   /colour=2
+FT   feature         518
+FT                   /label=Uncharacterized protein TP_0619
+FT                   /locus_tag=Uncharacterized protein TP_0619
+FT                   /colour=2
+FT   feature         470
+FT                   /label=Chromosome partition protein Smc
+FT                   /locus_tag=Chromosome partition protein Smc
+FT                   /colour=2
+FT   feature         388
+FT                   /label=parB
+FT                   /locus_tag=parB
+FT                   /colour=2
+FT   misc_feature    45
+FT                   /label=group_672
+FT                   /locus_tag=group_672
+FT                   /colour=2
+FT   feature         960
+FT                   /label=Small ribosomal subunit protein uS15
+FT                   /locus_tag=Small ribosomal subunit protein uS15
+FT                   /colour=2
+FT   feature         795
+FT                   /label=khpB
+FT                   /locus_tag=khpB
+FT                   /colour=2
+FT   feature         873
+FT                   /label=SSD domain-containing protein
+FT                   /locus_tag=SSD domain-containing protein
+FT                   /colour=2
+FT   feature         151
+FT                   /label=Hemolysin, putative
+FT                   /locus_tag=Hemolysin, putative
+FT                   /colour=2
+FT   misc_feature    401
+FT                   /label=group_254
+FT                   /locus_tag=group_254
+FT                   /colour=2
+FT   misc_feature    944
+FT                   /label=group_365
+FT                   /locus_tag=group_365
+FT                   /colour=2
+FT   misc_feature    52
+FT                   /label=group_613
+FT                   /locus_tag=group_613
+FT                   /colour=2
+FT   feature         177
+FT                   /label=Oxaloacetate decarboxylase beta chain
+FT                   /locus_tag=Oxaloacetate decarboxylase beta chain
+FT                   /colour=2
+FT   feature         145
+FT                   /label=Uncharacterized protein TP_0021
+FT                   /locus_tag=Uncharacterized protein TP_0021
+FT                   /colour=2
+FT   misc_feature    628
+FT                   /label=group_381
+FT                   /locus_tag=group_381
+FT                   /colour=2
+FT   misc_feature    121
+FT                   /label=group_6
+FT                   /locus_tag=group_6
+FT                   /colour=6
+FT   feature         741
+FT                   /label=potA
+FT                   /locus_tag=potA
+FT                   /colour=2
+FT   feature         328
+FT                   /label=DNA-directed RNA polymerase subunit alpha
+FT                   /locus_tag=DNA-directed RNA polymerase subunit alpha
+FT                   /colour=2
+FT   misc_feature    203
+FT                   /label=group_514
+FT                   /locus_tag=group_514
+FT                   /colour=2
+FT   feature         259
+FT                   /label=trkA
+FT                   /locus_tag=trkA
+FT                   /colour=2
+FT   feature         54
+FT                   /label=UPF0056 inner membrane protein
+FT                   /locus_tag=UPF0056 inner membrane protein
+FT                   /colour=2
+FT   feature         552
+FT                   /label=Elongation factor G 2
+FT                   /locus_tag=Elongation factor G 2
+FT                   /colour=2
+FT   feature         550
+FT                   /label=Putative uracil phosphoribosyltransferase
+FT                   /locus_tag=Putative uracil phosphoribosyltransferase
+FT                   /colour=2
+FT   feature         403
+FT                   /label=Outer membrane protein Tpn50
+FT                   /locus_tag=Outer membrane protein Tpn50
+FT                   /colour=2
+FT   misc_feature    407
+FT                   /label=group_694
+FT                   /locus_tag=group_694
+FT                   /colour=2
+FT   misc_feature    811
+FT                   /label=group_187
+FT                   /locus_tag=group_187
+FT                   /colour=2
+FT   feature         120
+FT                   /label=TPR repeat-containing protein TP_0920
+FT                   /locus_tag=TPR repeat-containing protein TP_0920
+FT                   /colour=2
+FT   misc_feature    412
+FT                   /label=group_641
+FT                   /locus_tag=group_641
+FT                   /colour=2
+FT   misc_feature    261
+FT                   /label=group_590
+FT                   /locus_tag=group_590
+FT                   /colour=2
+FT   feature         530
+FT                   /label=V-type ATP synthase subunit D 1
+FT                   /locus_tag=V-type ATP synthase subunit D 1
+FT                   /colour=2
+FT   misc_feature    82
+FT                   /label=group_294
+FT                   /locus_tag=group_294
+FT                   /colour=2
+FT   misc_feature    419
+FT                   /label=group_4
+FT                   /locus_tag=group_4
+FT                   /colour=5
+FT   feature         582
+FT                   /label=Uncharacterized protein TP_0483
+FT                   /locus_tag=Uncharacterized protein TP_0483
+FT                   /colour=2
+FT   misc_feature    330
+FT                   /label=group_216
+FT                   /locus_tag=group_216
+FT                   /colour=2
+FT   misc_feature    166
+FT                   /label=group_568
+FT                   /locus_tag=group_568
+FT                   /colour=2
+FT   misc_feature    382
+FT                   /label=group_849
+FT                   /locus_tag=group_849
+FT                   /colour=2
+FT   feature         507
+FT                   /label=Uncharacterized AAA domain-containing protein ycf46
+FT                   /locus_tag=Uncharacterized AAA domain-containing protein ycf46
+FT                   /colour=2
+FT   feature         509
+FT                   /label=Outer membrane protein
+FT                   /locus_tag=Outer membrane protein
+FT                   /colour=2
+FT   feature         920
+FT                   /label=Glyceraldehyde-3-phosphate dehydrogenase
+FT                   /locus_tag=Glyceraldehyde-3-phosphate dehydrogenase
+FT                   /colour=2
+FT   misc_feature    937
+FT                   /label=group_511
+FT                   /locus_tag=group_511
+FT                   /colour=2
+FT   feature         670
+FT                   /label=Putative DD-carboxypeptidase TP_0574
+FT                   /locus_tag=Putative DD-carboxypeptidase TP_0574
+FT                   /colour=2
+FT   feature         974
+FT                   /label=MATE family multi antimicrobial extrusion protein OR
+FT                   /locus_tag=MATE family multi antimicrobial extrusion protein OR
+FT                   /colour=2
+FT   feature         65
+FT                   /label=GTP cyclohydrolase 1 type 2-like protein
+FT                   /locus_tag=GTP cyclohydrolase 1 type 2-like protein
+FT                   /colour=2
+FT   feature         660
+FT                   /label=J domain-containing protein
+FT                   /locus_tag=J domain-containing protein
+FT                   /colour=2
+FT   feature         10
+FT                   /label=Uncharacterized protein TP_1032
+FT                   /locus_tag=Uncharacterized protein TP_1032
+FT                   /colour=2
+FT   misc_feature    534
+FT                   /label=group_819
+FT                   /locus_tag=group_819
+FT                   /colour=2
+FT   feature         561
+FT                   /label=rsuA
+FT                   /locus_tag=rsuA
+FT                   /colour=2
+FT   misc_feature    890
+FT                   /label=group_924
+FT                   /locus_tag=group_924
+FT                   /colour=2
+FT   feature         817
+FT                   /label=folD
+FT                   /locus_tag=folD
+FT                   /colour=2
+FT   misc_feature    253
+FT                   /label=group_887
+FT                   /locus_tag=group_887
+FT                   /colour=2
+FT   misc_feature    526
+FT                   /label=group_715
+FT                   /locus_tag=group_715
+FT                   /colour=2
+FT   misc_feature    567
+FT                   /label=group_355
+FT                   /locus_tag=group_355
+FT                   /colour=2
+FT   feature         797
+FT                   /label=fleN
+FT                   /locus_tag=fleN
+FT                   /colour=2
+FT   feature         276
+FT                   /label=Pseudouridylate synthase
+FT                   /locus_tag=Pseudouridylate synthase
+FT                   /colour=2
+FT   feature         620
+FT                   /label=UDP-N-acetylglucosamine--N-acetylmuramyl-(pentapeptide) pyrophosphoryl-undecaprenol N-acetylglucosamine transferase
+FT                   /locus_tag=UDP-N-acetylglucosamine--N-acetylmuramyl-(pentapeptide) pyrophosphoryl-undecaprenol N-acetylglucosamine transferase
+FT                   /colour=2
+FT   misc_feature    375
+FT                   /label=group_210
+FT                   /locus_tag=group_210
+FT                   /colour=2
+FT   misc_feature    130
+FT                   /label=group_229
+FT                   /locus_tag=group_229
+FT                   /colour=2
+FT   feature         195
+FT                   /label=Sugar ABC superfamily ATP binding cassette transporter, membrane protein
+FT                   /locus_tag=Sugar ABC superfamily ATP binding cassette transporter, membrane protein
+FT                   /colour=2
+FT   feature         576
+FT                   /label=Acetate kinase
+FT                   /locus_tag=Acetate kinase
+FT                   /colour=2
+FT   misc_feature    984
+FT                   /label=group_977
+FT                   /locus_tag=group_977
+FT                   /colour=2
+FT   misc_feature    639
+FT                   /label=group_630
+FT                   /locus_tag=group_630
+FT                   /colour=2
+FT   feature         693
+FT                   /label=1-deoxy-D-xylulose 5-phosphate reductoisomerase
+FT                   /locus_tag=1-deoxy-D-xylulose 5-phosphate reductoisomerase
+FT                   /colour=2
+FT   misc_feature    377
+FT                   /label=group_141
+FT                   /locus_tag=group_141
+FT                   /colour=2
+FT   feature         725
+FT                   /label=Peptide methionine sulfoxide reductase MsrB/MsrA
+FT                   /locus_tag=Peptide methionine sulfoxide reductase MsrB/MsrA
+FT                   /colour=2
+FT   misc_feature    175
+FT                   /label=group_811
+FT                   /locus_tag=group_811
+FT                   /colour=2
+FT   feature         529
+FT                   /label=V-type ATP synthase beta chain
+FT                   /locus_tag=V-type ATP synthase beta chain
+FT                   /colour=2
+FT   misc_feature    340
+FT                   /label=group_628
+FT                   /locus_tag=group_628
+FT                   /colour=2
+FT   misc_feature    586
+FT                   /label=group_956
+FT                   /locus_tag=group_956
+FT                   /colour=2
+FT   misc_feature    424
+FT                   /label=group_49
+FT                   /locus_tag=group_49
+FT                   /colour=5
+FT   feature         171
+FT                   /label=Peptide chain release factor 1
+FT                   /locus_tag=Peptide chain release factor 1
+FT                   /colour=2
+FT   feature         623
+FT                   /label=RNA helicase
+FT                   /locus_tag=RNA helicase
+FT                   /colour=2
+FT   feature         819
+FT                   /label=Purine nucleoside phosphorylase DeoD-type
+FT                   /locus_tag=Purine nucleoside phosphorylase DeoD-type
+FT                   /colour=2
+FT   feature         813
+FT                   /label=Flagellar hook capping protein
+FT                   /locus_tag=Flagellar hook capping protein
+FT                   /colour=2
+FT   feature         9
+FT                   /label=PNPLA domain-containing protein
+FT                   /locus_tag=PNPLA domain-containing protein
+FT                   /colour=2
+FT   misc_feature    376
+FT                   /label=group_808
+FT                   /locus_tag=group_808
+FT                   /colour=2
+FT   feature         477
+FT                   /label=50S ribosomal protein L33
+FT                   /locus_tag=50S ribosomal protein L33
+FT                   /colour=2
+FT   misc_feature    69
+FT                   /label=group_921
+FT                   /locus_tag=group_921
+FT                   /colour=2
+FT   feature         306
+FT                   /label=Large ribosomal subunit protein uL4
+FT                   /locus_tag=Large ribosomal subunit protein uL4
+FT                   /colour=2
+FT   feature         953
+FT                   /label=Membrane spanning protein, putative
+FT                   /locus_tag=Membrane spanning protein, putative
+FT                   /colour=2
+FT   feature         692
+FT                   /label=Putative zinc metalloprotease TP_0600
+FT                   /locus_tag=Putative zinc metalloprotease TP_0600
+FT                   /colour=2
+FT   feature         917
+FT                   /label=Putative periplasmic serine endoprotease DegP-like
+FT                   /locus_tag=Putative periplasmic serine endoprotease DegP-like
+FT                   /colour=2
+FT   feature         2
+FT                   /label=Elongation factor P--(R)-beta-lysine ligase
+FT                   /locus_tag=Elongation factor P--(R)-beta-lysine ligase
+FT                   /colour=2
+FT   feature         970
+FT                   /label=Tpr protein K
+FT                   /locus_tag=Tpr protein K
+FT                   /colour=3
+FT   feature         373
+FT                   /label=Glycerophosphodiester phosphodiesterase
+FT                   /locus_tag=Glycerophosphodiester phosphodiesterase
+FT                   /colour=2
+FT   feature         37
+FT                   /label=DNA gyrase subunit B
+FT                   /locus_tag=DNA gyrase subunit B
+FT                   /colour=2
+FT   misc_feature    853
+FT                   /label=group_311
+FT                   /locus_tag=group_311
+FT                   /colour=2
+FT   misc_feature    480
+FT                   /label=group_79
+FT                   /locus_tag=group_79
+FT                   /colour=2
+FT   feature         724
+FT                   /label=Tryptophan--tRNA ligase
+FT                   /locus_tag=Tryptophan--tRNA ligase
+FT                   /colour=2
+FT   feature         227
+FT                   /label=putative bifunctional choline-phosphate cytidylyltransferase/choline kinase
+FT                   /locus_tag=putative bifunctional choline-phosphate cytidylyltransferase/choline kinase
+FT                   /colour=2
+FT   feature         649
+FT                   /label=Uncharacterized protein TP_0552
+FT                   /locus_tag=Uncharacterized protein TP_0552
+FT                   /colour=2
+FT   feature         134
+FT                   /label=DNA gyrase subunit A
+FT                   /locus_tag=DNA gyrase subunit A
+FT                   /colour=2
+FT   feature         771
+FT                   /label=Glucose/galactose-binding lipoprotein
+FT                   /locus_tag=Glucose/galactose-binding lipoprotein
+FT                   /colour=2
+FT   feature         826
+FT                   /label=putative nicotinate-nucleotide adenylyltransferase
+FT                   /locus_tag=putative nicotinate-nucleotide adenylyltransferase
+FT                   /colour=2
+FT   feature         185
+FT                   /label=TPR domain protein
+FT                   /locus_tag=TPR domain protein
+FT                   /colour=2
+FT   misc_feature    965
+FT                   /label=group_230
+FT                   /locus_tag=group_230
+FT                   /colour=2
+FT   misc_feature    503
+FT                   /label=group_384
+FT                   /locus_tag=group_384
+FT                   /colour=2
+FT   misc_feature    158
+FT                   /label=group_697
+FT                   /locus_tag=group_697
+FT                   /colour=2
+FT   feature         242
+FT                   /label=Putative L-lysine 2,3-aminomutase
+FT                   /locus_tag=Putative L-lysine 2,3-aminomutase
+FT                   /colour=2
+FT   misc_feature    568
+FT                   /label=group_262
+FT                   /locus_tag=group_262
+FT                   /colour=2
+FT   misc_feature    481
+FT                   /label=group_735
+FT                   /locus_tag=group_735
+FT                   /colour=2
+FT   misc_feature    522
+FT                   /label=group_255
+FT                   /locus_tag=group_255
+FT                   /colour=2
+FT   feature         320
+FT                   /label=Large ribosomal subunit protein uL18
+FT                   /locus_tag=Large ribosomal subunit protein uL18
+FT                   /colour=2
+FT   misc_feature    912
+FT                   /label=group_205
+FT                   /locus_tag=group_205
+FT                   /colour=2
+FT   feature         27
+FT                   /label=Basic membrane protein
+FT                   /locus_tag=Basic membrane protein
+FT                   /colour=2
+FT   feature         136
+FT                   /label=Protein Tp75
+FT                   /locus_tag=Protein Tp75
+FT                   /colour=2
+FT   feature         224
+FT                   /label=NAD 5'-nucleotidase
+FT                   /locus_tag=NAD 5'-nucleotidase
+FT                   /colour=2
+FT   feature         685
+FT                   /label=Peptidase M15C domain-containing protein
+FT                   /locus_tag=Peptidase M15C domain-containing protein
+FT                   /colour=2
+FT   feature         58
+FT                   /label=htpG
+FT                   /locus_tag=htpG
+FT                   /colour=2
+FT   misc_feature    940
+FT                   /label=group_787
+FT                   /locus_tag=group_787
+FT                   /colour=2
+FT   feature         571
+FT                   /label=Restriction endonuclease type IV Mrr domain-containing protein
+FT                   /locus_tag=Restriction endonuclease type IV Mrr domain-containing protein
+FT                   /colour=2
+FT   misc_feature    351
+FT                   /label=group_326
+FT                   /locus_tag=group_326
+FT                   /colour=2
+FT   feature         359
+FT                   /label=30S ribosomal protein S12
+FT                   /locus_tag=30S ribosomal protein S12
+FT                   /colour=2
+FT   feature         414
+FT                   /label=CTP synthase
+FT                   /locus_tag=CTP synthase
+FT                   /colour=2
+FT   feature         155
+FT                   /label=DUF1361 domain-containing protein
+FT                   /locus_tag=DUF1361 domain-containing protein
+FT                   /colour=2
+FT   misc_feature    395
+FT                   /label=group_12
+FT                   /locus_tag=group_12
+FT                   /colour=2
+FT   misc_feature    223
+FT                   /label=group_298
+FT                   /locus_tag=group_298
+FT                   /colour=2
+FT   misc_feature    669
+FT                   /label=group_821
+FT                   /locus_tag=group_821
+FT                   /colour=2
+FT   misc_feature    162
+FT                   /label=group_142
+FT                   /locus_tag=group_142
+FT                   /colour=2
+FT   feature         184
+FT                   /label=rsmD
+FT                   /locus_tag=rsmD
+FT                   /colour=2
+FT   feature         696
+FT                   /label=Ribosome-recycling factor
+FT                   /locus_tag=Ribosome-recycling factor
+FT                   /colour=2
+FT   misc_feature    11
+FT                   /label=group_55
+FT                   /locus_tag=group_55
+FT                   /colour=2
+FT   feature         275
+FT                   /label=Divergent PAP2 family protein
+FT                   /locus_tag=Divergent PAP2 family protein
+FT                   /colour=2
+FT   misc_feature    174
+FT                   /label=group_560
+FT                   /locus_tag=group_560
+FT                   /colour=2
+FT   feature         850
+FT                   /label=Elongation factor G 1
+FT                   /locus_tag=Elongation factor G 1
+FT                   /colour=2
+FT   misc_feature    708
+FT                   /label=group_305
+FT                   /locus_tag=group_305
+FT                   /colour=2
+FT   feature         828
+FT                   /label=Large ribosomal subunit protein bL27
+FT                   /locus_tag=Large ribosomal subunit protein bL27
+FT                   /colour=2
+FT   misc_feature    410
+FT                   /label=group_601
+FT                   /locus_tag=group_601
+FT                   /colour=2
+FT   misc_feature    191
+FT                   /label=group_497
+FT                   /locus_tag=group_497
+FT                   /colour=2
+FT   feature         241
+FT                   /label=Methionine transport system ATP-binding protein
+FT                   /locus_tag=Methionine transport system ATP-binding protein
+FT                   /colour=2
+FT   feature         676
+FT                   /label=ABC3 transporter permease protein domain-containing protein
+FT                   /locus_tag=ABC3 transporter permease protein domain-containing protein
+FT                   /colour=2
+FT   misc_feature    193
+FT                   /label=group_855
+FT                   /locus_tag=group_855
+FT                   /colour=2
+FT   feature         665
+FT                   /label=2-dehydro-3-deoxy-phosphogluconate aldolase
+FT                   /locus_tag=2-dehydro-3-deoxy-phosphogluconate aldolase
+FT                   /colour=2
+FT   misc_feature    640
+FT                   /label=group_185
+FT                   /locus_tag=group_185
+FT                   /colour=2
+FT   feature         214
+FT                   /label=TPR repeat-containing protein TP_0095
+FT                   /locus_tag=TPR repeat-containing protein TP_0095
+FT                   /colour=2
+FT   feature         744
+FT                   /label=Spermidine/putrescine-binding protein
+FT                   /locus_tag=Spermidine/putrescine-binding protein
+FT                   /colour=2
+FT   misc_feature    270
+FT                   /label=group_91
+FT                   /locus_tag=group_91
+FT                   /colour=2
+FT   feature         824
+FT                   /label=lytR
+FT                   /locus_tag=lytR
+FT                   /colour=2
+FT   misc_feature    206
+FT                   /label=group_105
+FT                   /locus_tag=group_105
+FT                   /colour=2
+FT   feature         679
+FT                   /label=Uncharacterized protein TP_0584
+FT                   /locus_tag=Uncharacterized protein TP_0584
+FT                   /colour=2
+FT   misc_feature    94
+FT                   /label=group_780
+FT                   /locus_tag=group_780
+FT                   /colour=2
+FT   misc_feature    368
+FT                   /label=group_439
+FT                   /locus_tag=group_439
+FT                   /colour=2
+FT   feature         34
+FT                   /label=Glycerol-3-phosphate dehydrogenase [NAD(P)+]
+FT                   /locus_tag=Glycerol-3-phosphate dehydrogenase [NAD(P)+]
+FT                   /colour=2
+FT   misc_feature    691
+FT                   /label=group_214
+FT                   /locus_tag=group_214
+FT                   /colour=2
+FT   misc_feature    564
+FT                   /label=group_39
+FT                   /locus_tag=group_39
+FT                   /colour=3
+FT   feature         19
+FT                   /label=Small ribosomal subunit protein uS9
+FT                   /locus_tag=Small ribosomal subunit protein uS9
+FT                   /colour=2
+FT   misc_feature    488
+FT                   /label=group_695
+FT                   /locus_tag=group_695
+FT                   /colour=2
+FT   misc_feature    219
+FT                   /label=group_638
+FT                   /locus_tag=group_638
+FT                   /colour=2
+FT   feature         958
+FT                   /label=Deoxyuridine 5'-triphosphate nucleotidohydrolase
+FT                   /locus_tag=Deoxyuridine 5'-triphosphate nucleotidohydrolase
+FT                   /colour=2
+FT   feature         695
+FT                   /label=Isoprenyl transferase
+FT                   /locus_tag=Isoprenyl transferase
+FT                   /colour=2
+FT   misc_feature    947
+FT                   /label=group_789
+FT                   /locus_tag=group_789
+FT                   /colour=2
+FT   feature         39
+FT                   /label=recR
+FT                   /locus_tag=recR
+FT                   /colour=2
+FT   feature         860
+FT                   /label=Uncharacterized protein TP_0777
+FT                   /locus_tag=Uncharacterized protein TP_0777
+FT                   /colour=2
+FT   feature         370
+FT                   /label=Transcription termination factor Rho
+FT                   /locus_tag=Transcription termination factor Rho
+FT                   /colour=2
+FT   feature         810
+FT                   /label=Motility protein A
+FT                   /locus_tag=Motility protein A
+FT                   /colour=2
+FT   misc_feature    633
+FT                   /label=group_574
+FT                   /locus_tag=group_574
+FT                   /colour=2
+FT   feature         762
+FT                   /label=Uncharacterized protein TP_0675
+FT                   /locus_tag=Uncharacterized protein TP_0675
+FT                   /colour=2
+FT   feature         260
+FT                   /label=K+ transport protein (NtpJ)
+FT                   /locus_tag=K+ transport protein (NtpJ)
+FT                   /colour=2
+FT   misc_feature    717
+FT                   /label=group_421
+FT                   /locus_tag=group_421
+FT                   /colour=2
+FT   feature         772
+FT                   /label=Ribose/galactose/methyl galactoside import ATP-binding protein
+FT                   /locus_tag=Ribose/galactose/methyl galactoside import ATP-binding protein
+FT                   /colour=2
+FT   misc_feature    264
+FT                   /label=group_854
+FT                   /locus_tag=group_854
+FT                   /colour=2
+FT   misc_feature    616
+FT                   /label=group_933
+FT                   /locus_tag=group_933
+FT                   /colour=2
+FT   misc_feature    367
+FT                   /label=group_399
+FT                   /locus_tag=group_399
+FT                   /colour=2
+FT   feature         931
+FT                   /label=Uncharacterized protein TP_0855
+FT                   /locus_tag=Uncharacterized protein TP_0855
+FT                   /colour=2
+FT   misc_feature    769
+FT                   /label=group_747
+FT                   /locus_tag=group_747
+FT                   /colour=2
+FT   misc_feature    796
+FT                   /label=group_183
+FT                   /locus_tag=group_183
+FT                   /colour=2
+FT   feature         216
+FT                   /label=Translation initiation factor IF-1
+FT                   /locus_tag=Translation initiation factor IF-1
+FT                   /colour=2
+FT   misc_feature    281
+FT                   /label=group_790
+FT                   /locus_tag=group_790
+FT                   /colour=2
+FT   feature         291
+FT                   /label=15 kDa lipoprotein
+FT                   /locus_tag=15 kDa lipoprotein
+FT                   /colour=2
+FT   feature         523
+FT                   /label=pknD
+FT                   /locus_tag=pknD
+FT                   /colour=2
+FT   feature         925
+FT                   /label=Large ribosomal subunit protein bL35
+FT                   /locus_tag=Large ribosomal subunit protein bL35
+FT                   /colour=2
+FT   misc_feature    334
+FT                   /label=group_304
+FT                   /locus_tag=group_304
+FT                   /colour=2
+FT   misc_feature    112
+FT                   /label=group_288
+FT                   /locus_tag=group_288
+FT                   /colour=2
+FT   misc_feature    55
+FT                   /label=group_827
+FT                   /locus_tag=group_827
+FT                   /colour=2
+FT   misc_feature    768
+FT                   /label=group_612
+FT                   /locus_tag=group_612
+FT                   /colour=2
+FT   feature         702
+FT                   /label=ABC superfamily ATP binding cassette transporter, ABC protein
+FT                   /locus_tag=ABC superfamily ATP binding cassette transporter, ABC protein
+FT                   /colour=2
+FT   feature         316
+FT                   /label=Large ribosomal subunit protein uL24
+FT                   /locus_tag=Large ribosomal subunit protein uL24
+FT                   /colour=2
+FT   feature         61
+FT                   /label=GGDEF domain-containing protein
+FT                   /locus_tag=GGDEF domain-containing protein
+FT                   /colour=2
+FT   feature         689
+FT                   /label=Poly(A) polymerase
+FT                   /locus_tag=Poly(A) polymerase
+FT                   /colour=2
+FT   feature         980
+FT                   /label=tRNA (guanine-N(1)-)-methyltransferase
+FT                   /locus_tag=tRNA (guanine-N(1)-)-methyltransferase
+FT                   /colour=2
+FT   feature         605
+FT                   /label=clpX
+FT                   /locus_tag=clpX
+FT                   /colour=2
+FT   feature         668
+FT                   /label=lemA
+FT                   /locus_tag=lemA
+FT                   /colour=2
+FT   feature         402
+FT                   /label=FMN hydroxy acid dehydrogenase domain-containing protein
+FT                   /locus_tag=FMN hydroxy acid dehydrogenase domain-containing protein
+FT                   /colour=2
+FT   feature         353
+FT                   /label=Large ribosomal subunit protein uL11
+FT                   /locus_tag=Large ribosomal subunit protein uL11
+FT                   /colour=2
+FT   feature         651
+FT                   /label=HAD-superfamily hydrolase, subfamily IA
+FT                   /locus_tag=HAD-superfamily hydrolase, subfamily IA
+FT                   /colour=2
+FT   misc_feature    220
+FT                   /label=group_178
+FT                   /locus_tag=group_178
+FT                   /colour=2
+FT   feature         740
+FT                   /label=HD domain-containing protein
+FT                   /locus_tag=HD domain-containing protein
+FT                   /colour=2
+FT   feature         384
+FT                   /label=Polymer-forming cytoskeletal protein
+FT                   /locus_tag=Polymer-forming cytoskeletal protein
+FT                   /colour=2
+FT   feature         699
+FT                   /label=Uncharacterized protein TP_0608
+FT                   /locus_tag=Uncharacterized protein TP_0608
+FT                   /colour=2
+FT   feature         304
+FT                   /label=Small ribosomal subunit protein uS10
+FT                   /locus_tag=Small ribosomal subunit protein uS10
+FT                   /colour=2
+FT   feature         666
+FT                   /label=Xaa-Pro aminopeptidase
+FT                   /locus_tag=Xaa-Pro aminopeptidase
+FT                   /colour=2
+FT   feature         321
+FT                   /label=Small ribosomal subunit protein uS5
+FT                   /locus_tag=Small ribosomal subunit protein uS5
+FT                   /colour=2
+FT   feature         97
+FT                   /label=Ribulose-phosphate 3-epimerase
+FT                   /locus_tag=Ribulose-phosphate 3-epimerase
+FT                   /colour=2
+FT   feature         387
+FT                   /label=Polynucleotide adenylyltransferase
+FT                   /locus_tag=Polynucleotide adenylyltransferase
+FT                   /colour=2
+FT   feature         755
+FT                   /label=Bifunctional phosphoribulokinase/uridine kinase
+FT                   /locus_tag=Bifunctional phosphoribulokinase/uridine kinase
+FT                   /colour=2
+FT   misc_feature    47
+FT                   /label=group_592
+FT                   /locus_tag=group_592
+FT                   /colour=2
+FT   feature         544
+FT                   /label=recN
+FT                   /locus_tag=recN
+FT                   /colour=2
+FT   misc_feature    135
+FT                   /label=group_499
+FT                   /locus_tag=group_499
+FT                   /colour=2
+FT   misc_feature    416
+FT                   /label=group_336
+FT                   /locus_tag=group_336
+FT                   /colour=2
+FT   feature         757
+FT                   /label=DNA polymerase III subunit alpha
+FT                   /locus_tag=DNA polymerase III subunit alpha
+FT                   /colour=2
+FT   feature         803
+FT                   /label=fliP
+FT                   /locus_tag=fliP
+FT                   /colour=2
+FT   feature         918
+FT                   /label=Methionine aminopeptidase
+FT                   /locus_tag=Methionine aminopeptidase
+FT                   /colour=2
+FT   misc_feature    967
+FT                   /label=group_87
+FT                   /locus_tag=group_87
+FT                   /colour=2
+FT   feature         959
+FT                   /label=Polyribonucleotide nucleotidyltransferase
+FT                   /locus_tag=Polyribonucleotide nucleotidyltransferase
+FT                   /colour=2
+FT   feature         812
+FT                   /label=flgE
+FT                   /locus_tag=flgE
+FT                   /colour=2
+FT   misc_feature    293
+FT                   /label=group_853
+FT                   /locus_tag=group_853
+FT                   /colour=2
+FT   feature         945
+FT                   /label=Flagellar hook-associated protein 2
+FT                   /locus_tag=Flagellar hook-associated protein 2
+FT                   /colour=2
+FT   misc_feature    849
+FT                   /label=group_535
+FT                   /locus_tag=group_535
+FT                   /colour=2
+FT   misc_feature    438
+FT                   /label=group_470
+FT                   /locus_tag=group_470
+FT                   /colour=2
+FT   feature         300
+FT                   /label=SsrA-binding protein
+FT                   /locus_tag=SsrA-binding protein
+FT                   /colour=2
+FT   misc_feature    781
+FT                   /label=group_165
+FT                   /locus_tag=group_165
+FT                   /colour=2
+FT   misc_feature    79
+FT                   /label=group_543
+FT                   /locus_tag=group_543
+FT                   /colour=2
+FT   misc_feature    897
+FT                   /label=group_844
+FT                   /locus_tag=group_844
+FT                   /colour=2
+FT   feature         475
+FT                   /label=Large ribosomal subunit protein bL28
+FT                   /locus_tag=Large ribosomal subunit protein bL28
+FT                   /colour=2
+FT   misc_feature    919
+FT                   /label=group_941
+FT                   /locus_tag=group_941
+FT                   /colour=2
+FT   feature         973
+FT                   /label=Uncharacterized protein TP_0900
+FT                   /locus_tag=Uncharacterized protein TP_0900
+FT                   /colour=2
+FT   misc_feature    217
+FT                   /label=group_806
+FT                   /locus_tag=group_806
+FT                   /colour=2
+FT   misc_feature    664
+FT                   /label=group_746
+FT                   /locus_tag=group_746
+FT                   /colour=2
+FT   feature         487
+FT                   /label=Glutamate 5-kinase
+FT                   /locus_tag=Glutamate 5-kinase
+FT                   /colour=2
+FT   feature         608
+FT                   /label=CarD-like/TRCF RNAP-interacting domain-containing protein
+FT                   /locus_tag=CarD-like/TRCF RNAP-interacting domain-containing protein
+FT                   /colour=2
+FT   feature         394
+FT                   /label=C-terminal processing peptidase
+FT                   /locus_tag=C-terminal processing peptidase
+FT                   /colour=2
+FT   misc_feature    156
+FT                   /label=group_469
+FT                   /locus_tag=group_469
+FT                   /colour=2
+FT   feature         287
+FT                   /label=troD
+FT                   /locus_tag=troD
+FT                   /colour=2
+FT   misc_feature    385
+FT                   /label=group_124
+FT                   /locus_tag=group_124
+FT                   /colour=2
+FT   feature         648
+FT                   /label=Phosphatase
+FT                   /locus_tag=Phosphatase
+FT                   /colour=2
+FT   misc_feature    543
+FT                   /label=group_111
+FT                   /locus_tag=group_111
+FT                   /colour=2
+FT   misc_feature    423
+FT                   /label=group_37
+FT                   /locus_tag=group_37
+FT                   /colour=5
+FT   feature         801
+FT                   /label=fliR
+FT                   /locus_tag=fliR
+FT                   /colour=2
+FT   feature         7
+FT                   /label=Valine--tRNA ligase
+FT                   /locus_tag=Valine--tRNA ligase
+FT                   /colour=2
+FT   misc_feature    400
+FT                   /label=group_674
+FT                   /locus_tag=group_674
+FT                   /colour=2
+FT   misc_feature    422
+FT                   /label=group_858
+FT                   /locus_tag=group_858
+FT                   /colour=2
+FT   misc_feature    133
+FT                   /label=group_444
+FT                   /locus_tag=group_444
+FT                   /colour=2
+FT   feature         857
+FT                   /label=Endonuclease III
+FT                   /locus_tag=Endonuclease III
+FT                   /colour=2
+FT   misc_feature    562
+FT                   /label=group_816
+FT                   /locus_tag=group_816
+FT                   /colour=2
+FT   misc_feature    754
+FT                   /label=group_584
+FT                   /locus_tag=group_584
+FT                   /colour=2
+FT   feature         343
+FT                   /label=Uncharacterized protein TP_0226
+FT                   /locus_tag=Uncharacterized protein TP_0226
+FT                   /colour=2
+FT   misc_feature    221
+FT                   /label=group_194
+FT                   /locus_tag=group_194
+FT                   /colour=2
+FT   misc_feature    786
+FT                   /label=group_347
+FT                   /locus_tag=group_347
+FT                   /colour=2
+FT   feature         355
+FT                   /label=Large ribosomal subunit protein uL10
+FT                   /locus_tag=Large ribosomal subunit protein uL10
+FT                   /colour=2
+FT   feature         499
+FT                   /label=Pseudouridine synthase
+FT                   /locus_tag=Pseudouridine synthase
+FT                   /colour=2
+FT   misc_feature    823
+FT                   /label=group_850
+FT                   /locus_tag=group_850
+FT                   /colour=2
+FT   misc_feature    251
+FT                   /label=group_92
+FT                   /locus_tag=group_92
+FT                   /colour=2
+FT   feature         381
+FT                   /label=Amino acid ABC transporter, permease protein
+FT                   /locus_tag=Amino acid ABC transporter, permease protein
+FT                   /colour=2
+FT   feature         157
+FT                   /label=znuC
+FT                   /locus_tag=znuC
+FT                   /colour=2
+FT   feature         111
+FT                   /label=Uncharacterized protein TP_0930
+FT                   /locus_tag=Uncharacterized protein TP_0930
+FT                   /colour=2
+FT   feature         614
+FT                   /label=ruvC
+FT                   /locus_tag=ruvC
+FT                   /colour=2
+FT   misc_feature    14
+FT                   /label=group_982
+FT                   /locus_tag=group_982
+FT                   /colour=2
+FT   feature         989
+FT                   /label=mgtE
+FT                   /locus_tag=mgtE
+FT                   /colour=2
+FT   feature         504
+FT                   /label=HTH cro/C1-type domain-containing protein
+FT                   /locus_tag=HTH cro/C1-type domain-containing protein
+FT                   /colour=2
+FT   misc_feature    478
+FT                   /label=group_581
+FT                   /locus_tag=group_581
+FT                   /colour=2
+FT   feature         235
+FT                   /label=Putative pyridoxine kinase
+FT                   /locus_tag=Putative pyridoxine kinase
+FT                   /colour=2
+FT   feature         102
+FT                   /label=Pyruvate-flavodoxin oxidoreductase
+FT                   /locus_tag=Pyruvate-flavodoxin oxidoreductase
+FT                   /colour=2
+FT   feature         196
+FT                   /label=capD
+FT                   /locus_tag=capD
+FT                   /colour=2
+FT   feature         391
+FT                   /label=tRNA-specific adenosine deaminase
+FT                   /locus_tag=tRNA-specific adenosine deaminase
+FT                   /colour=2
+FT   misc_feature    332
+FT                   /label=group_314
+FT                   /locus_tag=group_314
+FT                   /colour=2
+FT   feature         622
+FT                   /label=Elongation factor P
+FT                   /locus_tag=Elongation factor P
+FT                   /colour=2
+FT   misc_feature    756
+FT                   /label=group_521
+FT                   /locus_tag=group_521
+FT                   /colour=2
+FT   feature         389
+FT                   /label=Sporulation initiation inhibitor protein Soj
+FT                   /locus_tag=Sporulation initiation inhibitor protein Soj
+FT                   /colour=2
+FT   misc_feature    871
+FT                   /label=group_71
+FT                   /locus_tag=group_71
+FT                   /colour=2
+FT   feature         161
+FT                   /label=putative methyl-accepting chemotaxis protein
+FT                   /locus_tag=putative methyl-accepting chemotaxis protein
+FT                   /colour=2
+FT   feature         109
+FT                   /label=UDP-N-acetylmuramyl-tripeptide synthetase
+FT                   /locus_tag=UDP-N-acetylmuramyl-tripeptide synthetase
+FT                   /colour=2
+FT   feature         99
+FT                   /label=fliS
+FT                   /locus_tag=fliS
+FT                   /colour=2
+FT   misc_feature    551
+FT                   /label=group_564
+FT                   /locus_tag=group_564
+FT                   /colour=2
+FT   feature         641
+FT                   /label=mglB
+FT                   /locus_tag=mglB
+FT                   /colour=2
+FT   feature         893
+FT                   /label=N-acetyltransferase domain-containing protein
+FT                   /locus_tag=N-acetyltransferase domain-containing protein
+FT                   /colour=2
+FT   feature         800
+FT                   /label=flhB
+FT                   /locus_tag=flhB
+FT                   /colour=2
+FT   feature         613
+FT                   /label=murJ
+FT                   /locus_tag=murJ
+FT                   /colour=2
+FT   feature         645
+FT                   /label=UPF0164 protein TP_0548
+FT                   /locus_tag=UPF0164 protein TP_0548
+FT                   /colour=4
+FT   feature         352
+FT                   /label=nusG
+FT                   /locus_tag=nusG
+FT                   /colour=2
+FT   feature         680
+FT                   /label=Oligopeptide ABC superfamily ATP binding cassette transporter, membrane/binding protein
+FT                   /locus_tag=Oligopeptide ABC superfamily ATP binding cassette transporter, membrane/binding protein
+FT                   /colour=2
+FT   feature         398
+FT                   /label=4Fe4S-binding SPASM domain-containing protein
+FT                   /locus_tag=4Fe4S-binding SPASM domain-containing protein
+FT                   /colour=2
+FT   misc_feature    168
+FT                   /label=group_792
+FT                   /locus_tag=group_792
+FT                   /colour=2
+FT   misc_feature    473
+FT                   /label=group_290
+FT                   /locus_tag=group_290
+FT                   /colour=2
+FT   feature         357
+FT                   /label=DNA-directed RNA polymerase subunit beta
+FT                   /locus_tag=DNA-directed RNA polymerase subunit beta
+FT                   /colour=2
+FT   feature         449
+FT                   /label=ftsZ
+FT                   /locus_tag=ftsZ
+FT                   /colour=2
+FT   feature         505
+FT                   /label=lolA
+FT                   /locus_tag=lolA
+FT                   /colour=2
+FT   feature         722
+FT                   /label=protein-glutamate O-methyltransferase
+FT                   /locus_tag=protein-glutamate O-methyltransferase
+FT                   /colour=2
+FT   misc_feature    780
+FT                   /label=group_509
+FT                   /locus_tag=group_509
+FT                   /colour=2
+FT   misc_feature    950
+FT                   /label=group_172
+FT                   /locus_tag=group_172
+FT                   /colour=2
+FT   misc_feature    331
+FT                   /label=group_341
+FT                   /locus_tag=group_341
+FT                   /colour=2
+FT   feature         405
+FT                   /label=Carhohydrate kinase (XylB)
+FT                   /locus_tag=Carhohydrate kinase (XylB)
+FT                   /colour=2
+FT   feature         957
+FT                   /label=Conserved hypothetical integral membrane protein
+FT                   /locus_tag=Conserved hypothetical integral membrane protein
+FT                   /colour=2
+FT   misc_feature    91
+FT                   /label=group_468
+FT                   /locus_tag=group_468
+FT                   /colour=2
+FT   misc_feature    443
+FT                   /label=group_690
+FT                   /locus_tag=group_690
+FT                   /colour=2
+FT   misc_feature    624
+FT                   /label=group_655
+FT                   /locus_tag=group_655
+FT                   /colour=2
+FT   misc_feature    644
+FT                   /label=group_40
+FT                   /locus_tag=group_40
+FT                   /colour=2
+FT   misc_feature    844
+FT                   /label=group_99
+FT                   /locus_tag=group_99
+FT                   /colour=2
+FT   misc_feature    727
+FT                   /label=group_899
+FT                   /locus_tag=group_899
+FT                   /colour=2
+FT   misc_feature    682
+FT                   /label=group_117
+FT                   /locus_tag=group_117
+FT                   /colour=2
+FT   feature         818
+FT                   /label=Uncharacterized protein TP_0733
+FT                   /locus_tag=Uncharacterized protein TP_0733
+FT                   /colour=2
+FT   misc_feature    737
+FT                   /label=group_517
+FT                   /locus_tag=group_517
+FT                   /colour=2
+FT   feature         528
+FT                   /label=V-type ATP synthase alpha chain
+FT                   /locus_tag=V-type ATP synthase alpha chain
+FT                   /colour=2
+FT   feature         720
+FT                   /label=Nicotinate phosphoribosyltransferase
+FT                   /locus_tag=Nicotinate phosphoribosyltransferase
+FT                   /colour=2
+FT   feature         18
+FT                   /label=Large ribosomal subunit protein uL13
+FT                   /locus_tag=Large ribosomal subunit protein uL13
+FT                   /colour=2
+FT   misc_feature    51
+FT                   /label=group_483
+FT                   /locus_tag=group_483
+FT                   /colour=2
+FT   misc_feature    38
+FT                   /label=group_361
+FT                   /locus_tag=group_361
+FT                   /colour=2
+FT   misc_feature    132
+FT                   /label=group_471
+FT                   /locus_tag=group_471
+FT                   /colour=2
+FT   misc_feature    489
+FT                   /label=group_442
+FT                   /locus_tag=group_442
+FT                   /colour=2
+FT   feature         742
+FT                   /label=Spermidine/putrescine ABC transporter permease
+FT                   /locus_tag=Spermidine/putrescine ABC transporter permease
+FT                   /colour=2
+FT   feature         892
+FT                   /label=Thioredoxin reductase
+FT                   /locus_tag=Thioredoxin reductase
+FT                   /colour=2
+FT   feature         602
+FT                   /label=Hexokinase
+FT                   /locus_tag=Hexokinase
+FT                   /colour=2
+FT   misc_feature    447
+FT                   /label=group_573
+FT                   /locus_tag=group_573
+FT                   /colour=2
+FT   misc_feature    426
+FT                   /label=group_295
+FT                   /locus_tag=group_295
+FT                   /colour=2
+FT   feature         572
+FT                   /label=UvrABC system protein C
+FT                   /locus_tag=UvrABC system protein C
+FT                   /colour=2
+FT   feature         806
+FT                   /label=fliM
+FT                   /locus_tag=fliM
+FT                   /colour=2
+FT   feature         832
+FT                   /label=Uncharacterized protein TP_0747
+FT                   /locus_tag=Uncharacterized protein TP_0747
+FT                   /colour=2
+FT   feature         885
+FT                   /label=femA
+FT                   /locus_tag=femA
+FT                   /colour=2
+FT   feature         880
+FT                   /label=Serine-type D-Ala-D-Ala carboxypeptidase
+FT                   /locus_tag=Serine-type D-Ala-D-Ala carboxypeptidase
+FT                   /colour=2
+FT   feature         667
+FT                   /label=TPM domain-containing protein
+FT                   /locus_tag=TPM domain-containing protein
+FT                   /colour=2
+FT   feature         365
+FT                   /label=Flagellar filament outer layer protein
+FT                   /locus_tag=Flagellar filament outer layer protein
+FT                   /colour=2
+FT   feature         924
+FT                   /label=Large ribosomal subunit protein bL20
+FT                   /locus_tag=Large ribosomal subunit protein bL20
+FT                   /colour=2
+FT   feature         615
+FT                   /label=Thiamine diphosphokinase
+FT                   /locus_tag=Thiamine diphosphokinase
+FT                   /colour=2
+FT   feature         417
+FT                   /label=Amino acid ABC transporter, periplasmic binding protein (HisJ)
+FT                   /locus_tag=Amino acid ABC transporter, periplasmic binding protein (HisJ)
+FT                   /colour=2
+FT   misc_feature    525
+FT                   /label=group_247
+FT                   /locus_tag=group_247
+FT                   /colour=2
+FT   feature         428
+FT                   /label=secF
+FT                   /locus_tag=secF
+FT                   /colour=2
+FT   misc_feature    295
+FT                   /label=group_98
+FT                   /locus_tag=group_98
+FT                   /colour=2
+FT   misc_feature    345
+FT                   /label=group_180
+FT                   /locus_tag=group_180
+FT                   /colour=2
+FT   feature         186
+FT                   /label=UDP-N-acetylglucosamine--peptide N-acetylglucosaminyltransferase SPINDLY
+FT                   /locus_tag=UDP-N-acetylglucosamine--peptide N-acetylglucosaminyltransferase SPINDLY
+FT                   /colour=2
+FT   feature         900
+FT                   /label=Desulfoferrodoxin
+FT                   /locus_tag=Desulfoferrodoxin
+FT                   /colour=2
+FT   misc_feature    535
+FT                   /label=group_50
+FT                   /locus_tag=group_50
+FT                   /colour=3
+FT   feature         440
+FT                   /label=fliF
+FT                   /locus_tag=fliF
+FT                   /colour=2
+FT   feature         603
+FT                   /label=Trigger factor
+FT                   /locus_tag=Trigger factor
+FT                   /colour=2
+FT   misc_feature    597
+FT                   /label=group_370
+FT                   /locus_tag=group_370
+FT                   /colour=2
+FT   misc_feature    874
+FT                   /label=group_553
+FT                   /locus_tag=group_553
+FT                   /colour=2
+FT   feature         901
+FT                   /label=1-deoxy-D-xylulose-5-phosphate synthase
+FT                   /locus_tag=1-deoxy-D-xylulose-5-phosphate synthase
+FT                   /colour=2
+FT   feature         310
+FT                   /label=Large ribosomal subunit protein uL22
+FT                   /locus_tag=Large ribosomal subunit protein uL22
+FT                   /colour=2
+FT   misc_feature    972
+FT                   /label=group_954
+FT                   /locus_tag=group_954
+FT                   /colour=2
+FT   feature         26
+FT                   /label=Alanine--tRNA ligase
+FT                   /locus_tag=Alanine--tRNA ligase
+FT                   /colour=2
+FT   feature         409
+FT                   /label=rfuB
+FT                   /locus_tag=rfuB
+FT                   /colour=2
+FT   misc_feature    954
+FT                   /label=group_200
+FT                   /locus_tag=group_200
+FT                   /colour=2
+FT   feature         482
+FT                   /label=RRM domain-containing protein
+FT                   /locus_tag=RRM domain-containing protein
+FT                   /colour=2
+FT   feature         835
+FT                   /label=vwb
+FT                   /locus_tag=vwb
+FT                   /colour=2
+FT   misc_feature    189
+FT                   /label=group_546
+FT                   /locus_tag=group_546
+FT                   /colour=2
+FT   feature         284
+FT                   /label=troA
+FT                   /locus_tag=troA
+FT                   /colour=2
+FT   misc_feature    971
+FT                   /label=group_33
+FT                   /locus_tag=group_33
+FT                   /colour=2
+FT   feature         758
+FT                   /label=Ethanolaminephosphotransferase
+FT                   /locus_tag=Ethanolaminephosphotransferase
+FT                   /colour=2
+FT   misc_feature    646
+FT                   /label=group_401
+FT                   /locus_tag=group_401
+FT                   /colour=2
+FT   misc_feature    325
+FT                   /label=group_173
+FT                   /locus_tag=group_173
+FT                   /colour=2
+FT   feature         719
+FT                   /label=Nuclease SbcCD subunit C
+FT                   /locus_tag=Nuclease SbcCD subunit C
+FT                   /colour=2
+FT   feature         820
+FT                   /label=NADPH-dependent glutamate synthase
+FT                   /locus_tag=NADPH-dependent glutamate synthase
+FT                   /colour=2
+FT   misc_feature    341
+FT                   /label=group_975
+FT                   /locus_tag=group_975
+FT                   /colour=2
+FT   feature         452
+FT                   /label=ftsW
+FT                   /locus_tag=ftsW
+FT                   /colour=2
+FT   feature         204
+FT                   /label=PTS EIIA type-2 domain-containing protein
+FT                   /locus_tag=PTS EIIA type-2 domain-containing protein
+FT                   /colour=2
+FT   feature         642
+FT                   /label=Periplasmic serine protease, putative
+FT                   /locus_tag=Periplasmic serine protease, putative
+FT                   /colour=2
+FT   feature         706
+FT                   /label=Nitrogen fixation protein (NifU)
+FT                   /locus_tag=Nitrogen fixation protein (NifU)
+FT                   /colour=2
+FT   feature         456
+FT                   /label=mraZ
+FT                   /locus_tag=mraZ
+FT                   /colour=2
+FT   feature         672
+FT                   /label=Peptide chain release factor 2
+FT                   /locus_tag=Peptide chain release factor 2
+FT                   /colour=2
+FT   misc_feature    6
+FT                   /label=group_847
+FT                   /locus_tag=group_847
+FT                   /colour=2
+FT   feature         955
+FT                   /label=HEAT repeat domain-containing protein
+FT                   /locus_tag=HEAT repeat domain-containing protein
+FT                   /colour=2
+FT   feature         833
+FT                   /label=cfpA
+FT                   /locus_tag=cfpA
+FT                   /colour=2
+FT   feature         138
+FT                   /label=Tpr protein B
+FT                   /locus_tag=Tpr protein B
+FT                   /colour=2
+FT   misc_feature    963
+FT                   /label=group_445
+FT                   /locus_tag=group_445
+FT                   /colour=2
+FT   feature         165
+FT                   /label=Putative adenosine/adenine deaminase
+FT                   /locus_tag=Putative adenosine/adenine deaminase
+FT                   /colour=2
+FT   feature         495
+FT                   /label=Adenine DNA glycosylase
+FT                   /locus_tag=Adenine DNA glycosylase
+FT                   /colour=2
+FT   feature         323
+FT                   /label=Large ribosomal subunit protein uL15
+FT                   /locus_tag=Large ribosomal subunit protein uL15
+FT                   /colour=2
+FT   feature         868
+FT                   /label=Organic solvent tolerance-like N-terminal domain-containing protein
+FT                   /locus_tag=Organic solvent tolerance-like N-terminal domain-containing protein
+FT                   /colour=2
+FT   misc_feature    348
+FT                   /label=group_275
+FT                   /locus_tag=group_275
+FT                   /colour=2
+FT   misc_feature    546
+FT                   /label=group_520
+FT                   /locus_tag=group_520
+FT                   /colour=2
+FT   feature         747
+FT                   /label=Flagellar hook-associated protein 3
+FT                   /locus_tag=Flagellar hook-associated protein 3
+FT                   /colour=2
+FT   feature         445
+FT                   /label=DNA topoisomerase 1
+FT                   /locus_tag=DNA topoisomerase 1
+FT                   /colour=2
+FT   feature         583
+FT                   /label=Uncharacterized protein TP_0484
+FT                   /locus_tag=Uncharacterized protein TP_0484
+FT                   /colour=2
+FT   feature         439
+FT                   /label=fliG
+FT                   /locus_tag=fliG
+FT                   /colour=2
+FT   misc_feature    297
+FT                   /label=group_283
+FT                   /locus_tag=group_283
+FT                   /colour=2
+FT   misc_feature    625
+FT                   /label=group_680
+FT                   /locus_tag=group_680
+FT                   /colour=2
+FT   misc_feature    985
+FT                   /label=group_126
+FT                   /locus_tag=group_126
+FT                   /colour=2
+FT   misc_feature    629
+FT                   /label=group_558
+FT                   /locus_tag=group_558
+FT                   /colour=2
+FT   feature         942
+FT                   /label=AAA+ ATPase domain-containing protein
+FT                   /locus_tag=AAA+ ATPase domain-containing protein
+FT                   /colour=2
+FT   feature         28
+FT                   /label=nusB
+FT                   /locus_tag=nusB
+FT                   /colour=2
+FT   misc_feature    837
+FT                   /label=group_139
+FT                   /locus_tag=group_139
+FT                   /colour=2
+FT   feature         110
+FT                   /label=Mannosylglycerate hydrolase MGH1-like glycoside hydrolase domain-containing protein
+FT                   /locus_tag=Mannosylglycerate hydrolase MGH1-like glycoside hydrolase domain-containing protein
+FT                   /colour=2
+FT   feature         671
+FT                   /label=Phosphoenolpyruvate-protein phosphotransferase
+FT                   /locus_tag=Phosphoenolpyruvate-protein phosphotransferase
+FT                   /colour=2
+FT   misc_feature    839
+FT                   /label=group_472
+FT                   /locus_tag=group_472
+FT                   /colour=2
+FT   feature         663
+FT                   /label=Alginate O-acetylation protein
+FT                   /locus_tag=Alginate O-acetylation protein
+FT                   /colour=2
+FT   misc_feature    729
+FT                   /label=group_382
+FT                   /locus_tag=group_382
+FT                   /colour=2
+FT   feature         23
+FT                   /label=Glutamyl-tRNA(Gln) amidotransferase subunit A
+FT                   /locus_tag=Glutamyl-tRNA(Gln) amidotransferase subunit A
+FT                   /colour=2
+FT   feature         169
+FT                   /label=Peptidase M23 domain-containing protein
+FT                   /locus_tag=Peptidase M23 domain-containing protein
+FT                   /colour=2
+FT   feature         554
+FT                   /label=Outer membrane protein TP0453
+FT                   /locus_tag=Outer membrane protein TP0453
+FT                   /colour=2
+FT   feature         64
+FT                   /label=Lipoprotein signal peptidase
+FT                   /locus_tag=Lipoprotein signal peptidase
+FT                   /colour=2
+FT   feature         437
+FT                   /label=Flagellum-specific ATP synthase
+FT                   /locus_tag=Flagellum-specific ATP synthase
+FT                   /colour=2
+FT   misc_feature    172
+FT                   /label=group_236
+FT                   /locus_tag=group_236
+FT                   /colour=2
+FT   feature         344
+FT                   /label=Cobalt ABC transporter, ATP-binding protein
+FT                   /locus_tag=Cobalt ABC transporter, ATP-binding protein
+FT                   /colour=2
+FT   misc_feature    77
+FT                   /label=group_81
+FT                   /locus_tag=group_81
+FT                   /colour=2
+FT   feature         508
+FT                   /label=mutS
+FT                   /locus_tag=mutS
+FT                   /colour=2
+FT   feature         598
+FT                   /label=Peptidoglycan glycosyltransferase
+FT                   /locus_tag=Peptidoglycan glycosyltransferase
+FT                   /colour=2
+FT   feature         588
+FT                   /label=Metallo-beta-lactamase domain-containing protein
+FT                   /locus_tag=Metallo-beta-lactamase domain-containing protein
+FT                   /colour=2
+FT   feature         904
+FT                   /label=Holo-[acyl-carrier-protein] synthase
+FT                   /locus_tag=Holo-[acyl-carrier-protein] synthase
+FT                   /colour=2
+FT   feature         493
+FT                   /label=Phospho-N-acetylmuramoyl-pentapeptide-transferase
+FT                   /locus_tag=Phospho-N-acetylmuramoyl-pentapeptide-transferase
+FT                   /colour=2
+FT   feature         690
+FT                   /label=Uncharacterized protein TP_0598
+FT                   /locus_tag=Uncharacterized protein TP_0598
+FT                   /colour=2
+FT   misc_feature    765
+FT                   /label=group_699
+FT                   /locus_tag=group_699
+FT                   /colour=2
+FT   misc_feature    298
+FT                   /label=group_389
+FT                   /locus_tag=group_389
+FT                   /colour=2
+FT   misc_feature    770
+FT                   /label=group_238
+FT                   /locus_tag=group_238
+FT                   /colour=2
+FT   feature         210
+FT                   /label=Cysteine--tRNA ligase
+FT                   /locus_tag=Cysteine--tRNA ligase
+FT                   /colour=2
+FT   feature         73
+FT                   /label=Uncharacterized protein TP_0968
+FT                   /locus_tag=Uncharacterized protein TP_0968
+FT                   /colour=2
+FT   feature         101
+FT                   /label=Uncharacterized protein TP_0941
+FT                   /locus_tag=Uncharacterized protein TP_0941
+FT                   /colour=2
+FT   feature         592
+FT                   /label=rpoD
+FT                   /locus_tag=rpoD
+FT                   /colour=2
+FT   feature         956
+FT                   /label=YjgP/YjgQ family permease
+FT                   /locus_tag=YjgP/YjgQ family permease
+FT                   /colour=2
+FT   feature         697
+FT                   /label=Elongation factor Ts
+FT                   /locus_tag=Elongation factor Ts
+FT                   /colour=2
+FT   misc_feature    212
+FT                   /label=group_316
+FT                   /locus_tag=group_316
+FT                   /colour=2
+FT   misc_feature    182
+FT                   /label=group_80
+FT                   /locus_tag=group_80
+FT                   /colour=2
+FT   misc_feature    542
+FT                   /label=group_379
+FT                   /locus_tag=group_379
+FT                   /colour=2
+FT   misc_feature    200
+FT                   /label=group_889
+FT                   /locus_tag=group_889
+FT                   /colour=2
+FT   misc_feature    888
+FT                   /label=group_331
+FT                   /locus_tag=group_331
+FT                   /colour=2
+FT   misc_feature    483
+FT                   /label=group_251
+FT                   /locus_tag=group_251
+FT                   /colour=2
+FT   misc_feature    886
+FT                   /label=group_155
+FT                   /locus_tag=group_155
+FT                   /colour=2
+FT   misc_feature    866
+FT                   /label=group_764
+FT                   /locus_tag=group_764
+FT                   /colour=2
+FT   misc_feature    100
+FT                   /label=group_266
+FT                   /locus_tag=group_266
+FT                   /colour=2
+FT   feature         939
+FT                   /label=Bifunctional cysteine sulfinate desulfinase/cysteine desulfurase
+FT                   /locus_tag=Bifunctional cysteine sulfinate desulfinase/cysteine desulfurase
+FT                   /colour=2
+FT   feature         296
+FT                   /label=Uncharacterized protein TP_0179
+FT                   /locus_tag=Uncharacterized protein TP_0179
+FT                   /colour=2
+FT   feature         843
+FT                   /label=PASTA domain-containing protein
+FT                   /locus_tag=PASTA domain-containing protein
+FT                   /colour=2
+FT   feature         356
+FT                   /label=Large ribosomal subunit protein bL12
+FT                   /locus_tag=Large ribosomal subunit protein bL12
+FT                   /colour=2
+FT   feature         748
+FT                   /label=Flagellar hook-associated protein 1
+FT                   /locus_tag=Flagellar hook-associated protein 1
+FT                   /colour=2
+FT   feature         84
+FT                   /label=Tp33 protein
+FT                   /locus_tag=Tp33 protein
+FT                   /colour=2
+FT   misc_feature    714
+FT                   /label=group_908
+FT                   /locus_tag=group_908
+FT                   /colour=2
+FT   misc_feature    805
+FT                   /label=group_144
+FT                   /locus_tag=group_144
+FT                   /colour=2
+FT   feature         711
+FT                   /label=Uncharacterized protein TP_0618
+FT                   /locus_tag=Uncharacterized protein TP_0618
+FT                   /colour=2
+FT   feature         807
+FT                   /label=fliL
+FT                   /locus_tag=fliL
+FT                   /colour=2
+FT   feature         899
+FT                   /label=Small-conductance mechanosensitive channel
+FT                   /locus_tag=Small-conductance mechanosensitive channel
+FT                   /colour=2
+FT   feature         476
+FT                   /label=Acyltransferase
+FT                   /locus_tag=Acyltransferase
+FT                   /colour=2
+FT   feature         510
+FT                   /label=Putative outer membrane protein assembly factor TP_0326
+FT                   /locus_tag=Putative outer membrane protein assembly factor TP_0326
+FT                   /colour=2
+FT   feature         948
+FT                   /label=tsaE
+FT                   /locus_tag=tsaE
+FT                   /colour=2
+FT   misc_feature    467
+FT                   /label=group_148
+FT                   /locus_tag=group_148
+FT                   /colour=2
+FT   feature         686
+FT                   /label=Uncharacterized protein TP_0593
+FT                   /locus_tag=Uncharacterized protein TP_0593
+FT                   /colour=2
+FT   misc_feature    907
+FT                   /label=group_593
+FT                   /locus_tag=group_593
+FT                   /colour=2
+FT   feature         612
+FT                   /label=lptD
+FT                   /locus_tag=lptD
+FT                   /colour=2
+FT   misc_feature    250
+FT                   /label=group_8
+FT                   /locus_tag=group_8
+FT                   /colour=7
+FT   feature         448
+FT                   /label=xerD
+FT                   /locus_tag=xerD
+FT                   /colour=2
+FT   feature         836
+FT                   /label=Uncharacterized protein TP_0752
+FT                   /locus_tag=Uncharacterized protein TP_0752
+FT                   /colour=2
+FT   misc_feature    501
+FT                   /label=group_651
+FT                   /locus_tag=group_651
+FT                   /colour=2
+FT   feature         461
+FT                   /label=Uncharacterized protein TP_0376
+FT                   /locus_tag=Uncharacterized protein TP_0376
+FT                   /colour=2
+FT   feature         74
+FT                   /label=Uncharacterized protein TP_0967
+FT                   /locus_tag=Uncharacterized protein TP_0967
+FT                   /colour=2
+FT   feature         596
+FT                   /label=mreC
+FT                   /locus_tag=mreC
+FT                   /colour=2
+FT   misc_feature    946
+FT                   /label=group_643
+FT                   /locus_tag=group_643
+FT                   /colour=2
+FT   misc_feature    383
+FT                   /label=group_960
+FT                   /locus_tag=group_960
+FT                   /colour=2
+FT   feature         814
+FT                   /label=fliK
+FT                   /locus_tag=fliK
+FT                   /colour=2
+FT   misc_feature    44
+FT                   /label=group_913
+FT                   /locus_tag=group_913
+FT                   /colour=2
+FT   misc_feature    891
+FT                   /label=group_253
+FT                   /locus_tag=group_253
+FT                   /colour=2
+FT   feature         178
+FT                   /label=dnaB
+FT                   /locus_tag=dnaB
+FT                   /colour=2
+FT   misc_feature    938
+FT                   /label=group_825
+FT                   /locus_tag=group_825
+FT                   /colour=2
+FT   feature         354
+FT                   /label=Large ribosomal subunit protein uL1
+FT                   /locus_tag=Large ribosomal subunit protein uL1
+FT                   /colour=2
+FT   feature         429
+FT                   /label=secD
+FT                   /locus_tag=secD
+FT                   /colour=2
+FT   misc_feature    577
+FT                   /label=group_660
+FT                   /locus_tag=group_660
+FT                   /colour=2
+FT   feature         745
+FT                   /label=csrA
+FT                   /locus_tag=csrA
+FT                   /colour=2
+FT   misc_feature    436
+FT                   /label=group_78
+FT                   /locus_tag=group_78
+FT                   /colour=2
+FT   feature         560
+FT                   /label=scpB
+FT                   /locus_tag=scpB
+FT                   /colour=2
+FT   misc_feature    580
+FT                   /label=group_388
+FT                   /locus_tag=group_388
+FT                   /colour=2
+FT   feature         516
+FT                   /label=tmpC
+FT                   /locus_tag=tmpC
+FT                   /colour=2
+FT   misc_feature    62
+FT                   /label=group_870
+FT                   /locus_tag=group_870
+FT                   /colour=2
+FT   misc_feature    273
+FT                   /label=group_585
+FT                   /locus_tag=group_585
+FT                   /colour=2
+FT   misc_feature    267
+FT                   /label=group_151
+FT                   /locus_tag=group_151
+FT                   /colour=2
+FT   misc_feature    878
+FT                   /label=group_532
+FT                   /locus_tag=group_532
+FT                   /colour=2
+FT   misc_feature    751
+FT                   /label=group_923
+FT                   /locus_tag=group_923
+FT                   /colour=2
+FT   feature         549
+FT                   /label=Uncharacterized protein TP_0447
+FT                   /locus_tag=Uncharacterized protein TP_0447
+FT                   /colour=2
+FT   feature         896
+FT                   /label=Ribonuclease Z
+FT                   /locus_tag=Ribonuclease Z
+FT                   /colour=2
+FT   feature         621
+FT                   /label=Lon protease
+FT                   /locus_tag=Lon protease
+FT                   /colour=2
+FT   feature         879
+FT                   /label=Methionine--tRNA ligase
+FT                   /locus_tag=Methionine--tRNA ligase
+FT                   /colour=2
+FT   misc_feature    435
+FT                   /label=group_152
+FT                   /locus_tag=group_152
+FT                   /colour=2
+FT   feature         361
+FT                   /label=Uncharacterized protein TP_0245
+FT                   /locus_tag=Uncharacterized protein TP_0245
+FT                   /colour=2
+FT   feature         119
+FT                   /label=NADH oxidase
+FT                   /locus_tag=NADH oxidase
+FT                   /colour=2
+FT   feature         363
+FT                   /label=MurNAc-LAA domain-containing protein
+FT                   /locus_tag=MurNAc-LAA domain-containing protein
+FT                   /colour=2
+FT   misc_feature    32
+FT                   /label=group_550
+FT                   /locus_tag=group_550
+FT                   /colour=2
+FT   feature         707
+FT                   /label=Ribose-5-phosphate isomerase A
+FT                   /locus_tag=Ribose-5-phosphate isomerase A
+FT                   /colour=2
+FT   misc_feature    114
+FT                   /label=group_138
+FT                   /locus_tag=group_138
+FT                   /colour=2
+FT   feature         721
+FT                   /label=Uncharacterized protein TP_0629
+FT                   /locus_tag=Uncharacterized protein TP_0629
+FT                   /colour=2
+FT   misc_feature    825
+FT                   /label=group_248
+FT                   /locus_tag=group_248
+FT                   /colour=2
+FT   feature         319
+FT                   /label=Large ribosomal subunit protein uL6
+FT                   /locus_tag=Large ribosomal subunit protein uL6
+FT                   /colour=2
+FT   feature         746
+FT                   /label=fliW
+FT                   /locus_tag=fliW
+FT                   /colour=2
+FT   misc_feature    840
+FT                   /label=group_804
+FT                   /locus_tag=group_804
+FT                   /colour=2
+FT   misc_feature    139
+FT                   /label=group_68
+FT                   /locus_tag=group_68
+FT                   /colour=2
+FT   feature         56
+FT                   /label=DMT superfamily drug/metabolite transporter
+FT                   /locus_tag=DMT superfamily drug/metabolite transporter
+FT                   /colour=2
+FT   feature         821
+FT                   /label=FAD-binding FR-type domain-containing protein
+FT                   /locus_tag=FAD-binding FR-type domain-containing protein
+FT                   /colour=2
+FT   misc_feature    396
+FT                   /label=group_594
+FT                   /locus_tag=group_594
+FT                   /colour=2
+FT   misc_feature    150
+FT                   /label=group_624
+FT                   /locus_tag=group_624
+FT                   /colour=2
+FT   misc_feature    933
+FT                   /label=group_946
+FT                   /locus_tag=group_946
+FT                   /colour=2
+FT   feature         856
+FT                   /label=MgtC/SapB/SrpB/YhiD N-terminal domain-containing protein
+FT                   /locus_tag=MgtC/SapB/SrpB/YhiD N-terminal domain-containing protein
+FT                   /colour=2
+FT   feature         66
+FT                   /label=Uncharacterized protein TP_0976
+FT                   /locus_tag=Uncharacterized protein TP_0976
+FT                   /colour=2
+FT   misc_feature    559
+FT                   /label=group_104
+FT                   /locus_tag=group_104
+FT                   /colour=2
+FT   misc_feature    369
+FT                   /label=group_548
+FT                   /locus_tag=group_548
+FT                   /colour=2
+FT   feature         884
+FT                   /label=putative exoribonuclease II
+FT                   /locus_tag=putative exoribonuclease II
+FT                   /colour=2
+FT   feature         783
+FT                   /label=putative nicotinamidase
+FT                   /locus_tag=putative nicotinamidase
+FT                   /colour=2
+FT   feature         743
+FT                   /label=ABC transmembrane type-1 domain-containing protein
+FT                   /locus_tag=ABC transmembrane type-1 domain-containing protein
+FT                   /colour=2
+FT   feature         535
+FT                   /colour=3
+FT   feature         122
+FT                   /colour=3
+FT   feature         423
+FT                   /colour=5
+FT   feature         645
+FT                   /colour=4
+FT   feature         126
+FT                   /colour=7
+FT   feature         121
+FT                   /colour=6
+FT   feature         250
+FT                   /colour=7
+FT   feature         536
+FT                   /colour=4
+FT   feature         515
+FT                   /colour=4
+FT   feature         125
+FT                   /colour=6
+FT   feature         465
+FT                   /colour=5
+FT   feature         970
+FT                   /colour=3
+FT   feature         90
+FT                   /colour=3
+FT   feature         564
+FT                   /colour=3
+FT   feature         565
+FT                   /colour=6
+FT   feature         712
+FT                   /colour=4
+FT   feature         257
+FT                   /colour=7
+FT   feature         424
+FT                   /colour=5
+FT   feature         971
+FT                   /colour=2
+FT   feature         129
+FT                   /colour=4
+FT   feature         934
+FT                   /colour=5
+FT   feature         124..518
+FT                   /colour=2
+FT   feature         644
+FT                   /colour=2
+FT   feature         709..710
+FT                   /colour=7
+FT   feature         11
+FT                   /colour=2
+FT   feature         12
+FT                   /colour=2
+FT   feature         123
+FT                   /colour=7
+FT   feature         419
+FT                   /colour=5
+FT   feature         256
+FT                   /colour=6
+FT   feature         127..128
+FT                   /colour=6
+XX
+SQ   Sequence 1234 BP; 789 A; 1717 C; 1693 G; 691 T; 0 other;
+//

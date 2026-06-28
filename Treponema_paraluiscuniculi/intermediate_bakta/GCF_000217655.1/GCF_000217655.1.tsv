@@ -1,0 +1,1037 @@
+# Annotated with Bakta
+# Software: v1.11.4
+# Database: v6.0, light
+# DOI: 10.1099/mgen.0.000685
+# URL: github.com/oschwengers/bakta
+#Sequence Id	Type	Start	Stop	Strand	Locus Tag	Gene	Product	DbXrefs
+contig_1	cds	4	1398	+	LIHGCB_00001		hypothetical protein	PFAM:PF00004.35, PFAM:PF00308.24, PFAM:PF00910.28, PFAM:PF01695.23, PFAM:PF08299.17, PFAM:PF11638.13
+contig_1	oriC	1399	1641	?			origin of replication	
+contig_1	cds	1642	2757	+	LIHGCB_00002		Beta sliding clamp	SO:0001217, UniRef:UniRef50_O83048
+contig_1	cds	2846	3835	+	LIHGCB_00003		hypothetical protein	
+contig_1	cds	3828	4265	+	LIHGCB_00004		hypothetical protein	
+contig_1	cds	4392	6833	+	LIHGCB_00005		DNA gyrase subunit A	SO:0001217, UniRef:UniRef50_O83051
+contig_1	cds	6833	7018	+	LIHGCB_00006		hypothetical protein	
+contig_1	cds	7162	8262	+	LIHGCB_00007		Protein Tp75	SO:0001217, UniRef:UniRef50_Q01305
+contig_1	cds	8342	10138	-	LIHGCB_00008		Tpr protein A	SO:0001217, UniRef:UniRef50_F7XRK5
+contig_1	cds	10443	12425	+	LIHGCB_00009		Tpr protein B	SO:0001217, UniRef:UniRef50_F7XRK7
+contig_1	cds	12591	13823	+	LIHGCB_00010		hypothetical protein	
+contig_1	cds	14014	15828	+	LIHGCB_00011		hypothetical protein	PFAM:PF03484.21, PFAM:PF17759.6
+contig_1	cds	15806	18364	+	LIHGCB_00012		endopeptidase La	SO:0001217, UniRef:UniRef50_F7XRL0
+contig_1	cds	18489	19436	+	LIHGCB_00013		Tetratricopeptide repeat protein	SO:0001217, UniRef:UniRef50_O83061
+contig_1	cds	19453	22134	+	LIHGCB_00014	greA	Transcription elongation factor GreA	SO:0001217, UniRef:UniRef50_S5ZYJ4
+contig_1	cds	22149	24257	+	LIHGCB_00015		76K protein	SO:0001217, UniRef:UniRef50_O83064
+contig_1	ncRNA	24330	24424	-	LIHGCB_00016	Bacteria_small_SRP	Bacterial small signal recognition particle RNA	RFAM:RF00169, SO:0000655
+contig_1	tRNA	24426	24513	-	LIHGCB_00017	trnS	tRNA-Ser(gga)	SO:0000269
+contig_1	tRNA	24570	24658	-	LIHGCB_00018	trnS	tRNA-Ser(cga)	SO:0000269
+contig_1	tRNA	24716	24789	-	LIHGCB_00019	trnR	tRNA-Arg(gcg)	SO:0001036
+contig_1	tRNA	24821	24907	-	LIHGCB_00020	trnS	tRNA-Ser(gct)	SO:0000269
+contig_1	tRNA	24948	25032	-	LIHGCB_00021	trnS	tRNA-Ser(tga)	SO:0000269
+contig_1	cds	25196	27586	+	LIHGCB_00022		Uncharacterized protein TP_0021	SO:0001217, UniRef:UniRef50_O83065
+contig_1	cds	27647	28978	+	LIHGCB_00023		NSS family neurotransmitter:Na+ symporter	SO:0001217, UniRef:UniRef50_S3MDE5
+contig_1	cds	29158	29868	+	LIHGCB_00024		hypothetical protein	PFAM:PF02080.26, PFAM:PF02254.24
+contig_1	cds	29947	33018	-	LIHGCB_00025		Peptidase M16C associated domain-containing protein	SO:0001217, UniRef:UniRef50_O83069
+contig_1	cds	33047	34069	-	LIHGCB_00026		hypothetical protein	PFAM:PF01706.21
+contig_1	cds	34190	35515	+	LIHGCB_00027		Hemolysin, putative	SO:0001217, UniRef:UniRef50_O83071
+contig_1	cds	35529	36890	+	LIHGCB_00028		Hemolysin, putative	SO:0001217, UniRef:UniRef50_O83072
+contig_1	cds	36999	38276	+	LIHGCB_00029		UDP-N-acetylglucosamine 1-carboxyvinyltransferase	SO:0001217, UniRef:UniRef50_Q73Q03
+contig_1	cds	38395	40029	+	LIHGCB_00030		Chaperonin GroEL	SO:0001217, UniRef:UniRef50_O66200
+contig_1	cds	40344	41168	-	LIHGCB_00031		hypothetical protein	PFAM:PF04452.19, PFAM:PF20260.4
+contig_1	cds	41165	41776	-	LIHGCB_00032		DUF1361 domain-containing protein	SO:0001217, UniRef:UniRef50_S6A470
+contig_1	cds	41877	42833	-	LIHGCB_00033		hypothetical protein	
+contig_1	cds	43031	43747	+	LIHGCB_00034	znuC	High-affinity zinc uptake system ATP-binding protein ZnuC	SO:0001217, UniRef:UniRef50_A0A0P8YVX4
+contig_1	cds	43747	44547	+	LIHGCB_00035		hypothetical protein	
+contig_1	cds	44656	45651	-	LIHGCB_00036		hypothetical protein	PFAM:PF00389.36, PFAM:PF02826.25
+contig_1	cds	45748	46800	-	LIHGCB_00037	pfoR	putative regulatory protein PfoR	SO:0001217, UniRef:UniRef50_F7XRN0
+contig_1	cds	47061	49478	+	LIHGCB_00038		putative methyl-accepting chemotaxis protein	SO:0001217, UniRef:UniRef50_F7XRN2
+contig_1	cds	49599	50531	+	LIHGCB_00039		hypothetical protein	PFAM:PF01476.26
+contig_1	cds	50635	52644	+	LIHGCB_00040		Soluble lytic transglycosylase, putative	SO:0001217, UniRef:UniRef50_O83083
+contig_1	cds	52684	54576	+	LIHGCB_00041		hypothetical protein	PFAM:PF13932.14
+contig_1	cds	54632	55531	-	LIHGCB_00042		Putative adenosine/adenine deaminase	SO:0001217, UniRef:UniRef50_O83085
+contig_1	cds	55893	56594	-	LIHGCB_00043		hypothetical protein	
+contig_1	cds	56612	57133	-	LIHGCB_00044		hypothetical protein	
+contig_1	cds	57139	57570	-	LIHGCB_00045		hypothetical protein	PFAM:PF04519.19
+contig_1	cds	57592	58683	-	LIHGCB_00046		Peptidase M23 domain-containing protein	SO:0001217, UniRef:UniRef50_M2BV55
+contig_1	cds	58914	59522	-	LIHGCB_00047		hypothetical protein	PFAM:PF00156.33
+contig_1	cds	59674	60729	+	LIHGCB_00048		Peptide chain release factor 1	SO:0001217, UniRef:UniRef50_B8IUB4
+contig_1	cds	60699	61766	+	LIHGCB_00049		hypothetical protein	PFAM:PF17827.6
+contig_1	cds	61836	62891	-	LIHGCB_00050		Ribonucleoside-diphosphate reductase subunit beta	SO:0001217, UniRef:UniRef50_O83092
+contig_1	cds	63062	64021	+	LIHGCB_00051		hypothetical protein	PFAM:PF08032.17
+contig_1	cds	64228	64464	+	LIHGCB_00052		hypothetical protein	
+contig_1	cds	64461	66242	+	LIHGCB_00053		Pyruvate carboxylase subunit B	SO:0001217, UniRef:UniRef50_E4PIM0
+contig_1	cds	66254	67663	+	LIHGCB_00054		Oxaloacetate decarboxylase beta chain	SO:0001217, UniRef:UniRef50_R4YUT1
+contig_1	cds	67738	69054	-	LIHGCB_00055	dnaB	Replicative DNA helicase DnaB	SO:0001217, UniRef:UniRef50_O83097
+contig_1	cds	69271	69741	-	LIHGCB_00056		hypothetical protein	PFAM:PF01281.25, PFAM:PF03948.19
+contig_1	cds	69847	70146	-	LIHGCB_00057		Small ribosomal subunit protein bS18	SO:0001217, UniRef:UniRef50_B5RLI7
+contig_1	cds	70263	70793	-	LIHGCB_00058		Single-stranded DNA-binding protein	SO:0001217, UniRef:UniRef50_O83101
+contig_1	cds	70802	71083	-	LIHGCB_00059		hypothetical protein	PFAM:PF01250.22
+contig_1	cds	71366	71800	+	LIHGCB_00060		hypothetical protein	
+contig_1	cds	71856	72401	+	LIHGCB_00061	rsmD	16S rRNA (Guanine(966)-N(2))-methyltransferase RsmD	SO:0001217, UniRef:UniRef50_A0A0B7H1B9
+contig_1	cds	72455	72760	+	LIHGCB_00062		TPR domain protein	SO:0001217, UniRef:UniRef50_Q73KZ5
+contig_1	cds	72781	73929	+	LIHGCB_00063		UDP-N-acetylglucosamine--peptide N-acetylglucosaminyltransferase SPINDLY	SO:0001217, UniRef:UniRef50_M2BGF1
+contig_1	cds	74110	75132	+	LIHGCB_00064		hypothetical protein	PFAM:PF04055.27, PFAM:PF21016.3
+contig_1	cds	75188	75571	-	LIHGCB_00065		hypothetical protein	
+contig_1	cds	75568	75954	-	LIHGCB_00066		hypothetical protein	
+contig_1	cds	76005	78641	-	LIHGCB_00067	clpB	Chaperone protein ClpB	SO:0001217, UniRef:UniRef50_A0A1L8N1Q2
+contig_1	cds	78845	79117	+	LIHGCB_00068		hypothetical protein	PFAM:PF00462.30
+contig_1	cds	79187	80677	-	LIHGCB_00069		Uncharacterized protein TP_0073	SO:0001217, UniRef:UniRef50_O83112
+contig_1	cds	81033	82442	+	LIHGCB_00070		Sugar ABC superfamily ATP binding cassette transporter, binding protein	SO:0001217, UniRef:UniRef50_F7XRR7
+contig_1	cds	82572	83450	+	LIHGCB_00071		hypothetical protein	
+contig_1	cds	83490	84320	+	LIHGCB_00072		Sugar ABC superfamily ATP binding cassette transporter, membrane protein	SO:0001217, UniRef:UniRef50_F7XRR9
+contig_1	cds	84467	85969	+	LIHGCB_00073	capD	Capsular polysaccharide biosynthesis protein CapD	SO:0001217, UniRef:UniRef50_F7XRS0
+contig_1	cds	85974	87212	+	LIHGCB_00074		UDP-4-keto-6-deoxy-N-acetylglucosamine 4-aminotransferase	SO:0001217, UniRef:UniRef50_S3KF66
+contig_1	cds	87209	89362	+	LIHGCB_00075		hypothetical protein	PFAM:PF02738.23
+contig_1	cds	89359	89826	+	LIHGCB_00076		hypothetical protein	PFAM:PF01799.25
+contig_1	cds	89833	90681	+	LIHGCB_00077		hypothetical protein	PFAM:PF00941.27
+contig_1	cds	90728	92314	-	LIHGCB_00078		Sigma-54 factor interaction domain-containing protein	SO:0001217, UniRef:UniRef50_M2BBM0
+contig_1	cds	92465	94459	+	LIHGCB_00079		DUF4015 domain-containing protein	SO:0001217, UniRef:UniRef50_A0A0B7GS70
+contig_1	cds	94539	94772	-	LIHGCB_00080		hypothetical protein	
+contig_1	cds	94884	95330	-	LIHGCB_00081		PTS EIIA type-2 domain-containing protein	SO:0001217, UniRef:UniRef50_S3KHH6
+contig_1	cds	95447	96355	+	LIHGCB_00082	pilZ	PilZ domain-containing protein	SO:0001217, UniRef:UniRef50_O83124
+contig_1	cds	96358	96744	-	LIHGCB_00083		hypothetical protein	
+contig_1	cds	96881	97495	-	LIHGCB_00084		hypothetical protein	
+contig_1	cds	97525	98760	-	LIHGCB_00085		Cyclic nucleotide-binding domain-containing protein	SO:0001217, UniRef:UniRef50_M2BUH9
+contig_1	cds	98843	99907	-	LIHGCB_00086		UDP-N-acetylenolpyruvoylglucosamine reductase	SO:0001217, UniRef:UniRef50_O83128
+contig_1	cds	100089	101651	+	LIHGCB_00087		Cysteine--tRNA ligase	SO:0001217, UniRef:UniRef50_O83129
+contig_1	cds	101671	102210	+	LIHGCB_00088		RNA polymerase sigma-24 factor (RpoE)	SO:0001217, UniRef:UniRef50_O83130
+contig_1	cds	102194	102841	+	LIHGCB_00089		hypothetical protein	PFAM:PF13490.11
+contig_1	cds	102979	103989	+	LIHGCB_00090		Phosphate acetyltransferase	SO:0001217, UniRef:UniRef50_Q73RP3
+contig_1	cds	103989	105935	+	LIHGCB_00091		TPR repeat-containing protein TP_0095	SO:0001217, UniRef:UniRef50_O83133
+contig_1	cds	106009	106371	-	LIHGCB_00092	dnaK	DnaK suppressor, putative	SO:0001217, UniRef:UniRef50_O83134
+contig_1	cds	106541	106759	+	LIHGCB_00093		Translation initiation factor IF-1	SO:0001217, UniRef:UniRef50_A0A0N1BL88
+contig_1	cds	106812	107468	-	LIHGCB_00094	dnaJ	Chaperone DnaJ	SO:0001217, UniRef:UniRef50_F7XRB1
+contig_1	cds	107472	108227	-	LIHGCB_00095		Uridylate kinase	SO:0001217, UniRef:UniRef50_F7XRU2
+contig_1	cds	108422	109024	+	LIHGCB_00096		hypothetical protein	PFAM:PF00085.26, PFAM:PF00578.27, PFAM:PF08534.16, PFAM:PF13098.12, PFAM:PF13905.12
+contig_1	cds	109017	109811	+	LIHGCB_00097		hypothetical protein	PFAM:PF02683.22
+contig_1	cds	109849	111822	-	LIHGCB_00098		DNA 3'-5' helicase	SO:0001217, UniRef:UniRef50_H7EMN1
+contig_1	cds	111887	113251	+	LIHGCB_00099		hypothetical protein	PFAM:PF00270.35, PFAM:PF00271.37
+contig_1	cds	113299	113709	+	LIHGCB_00100		hypothetical protein	
+contig_1	cds	113956	115584	+	LIHGCB_00101		NAD 5'-nucleotidase	SO:0001217, UniRef:UniRef50_P44569
+contig_1	cds	115750	118743	+	LIHGCB_00102		DNA polymerase I	SO:0001217, UniRef:UniRef50_P74933
+contig_1	cds	118775	120307	-	LIHGCB_00103		BCCT family transporter	SO:0001217, UniRef:UniRef50_A0A0J1J4P3
+contig_1	cds	120288	122099	-	LIHGCB_00104		putative bifunctional choline-phosphate cytidylyltransferase/choline kinase	SO:0001217, UniRef:UniRef50_F7XRU8
+contig_1	cds	122219	123604	-	LIHGCB_00105		ATP-dependent 6-phosphofructokinase	SO:0001217, UniRef:UniRef50_A0A929HXF6
+contig_1	cds	123706	124584	-	LIHGCB_00106		putative rRNA (Adenosine-2'-O-)-methyltransferase	SO:0001217, UniRef:UniRef50_F7XRU9
+contig_1	tRNA	124844	124914	+	LIHGCB_00107	trnQ	tRNA-Gln(ctg)	SO:0000261
+contig_1	tRNA	124924	124995	+	LIHGCB_00108	trnE	tRNA-Glu(ttc)	SO:0000259
+contig_1	tRNA	125032	125103	+	LIHGCB_00109	trnE	tRNA-Glu(ctc)	SO:0000259
+contig_1	cds	125146	126858	+	LIHGCB_00110		Uncharacterized protein TP_0110	SO:0001217, UniRef:UniRef50_O83148
+contig_1	cds	126918	128345	+	LIHGCB_00111		RNA polymerase sigma-54 factor	SO:0001217, UniRef:UniRef50_O83149
+contig_1	cds	128342	129694	-	LIHGCB_00112		Aminopeptidase	SO:0001217, UniRef:UniRef50_F4BNA1
+contig_1	cds	129836	130822	+	LIHGCB_00113		hypothetical protein	
+contig_1	cds	130827	131822	+	LIHGCB_00114	hflC	Protein HflC	SO:0001217, UniRef:UniRef50_O83152
+contig_1	cds	131847	132656	-	LIHGCB_00115		Putative pyridoxine kinase	SO:0001217, UniRef:UniRef50_O83153
+contig_1	cds	132781	134814	+	LIHGCB_00116		UvrABC system protein B	SO:0001217, UniRef:UniRef50_Q03AL7
+contig_1	cds	134846	136093	-	LIHGCB_00117		hypothetical protein	PFAM:PF02722.21
+contig_1	cds	136047	136637	-	LIHGCB_00118		hypothetical protein	
+contig_1	cds	136716	137981	-	LIHGCB_00119		hypothetical protein	
+contig_1	cds	138079	138738	-	LIHGCB_00120		Methionine ABC superfamily ATP binding cassette transporter, membrane protein	SO:0001217, UniRef:UniRef50_A0A090HWK7
+contig_1	cds	138738	139547	-	LIHGCB_00121		Methionine transport system ATP-binding protein	SO:0001217, UniRef:UniRef50_A0A388T721
+contig_1	cds	139670	140746	+	LIHGCB_00122		Putative L-lysine 2,3-aminomutase	SO:0001217, UniRef:UniRef50_O83158
+contig_1	cds	140965	142821	-	LIHGCB_00123		Phosphoenolpyruvate carboxykinase [GTP]	SO:0001217, UniRef:UniRef50_A0A5C6DH39
+contig_1	cds	142954	145497	+	LIHGCB_00124		TPR repeat-containing protein TP_0123	SO:0001217, UniRef:UniRef50_O83160
+contig_1	cds	145511	146617	+	LIHGCB_00125	ychF	Ribosome-binding ATPase YchF	SO:0001217, UniRef:UniRef50_P37518
+contig_1	cds	146694	147488	+	LIHGCB_00126		Exodeoxyribonuclease III	SO:0001217, UniRef:UniRef50_E5FNS8
+contig_1	cds	147552	148223	-	LIHGCB_00127		hypothetical protein	
+contig_1	cds	148277	148915	-	LIHGCB_00128		hypothetical protein	
+contig_1	cds	148997	149266	+	LIHGCB_00129		hypothetical protein	
+contig_1	cds	149144	149602	-	LIHGCB_00130		hypothetical protein	PFAM:PF02722.21
+contig_1	cds	149625	150092	-	LIHGCB_00131		hypothetical protein	
+contig_1	cds	150800	152047	-	LIHGCB_00132		hypothetical protein	PFAM:PF02722.21
+contig_1	cds	152001	152591	-	LIHGCB_00133		hypothetical protein	
+contig_1	cds	152831	154093	-	LIHGCB_00134		Uncharacterized lipoprotein TP_0134	SO:0001217, UniRef:UniRef50_O83170
+contig_1	cds	154280	155011	+	LIHGCB_00135		Outer membrane protein beta-barrel domain-containing protein	SO:0001217, UniRef:UniRef50_F7XRX5
+contig_1	tRNA	155160	155232	+	LIHGCB_00136	trnV	tRNA-Val(tac)	SO:0000273
+contig_1	cds	155468	156682	+	LIHGCB_00137		Uncharacterized lipoprotein TP_0134	SO:0001217, UniRef:UniRef50_O83170
+contig_1	cds	157097	157777	-	LIHGCB_00138		Uncharacterized protein TP_0138	SO:0001217, UniRef:UniRef50_O83174
+contig_1	cds	157842	158534	-	LIHGCB_00139	trkA	TrkA family potassium uptake protein	SO:0001217, UniRef:UniRef50_M2BKL1
+contig_1	cds	158574	160292	-	LIHGCB_00140		K+ transport protein (NtpJ)	SO:0001217, UniRef:UniRef50_O83176
+contig_1	cds	160472	161005	+	LIHGCB_00141		hypothetical protein	PFAM:PF01035.26
+contig_1	cds	160956	161618	-	LIHGCB_00142		ABC transporter domain-containing protein	SO:0001217, UniRef:UniRef50_M2ARP1
+contig_1	cds	161611	163353	-	LIHGCB_00143		Thiamine ABC transporter, permease protein, putative	SO:0001217, UniRef:UniRef50_O83179
+contig_1	cds	163350	164357	-	LIHGCB_00144		hypothetical protein	
+contig_1	cds	164467	166437	+	LIHGCB_00145		Long-chain-fatty-acid--CoA ligase	SO:0001217, UniRef:UniRef50_F7XRY5
+contig_1	tRNA	166511	166592	-	LIHGCB_00146	trnL	tRNA-Leu(gag)	SO:0000264
+contig_1	cds	166777	167256	+	LIHGCB_00147		hypothetical protein	
+contig_1	cds	167253	167564	+	LIHGCB_00148		hypothetical protein	
+contig_1	cds	167528	167830	+	LIHGCB_00149		hypothetical protein	
+contig_1	cds	167840	169699	-	LIHGCB_00150		Alpha-amylase 1, putative	SO:0001217, UniRef:UniRef50_O83182
+contig_1	cds	169696	170271	-	LIHGCB_00151		hypothetical protein	
+contig_1	cds	170268	170861	-	LIHGCB_00152		hypothetical protein	
+contig_1	cds	170854	171321	-	LIHGCB_00153		hypothetical protein	
+contig_1	cds	171305	172324	-	LIHGCB_00154		hypothetical protein	
+contig_1	cds	172311	173795	-	LIHGCB_00155	rnfC	putative NADH dehydrogenase (Ubiquinone), subunit RnfC	SO:0001217, UniRef:UniRef50_F7XRZ1
+contig_1	cds	173931	174422	-	LIHGCB_00156		Divergent PAP2 family protein	SO:0001217, UniRef:UniRef50_Q73MW8
+contig_1	cds	174584	175684	+	LIHGCB_00157		Pseudouridylate synthase	SO:0001217, UniRef:UniRef50_F7XRZ3
+contig_1	cds	175690	176805	+	LIHGCB_00158	lysM	LysM domain-containing protein	SO:0001217, UniRef:UniRef50_O83190
+contig_1	cds	176847	177251	-	LIHGCB_00159		Thioesterase family protein	SO:0001217, UniRef:UniRef50_Q73KJ3
+contig_1	cds	177248	178150	-	LIHGCB_00160		hypothetical protein	
+contig_1	cds	178147	178812	-	LIHGCB_00161		Pyrimidine 5'-nucleotidase	SO:0001217, UniRef:UniRef50_O83193
+contig_1	cds	178837	179865	-	LIHGCB_00162		hypothetical protein	
+contig_1	cds	179981	181840	-	LIHGCB_00163		Proline--tRNA ligase	SO:0001217, UniRef:UniRef50_Q73KJ8
+contig_1	cds	181946	182998	-	LIHGCB_00164	ruvB	Holliday junction branch migration complex subunit RuvB	SO:0001217, UniRef:UniRef50_P70828
+contig_1	cds	183174	184100	+	LIHGCB_00165	troA	transition metal ABC transporter substrate-binding protein TroA	BlastRules:WP_010881610, SO:0001217, UniRef:UniRef50_P96116
+contig_1	cds	184248	185048	+	LIHGCB_00166	troB	transition metal ABC transporter ATP-binding protein TroB	BlastRules:WP_010881611, SO:0001217, UniRef:UniRef50_F4BNH0
+contig_1	cds	185020	185916	+	LIHGCB_00167	troC	transition metal ABC transporter permease subunit TroC	BlastRules:WP_010881612, SO:0001217, UniRef:UniRef50_A0A0E2EJU4
+contig_1	cds	185920	187023	+	LIHGCB_00168	troD	transition metal ABC transporter permease subunit TroD	BlastRules:WP_014342310, SO:0001217, UniRef:UniRef50_P96119
+contig_1	cds	187033	187494	+	LIHGCB_00169	troR	manganese/iron-sensitive transcriptional repressor TroR	BlastRules:WP_010881614
+contig_1	cds	187574	188329	+	LIHGCB_00170		2,3-bisphosphoglycerate-dependent phosphoglycerate mutase	SO:0001217, UniRef:UniRef50_C0QV47
+contig_1	tRNA	188455	188527	+	LIHGCB_00171	trnfM	tRNA-fMet(cat)	SO:0000266
+contig_1	cds	188648	189457	+	LIHGCB_00172		5'-methylthioadenosine/S-adenosylhomocysteine nucleosidase	SO:0001217, UniRef:UniRef50_P96122
+contig_1	cds	189556	189984	+	LIHGCB_00173		15 kDa lipoprotein	SO:0001217, UniRef:UniRef50_P16055
+contig_1	cds	189974	191341	-	LIHGCB_00174		hypothetical protein	
+contig_1	cds	191349	192869	-	LIHGCB_00175		hypothetical protein	
+contig_1	cds	192866	194194	-	LIHGCB_00176		hypothetical protein	
+contig_1	cds	194269	195195	-	LIHGCB_00177		hypothetical protein	
+contig_1	cds	195195	197078	-	LIHGCB_00178		Uncharacterized protein TP_0179	SO:0001217, UniRef:UniRef50_O83209
+contig_1	cds	197172	197615	+	LIHGCB_00179		hypothetical protein	PFAM:PF04977.20
+contig_1	cds	197596	198234	+	LIHGCB_00180		hypothetical protein	
+contig_1	cds	198237	199082	-	LIHGCB_00181		hypothetical protein	
+contig_1	cds	199087	199551	-	LIHGCB_00182		SsrA-binding protein	SO:0001217, UniRef:UniRef50_O83214
+contig_1	cds	199639	200346	+	LIHGCB_00183		hypothetical protein	PFAM:PF10502.14
+contig_1	cds	200365	201582	+	LIHGCB_00184		Coproporphyrinogen dehydrogenase	SO:0001217, UniRef:UniRef50_F7XS16
+contig_1	cds	201946	203133	+	LIHGCB_00185		Elongation factor Tu	SO:0001217, UniRef:UniRef50_P43926
+contig_1	cds	203205	203513	+	LIHGCB_00186		Small ribosomal subunit protein uS10	SO:0001217, UniRef:UniRef50_Q2LQA2
+contig_1	cds	203560	204186	+	LIHGCB_00187		Large ribosomal subunit protein uL3	SO:0001217, UniRef:UniRef50_S3LPB9
+contig_1	cds	204176	204850	+	LIHGCB_00188		Large ribosomal subunit protein uL4	SO:0001217, UniRef:UniRef50_P94268
+contig_1	cds	204837	205121	+	LIHGCB_00189		hypothetical protein	
+contig_1	cds	205177	205998	+	LIHGCB_00190		Large ribosomal subunit protein uL2	SO:0001217, UniRef:UniRef50_P60405
+contig_1	cds	206008	206295	+	LIHGCB_00191		Small ribosomal subunit protein uS19	SO:0001217, UniRef:UniRef50_P94271
+contig_1	cds	206304	206678	+	LIHGCB_00192		Large ribosomal subunit protein uL22	SO:0001217, UniRef:UniRef50_O83224
+contig_1	cds	206662	207405	+	LIHGCB_00193		Small ribosomal subunit protein uS3	SO:0001217, UniRef:UniRef50_O83225
+contig_1	cds	207409	207828	+	LIHGCB_00194		Large ribosomal subunit protein uL16	SO:0001217, UniRef:UniRef50_A0A355UQN7
+contig_1	cds	207843	208061	+	LIHGCB_00195		hypothetical protein	
+contig_1	cds	208061	208330	+	LIHGCB_00196		Small ribosomal subunit protein uS17	SO:0001217, UniRef:UniRef50_O83228
+contig_1	cds	208343	208711	+	LIHGCB_00197		Large ribosomal subunit protein uL14	SO:0001217, UniRef:UniRef50_O83229
+contig_1	cds	208723	209034	+	LIHGCB_00198		Large ribosomal subunit protein uL24	SO:0001217, UniRef:UniRef50_O83230
+contig_1	cds	209031	209588	+	LIHGCB_00199		Large ribosomal subunit protein uL5	SO:0001217, UniRef:UniRef50_Q8DS25
+contig_1	cds	209801	210199	+	LIHGCB_00200		Small ribosomal subunit protein uS8	SO:0001217, UniRef:UniRef50_O51445
+contig_1	cds	210209	210748	+	LIHGCB_00201		Large ribosomal subunit protein uL6	SO:0001217, UniRef:UniRef50_O83234
+contig_1	cds	210757	211119	+	LIHGCB_00202		Large ribosomal subunit protein uL18	SO:0001217, UniRef:UniRef50_Q73PL6
+contig_1	cds	211128	211646	+	LIHGCB_00203		Small ribosomal subunit protein uS5	SO:0001217, UniRef:UniRef50_A0A7X7RJ92
+contig_1	cds	211649	211834	+	LIHGCB_00204		Large ribosomal subunit protein uL30	SO:0001217, UniRef:UniRef50_E4RQR2
+contig_1	cds	211834	212295	+	LIHGCB_00205		Large ribosomal subunit protein uL15	SO:0001217, UniRef:UniRef50_Q6AP51
+contig_1	cds	212303	213622	+	LIHGCB_00206		hypothetical protein	
+contig_1	cds	213661	213774	+	LIHGCB_00207		hypothetical protein	PFAM:PF00444.23
+contig_1	cds	213790	214155	+	LIHGCB_00208		Small ribosomal subunit protein uS13	SO:0001217, UniRef:UniRef50_Q8DML1
+contig_1	cds	214174	214554	+	LIHGCB_00209		Small ribosomal subunit protein uS11	SO:0001217, UniRef:UniRef50_O66485
+contig_1	cds	214569	215624	+	LIHGCB_00210		DNA-directed RNA polymerase subunit alpha	SO:0001217, UniRef:UniRef50_G0G9S3
+contig_1	cds	215614	216108	+	LIHGCB_00211		hypothetical protein	
+contig_1	cds	216132	216329	+	LIHGCB_00212		hypothetical protein	
+contig_1	cds	216514	217197	+	LIHGCB_00213		hypothetical protein	
+contig_1	cds	217313	219220	+	LIHGCB_00214	dnaK	Chaperone protein DnaK	SO:0001217, UniRef:UniRef50_Q2JI64
+contig_1	cds	219389	220591	+	LIHGCB_00215	dnaJ	Chaperone protein DnaJ	SO:0001217, UniRef:UniRef50_Q73Q15
+contig_1	cds	220768	222237	+	LIHGCB_00216		hypothetical protein	
+contig_1	cds	222241	224388	+	LIHGCB_00217		hypothetical protein	
+contig_1	cds	224417	224575	+	LIHGCB_00218		hypothetical protein	
+contig_1	cds	224572	224748	+	LIHGCB_00219		hypothetical protein	PFAM:PF01740.26
+contig_1	cds	224735	225532	+	LIHGCB_00220		hypothetical protein	
+contig_1	cds	225542	225988	+	LIHGCB_00221		Uncharacterized protein TP_0222	SO:0001217, UniRef:UniRef50_O83251
+contig_1	cds	226125	227564	+	LIHGCB_00222		hypothetical protein	PFAM:PF00155.27
+contig_1	cds	227598	227708	+	LIHGCB_00223		hypothetical protein	
+contig_1	cds	227754	228494	+	LIHGCB_00224		hypothetical protein	PFAM:PF13306.12
+contig_1	cds	228538	228645	+	LIHGCB_00225		hypothetical protein	
+contig_1	rRNA	228678	230226	+	LIHGCB_00226	rrs	16S ribosomal RNA	GO:0003735, GO:0005840, KEGG:K01977, RFAM:RF00177, SO:0001000
+contig_1	tRNA	230339	230412	+	LIHGCB_00227	trnI	tRNA-Ile(gat)	SO:0000263
+contig_1	rRNA	230522	233474	+	LIHGCB_00228	rrl	23S ribosomal RNA	GO:0003735, GO:0005840, KEGG:K01980, RFAM:RF02541, SO:0001001
+contig_1	rRNA	233523	233633	+	LIHGCB_00229	rrf	5S ribosomal RNA	GO:0003735, GO:0005840, KEGG:K01985, RFAM:RF00001, SO:0000652
+contig_1	cds	233647	234333	-	LIHGCB_00230		Uncharacterized protein TP_0226	SO:0001217, UniRef:UniRef50_O83254
+contig_1	cds	234386	235153	-	LIHGCB_00231		Cobalt ABC transporter, ATP-binding protein	SO:0001217, UniRef:UniRef50_O83255
+contig_1	cds	235220	235798	-	LIHGCB_00232		hypothetical protein	
+contig_1	cds	236000	236812	+	LIHGCB_00233		hypothetical protein	PFAM:PF03167.24
+contig_1	cds	236817	238790	+	LIHGCB_00234		Primosomal protein N'	SO:0001217, UniRef:UniRef50_O83258
+contig_1	cds	238891	239541	+	LIHGCB_00235		hypothetical protein	
+contig_1	cds	239788	240333	+	LIHGCB_00236		Anti-sigma factor antagonist	SO:0001217, UniRef:UniRef50_A0A1V5WKF9
+contig_1	tRNA	240468	240540	+	LIHGCB_00237	trnT	tRNA-Thr(ggt)	SO:0000270
+contig_1	cds	240569	240739	+	LIHGCB_00238		Large ribosomal subunit protein bL33	SO:0001217, UniRef:UniRef50_O83262
+contig_1	tRNA	240794	240866	+	LIHGCB_00239	trnW	tRNA-Trp(cca)	SO:0000271
+contig_1	cds	240889	241068	+	LIHGCB_00240		hypothetical protein	
+contig_1	cds	241078	241635	+	LIHGCB_00241	nusG	Transcription termination/antitermination protein NusG	SO:0001217, UniRef:UniRef50_O83264
+contig_1	cds	241742	242182	+	LIHGCB_00242		Large ribosomal subunit protein uL11	SO:0001217, UniRef:UniRef50_P10055
+contig_1	cds	242179	242859	+	LIHGCB_00243		Large ribosomal subunit protein uL1	SO:0001217, UniRef:UniRef50_H7ENF2
+contig_1	cds	242861	243403	+	LIHGCB_00244		Large ribosomal subunit protein uL10	SO:0001217, UniRef:UniRef50_S3L9G9
+contig_1	cds	243512	243901	+	LIHGCB_00245		Large ribosomal subunit protein bL12	SO:0001217, UniRef:UniRef50_Q8VVE2
+contig_1	cds	244165	247701	+	LIHGCB_00246		DNA-directed RNA polymerase subunit beta	SO:0001217, UniRef:UniRef50_A0A1V6BTB6
+contig_1	cds	247714	251964	+	LIHGCB_00247		DNA-directed RNA polymerase subunit beta'	SO:0001217, UniRef:UniRef50_A0A098QS40
+contig_1	cds	252067	252441	+	LIHGCB_00248		30S ribosomal protein S12	SO:0001217, UniRef:UniRef50_A0A962M7M0
+contig_1	cds	252463	252933	+	LIHGCB_00249		Small ribosomal subunit protein uS7	SO:0001217, UniRef:UniRef50_P02359
+contig_1	cds	253067	256390	+	LIHGCB_00250		Uncharacterized protein TP_0245	SO:0001217, UniRef:UniRef50_O83273
+contig_1	cds	256377	258329	+	LIHGCB_00251		hypothetical protein	PFAM:PF00092.34
+contig_1	cds	258422	259453	+	LIHGCB_00252		MurNAc-LAA domain-containing protein	SO:0001217, UniRef:UniRef50_M2AYA5
+contig_1	cds	259450	259923	+	LIHGCB_00253		hypothetical protein	
+contig_1	cds	260002	261054	+	LIHGCB_00254		Flagellar filament outer layer protein	SO:0001217, UniRef:UniRef50_P18193
+contig_1	cds	261167	261454	+	LIHGCB_00255		Small ribosomal subunit protein bS20	SO:0001217, UniRef:UniRef50_B2S2J8
+contig_1	cds	261486	261803	+	LIHGCB_00256		hypothetical protein	PFAM:PF00216.26, PFAM:PF18291.6
+contig_1	cds	261793	263433	+	LIHGCB_00257		hypothetical protein	PFAM:PF20154.4
+contig_1	cds	263424	263837	+	LIHGCB_00258		hypothetical protein	PFAM:PF04519.19
+contig_1	cds	264074	265633	+	LIHGCB_00259		Transcription termination factor Rho	SO:0001217, UniRef:UniRef50_P33561
+contig_1	cds	265752	265955	+	LIHGCB_00260		Large ribosomal subunit protein bL31	SO:0001217, UniRef:UniRef50_A0A239VDH6
+contig_1	cds	266000	266650	+	LIHGCB_00261		hypothetical protein	
+contig_1	cds	266747	267817	+	LIHGCB_00262		Glycerophosphodiester phosphodiesterase	SO:0001217, UniRef:UniRef50_O30405
+contig_1	cds	267884	268594	-	LIHGCB_00263		DUF4034 domain-containing protein	SO:0001217, UniRef:UniRef50_A0A7C6I9Q3
+contig_1	cds	268673	269275	+	LIHGCB_00264	lysM	LysM domain protein	SO:0001217, UniRef:UniRef50_A0A0B7H2T3
+contig_1	cds	269406	270686	-	LIHGCB_00265		hypothetical protein	PFAM:PF08239.17
+contig_1	cds	270915	271910	+	LIHGCB_00266		Cyclic nucleotide-binding domain-containing protein	SO:0001217, UniRef:UniRef50_A0A2G6QNB0
+contig_1	cds	271903	272562	+	LIHGCB_00267		Cyclic nucleotide-binding domain-containing protein	SO:0001217, UniRef:UniRef50_M2AWM9
+contig_1	cds	272753	274360	+	LIHGCB_00268		Fibronectin type-III domain-containing protein	SO:0001217, UniRef:UniRef50_O83287
+contig_1	cds	274365	275021	+	LIHGCB_00269		Deoxyribose-phosphate aldolase	SO:0001217, UniRef:UniRef50_O83288
+contig_1	tmRNA	275081	275432	+	LIHGCB_00270	ssrA	transfer-messenger RNA, SsrA	SO:0000584
+contig_1	cds	275453	276820	-	LIHGCB_00271		Amino acid ABC transporter, permease protein	SO:0001217, UniRef:UniRef50_A0A0H3BK28
+contig_1	cds	276890	276979	+	LIHGCB_00272		hypothetical protein	
+contig_1	cds	276925	277032	+	LIHGCB_00273		hypothetical protein	
+contig_1	rRNA	277065	278613	+	LIHGCB_00274	rrs	16S ribosomal RNA	GO:0003735, GO:0005840, KEGG:K01977, RFAM:RF00177, SO:0001000
+contig_1	tRNA	278725	278798	+	LIHGCB_00275	trnA	tRNA-Ala(tgc)	SO:0000254
+contig_1	rRNA	278919	281871	+	LIHGCB_00276	rrl	23S ribosomal RNA	GO:0003735, GO:0005840, KEGG:K01980, RFAM:RF02541, SO:0001001
+contig_1	rRNA	281920	282030	+	LIHGCB_00277	rrf	5S ribosomal RNA	GO:0003735, GO:0005840, KEGG:K01985, RFAM:RF00001, SO:0000652
+contig_1	cds	282088	282453	+	LIHGCB_00278		Polymer-forming cytoskeletal protein	SO:0001217, UniRef:UniRef50_O83291
+contig_1	cds	282483	283103	+	LIHGCB_00279		Tetratricopeptide repeat protein	SO:0001217, UniRef:UniRef50_O83292
+contig_1	cds	283113	284561	+	LIHGCB_00280		hypothetical protein	PFAM:PF04055.27
+contig_1	cds	284545	286071	+	LIHGCB_00281		Polynucleotide adenylyltransferase	SO:0001217, UniRef:UniRef50_F7XS94
+contig_1	cds	286068	287042	-	LIHGCB_00282	parB	putative chromosome-partitioning protein ParB	SO:0001217, UniRef:UniRef50_O83295
+contig_1	cds	287029	287790	-	LIHGCB_00283		Sporulation initiation inhibitor protein Soj	SO:0001217, UniRef:UniRef50_A0A644W2Q4
+contig_1	cds	287923	288714	+	LIHGCB_00284		hypothetical protein	
+contig_1	cds	288752	289252	-	LIHGCB_00285		tRNA-specific adenosine deaminase	SO:0001217, UniRef:UniRef50_A0A1V6EKM2
+contig_1	cds	289341	290090	-	LIHGCB_00286		WecB/TagA/CpsF family glycosyl transferase	SO:0001217, UniRef:UniRef50_S3L7J4
+contig_1	cds	290069	290953	-	LIHGCB_00287		hypothetical protein	PFAM:PF04452.19, PFAM:PF20260.4
+contig_1	cds	291123	292469	-	LIHGCB_00288		C-terminal processing peptidase	SO:0001217, UniRef:UniRef50_F7XSA0
+contig_1	cds	292876	295374	+	LIHGCB_00289		Cytidylate kinase	SO:0001217, UniRef:UniRef50_S6A0W4
+contig_1	cds	295637	296356	+	LIHGCB_00290		hypothetical protein	PFAM:PF07719.23, PFAM:PF13424.12, PFAM:PF13432.12
+contig_1	cds	296453	297013	+	LIHGCB_00291		hypothetical protein	PFAM:PF01467.32
+contig_1	cds	297118	298797	+	LIHGCB_00292		4Fe4S-binding SPASM domain-containing protein	SO:0001217, UniRef:UniRef50_F7XSA5
+contig_1	cds	298760	299725	+	LIHGCB_00293		Glycosyltransferase	SO:0001217, UniRef:UniRef50_F7XSA6
+contig_1	cds	299725	302298	+	LIHGCB_00294		hypothetical protein	PFAM:PF08241.18, PFAM:PF08242.18, PFAM:PF13489.12, PFAM:PF13649.12
+contig_1	cds	302353	303186	+	LIHGCB_00295		hypothetical protein	PFAM:PF00702.32, PFAM:PF08282.18
+contig_1	cds	303223	304104	+	LIHGCB_00296		FMN hydroxy acid dehydrogenase domain-containing protein	SO:0001217, UniRef:UniRef50_O83315
+contig_1	cds	304131	305348	+	LIHGCB_00297		Outer membrane protein Tpn50	SO:0001217, UniRef:UniRef50_P38369
+contig_1	cds	305514	306779	+	LIHGCB_00298		ribose-phosphate diphosphokinase	SO:0001217, UniRef:UniRef50_A0A1V6E9B6
+contig_1	cds	306798	308042	+	LIHGCB_00299		Carhohydrate kinase (XylB)	SO:0001217, UniRef:UniRef50_O83318
+contig_1	cds	308128	308763	+	LIHGCB_00300		hypothetical protein	PFAM:PF01121.26
+contig_1	cds	308766	309539	+	LIHGCB_00301		hypothetical protein	PFAM:PF05036.18
+contig_1	cds	309672	310703	+	LIHGCB_00302	rfuA	ABC transporter riboflavin-binding protein RfuA	SO:0001217, UniRef:UniRef50_Q56328
+contig_1	cds	310703	312460	+	LIHGCB_00303	rfuB	putative riboflavin import ATP-binding protein RfuB	SO:0001217, UniRef:UniRef50_O83321
+contig_1	cds	312457	313590	+	LIHGCB_00304		hypothetical protein	
+contig_1	cds	313581	314522	+	LIHGCB_00305	rfuD	putative riboflavin import permease protein RfuD	SO:0001217, UniRef:UniRef50_O83324
+contig_1	cds	314509	316455	-	LIHGCB_00306		hypothetical protein	PFAM:PF02518.31, PFAM:PF08676.16, PFAM:PF13589.12
+contig_1	cds	316468	319395	-	LIHGCB_00307		Uncharacterized protein TP_0304	SO:0001217, UniRef:UniRef50_O83326
+contig_1	cds	319466	321244	+	LIHGCB_00308		CTP synthase	SO:0001217, UniRef:UniRef50_O83327
+contig_1	cds	321409	322023	+	LIHGCB_00309		Small ribosomal subunit protein uS4	SO:0001217, UniRef:UniRef50_Q73LC2
+contig_1	cds	322109	323137	+	LIHGCB_00310		hypothetical protein	PFAM:PF03793.24
+contig_1	cds	323112	324077	+	LIHGCB_00311		Amino acid ABC transporter, periplasmic binding protein (HisJ)	SO:0001217, UniRef:UniRef50_O83330
+contig_1	cds	324143	324361	+	LIHGCB_00312		hypothetical protein	
+contig_1	cds	324375	324959	+	LIHGCB_00313		hypothetical protein	PFAM:PF00497.25
+contig_1	cds	324982	325344	+	LIHGCB_00314		hypothetical protein	PFAM:PF00436.31
+contig_1	cds	325417	326430	+	LIHGCB_00315		DUF368 domain-containing protein	SO:0001217, UniRef:UniRef50_O83334
+contig_1	cds	326609	326905	-	LIHGCB_00316		hypothetical protein	
+contig_1	cds	327048	328790	+	LIHGCB_00317		hypothetical protein	PFAM:PF02722.21
+contig_1	cds	328849	329121	-	LIHGCB_00318		hypothetical protein	PFAM:PF10895.14
+contig_1	cds	329210	329554	-	LIHGCB_00319		Uncharacterized protein TP_0618	SO:0001217, UniRef:UniRef50_O83627
+contig_1	cds	329624	330928	-	LIHGCB_00320		hypothetical protein	PFAM:PF02722.21
+contig_1	cds	331101	331397	+	LIHGCB_00321		hypothetical protein	
+contig_1	cds	331645	332706	+	LIHGCB_00322	tmpC	Membrane lipoprotein TmpC	SO:0001217, UniRef:UniRef50_P29724
+contig_1	cds	332947	334548	+	LIHGCB_00323		Ribose/galactose ABC transporter, ATP-binding protein (RbsA-2)	SO:0001217, UniRef:UniRef50_O83341
+contig_1	cds	334545	335660	+	LIHGCB_00324		hypothetical protein	
+contig_1	cds	335657	336607	+	LIHGCB_00325		hypothetical protein	
+contig_1	cds	336711	341117	+	LIHGCB_00326		Hypothetical outer membrane protein	SO:0001217, UniRef:UniRef50_F7XSD9
+contig_1	cds	341147	343630	+	LIHGCB_00327		Putative outer membrane protein assembly factor TP_0326	SO:0001217, UniRef:UniRef50_O83346
+contig_1	cds	343687	344205	+	LIHGCB_00328		Outer membrane protein	SO:0001217, UniRef:UniRef50_S3L6C5
+contig_1	cds	344261	346963	+	LIHGCB_00329	mutS	DNA mismatch repair protein MutS	SO:0001217, UniRef:UniRef50_P61672
+contig_1	tRNA	348604	348686	-	LIHGCB_00330	trnL	tRNA-Leu(caa)	SO:0000264
+contig_1	cds	348778	350574	-	LIHGCB_00331		Uncharacterized AAA domain-containing protein ycf46	SO:0001217, UniRef:UniRef50_A0A1V5TCF1
+contig_1	tRNA	350639	350710	-	LIHGCB_00332	trnG	tRNA-Gly(tcc)	SO:0000260
+contig_1	cds	350804	352270	-	LIHGCB_00333		6-phosphogluconate dehydrogenase, decarboxylating	SO:0001217, UniRef:UniRef50_O83351
+contig_1	cds	352449	353141	+	LIHGCB_00334	lolA	Outer membrane lipoprotein carrier protein LolA	SO:0001217, UniRef:UniRef50_Q73JG8
+contig_1	cds	353166	354383	+	LIHGCB_00335		HTH cro/C1-type domain-containing protein	SO:0001217, UniRef:UniRef50_S6A8A2
+contig_1	cds	354380	354844	-	LIHGCB_00336		hypothetical protein	
+contig_1	cds	354849	356462	+	LIHGCB_00337		DNA-T family bacterial competence-related DNA transformation transporter	SO:0001217, UniRef:UniRef50_F7XSE8
+contig_1	cds	356443	357300	+	LIHGCB_00338		hypothetical protein	PFAM:PF00398.26
+contig_1	cds	357318	357806	+	LIHGCB_00339		hypothetical protein	
+contig_1	cds	357818	358813	+	LIHGCB_00340		Pseudouridine synthase	SO:0001217, UniRef:UniRef50_F7XSF1
+contig_1	cds	358799	360271	-	LIHGCB_00341		tetrahydrofolate synthase	SO:0001217, UniRef:UniRef50_F7XSF2
+contig_1	cds	360290	361735	+	LIHGCB_00342		UDP-N-acetylmuramate--L-alanine ligase	SO:0001217, UniRef:UniRef50_O83361
+contig_1	cds	361856	362416	+	LIHGCB_00343		Cytidylate kinase	SO:0001217, UniRef:UniRef50_O83362
+contig_1	cds	362410	363243	+	LIHGCB_00344		Adenine DNA glycosylase	SO:0001217, UniRef:UniRef50_F7XRC8
+contig_1	cds	363248	366694	-	LIHGCB_00345		hypothetical protein	PFAM:PF00270.35, PFAM:PF00271.37, PFAM:PF02559.22, PFAM:PF03461.20, PFAM:PF17757.6
+contig_1	cds	366823	367914	+	LIHGCB_00346		Phospho-N-acetylmuramoyl-pentapeptide-transferase	SO:0001217, UniRef:UniRef50_Q73KG9
+contig_1	cds	368071	368772	+	LIHGCB_00347		Lipoprotein	SO:0001217, UniRef:UniRef50_O83366
+contig_1	cds	368876	369586	+	LIHGCB_00348		hypothetical protein	PFAM:PF10895.14, SO:0001217, UniRef:UniRef50_O83367
+contig_1	cds	369607	370722	-	LIHGCB_00349		hypothetical protein	SO:0001217, UniRef:UniRef50_F7XSG0
+contig_1	cds	370701	371231	-	LIHGCB_00350		hypothetical protein	PFAM:PF00254.34
+contig_1	cds	371444	372730	+	LIHGCB_00351		hypothetical protein	
+contig_1	cds	372727	373617	+	LIHGCB_00352		Glutamate 5-kinase	SO:0001217, UniRef:UniRef50_P74936
+contig_1	cds	373749	374006	+	LIHGCB_00353		Uncharacterized protein TP_0352	SO:0001217, UniRef:UniRef50_O83371
+contig_1	cds	374003	374512	-	LIHGCB_00354		Ribonuclease H	SO:0001217, UniRef:UniRef50_O83372
+contig_1	cds	374776	375402	+	LIHGCB_00355		hypothetical protein	PFAM:PF01712.25, PFAM:PF02223.23
+contig_1	cds	375478	375768	+	LIHGCB_00356		hypothetical protein	
+contig_1	cds	376004	376273	+	LIHGCB_00357		RRM domain-containing protein	SO:0001217, UniRef:UniRef50_S3L929
+contig_1	cds	376299	376406	+	LIHGCB_00358		hypothetical protein	
+contig_1	cds	376456	377115	+	LIHGCB_00359		hypothetical protein	PFAM:PF02237.23, PFAM:PF03099.24
+contig_1	cds	377120	378700	-	LIHGCB_00360		hypothetical protein	PFAM:PF03065.20, PFAM:PF09210.16
+contig_1	cds	378712	379347	-	LIHGCB_00361		hypothetical protein	
+contig_1	cds	379564	379734	+	LIHGCB_00362		50S ribosomal protein L33	SO:0001217, UniRef:UniRef50_A0A5C1QF15
+contig_1	cds	379731	380534	-	LIHGCB_00363		Acyltransferase	SO:0001217, UniRef:UniRef50_A0A0B7GW17
+contig_1	cds	380655	380891	+	LIHGCB_00364		Large ribosomal subunit protein bL28	SO:0001217, UniRef:UniRef50_P96131
+contig_1	cds	381389	383821	+	LIHGCB_00365	cheA	Chemotaxis protein CheA	SO:0001217, UniRef:UniRef50_P96123
+contig_1	cds	383848	385182	+	LIHGCB_00366		hypothetical protein	PFAM:PF01584.24, PFAM:PF01739.24
+contig_1	cds	385204	385668	+	LIHGCB_00367	cheX	CheY-P phosphatase CheX	SO:0001217, UniRef:UniRef50_A0A1V6BPW5
+contig_1	cds	385681	386115	+	LIHGCB_00368		Response regulatory domain-containing protein	SO:0001217, UniRef:UniRef50_E0RT59
+contig_1	cds	386419	389244	+	LIHGCB_00369		Chromosome partition protein Smc	SO:0001217, UniRef:UniRef50_O83382
+contig_1	cds	389244	389579	+	LIHGCB_00370		hypothetical protein	
+contig_1	cds	389576	391114	+	LIHGCB_00371		hypothetical protein	PFAM:PF13525.12
+contig_1	cds	391182	391445	-	LIHGCB_00372		hypothetical protein	
+contig_1	cds	391656	392492	+	LIHGCB_00373		4-diphosphocytidyl-2-C-methyl-D-erythritol kinase	SO:0001217, UniRef:UniRef50_O83386
+contig_1	tRNA	392501	392573	+	LIHGCB_00374	trnQ	tRNA-Gln(ttg)	SO:0000261
+contig_1	cds	392614	393204	+	LIHGCB_00375		hypothetical protein	PFAM:PF01386.24, PFAM:PF14693.11
+contig_1	cds	393264	394697	+	LIHGCB_00376		tRNA(Ile)-lysidine synthase	SO:0001217, UniRef:UniRef50_O83388
+contig_1	cds	394690	397008	+	LIHGCB_00377		Uncharacterized protein TP_0374	SO:0001217, UniRef:UniRef50_O83389
+contig_1	cds	397049	397408	-	LIHGCB_00378		hypothetical protein	PFAM:PF13309.12
+contig_1	cds	397692	398588	-	LIHGCB_00379		Uncharacterized protein TP_0376	SO:0001217, UniRef:UniRef50_O83391
+contig_1	cds	398676	399170	+	LIHGCB_00380		hypothetical protein	
+contig_1	cds	399245	401995	-	LIHGCB_00381	secA	Protein translocase subunit SecA	SO:0001217, UniRef:UniRef50_O07497
+contig_1	cds	402099	403919	-	LIHGCB_00382		DNA 3'-5' helicase	SO:0001217, UniRef:UniRef50_Q73J55
+contig_1	cds	404059	404775	-	LIHGCB_00383		Uncharacterized protein TP_0381	SO:0001217, UniRef:UniRef50_O83396
+contig_1	cds	405004	405453	+	LIHGCB_00384	mraZ	Transcriptional regulator MraZ	SO:0001217, UniRef:UniRef50_O83398
+contig_1	cds	405450	406589	+	LIHGCB_00385		Ribosomal RNA small subunit methyltransferase H	SO:0001217, UniRef:UniRef50_O83399
+contig_1	cds	406602	406976	+	LIHGCB_00386		hypothetical protein	
+contig_1	cds	406960	408339	+	LIHGCB_00387		UDP-N-acetylmuramoyl-tripeptide--D-alanyl-D-alanine ligase	SO:0001217, UniRef:UniRef50_O83401
+contig_1	cds	408336	409490	+	LIHGCB_00388	ftsW	putative peptidoglycan glycosyltransferase FtsW	SO:0001217, UniRef:UniRef50_F7XSJ9
+contig_1	cds	409468	410283	+	LIHGCB_00389		hypothetical protein	PFAM:PF08478.15
+contig_1	cds	410296	411540	+	LIHGCB_00390	ftsA	Cell division protein FtsA	SO:0001217, UniRef:UniRef50_S6A1D9
+contig_1	cds	411589	412842	+	LIHGCB_00391	ftsZ	Cell division protein FtsZ	SO:0001217, UniRef:UniRef50_O83405
+contig_1	cds	412839	413759	+	LIHGCB_00392	xerD	Integrase/recombinase XerD	SO:0001217, UniRef:UniRef50_S6A4N6
+contig_1	cds	413749	414501	+	LIHGCB_00393		hypothetical protein	PFAM:PF00515.34, PFAM:PF03704.23, PFAM:PF07719.23, PFAM:PF13174.12, PFAM:PF13176.12, PFAM:PF13181.12, PFAM:PF13414.12, PFAM:PF13424.12, PFAM:PF13428.12, PFAM:PF14559.12
+contig_1	cds	414498	415406	+	LIHGCB_00394		SMF family protein	SO:0001217, UniRef:UniRef50_F7XSK5
+contig_1	cds	415439	417634	+	LIHGCB_00395		DNA topoisomerase 1	SO:0001217, UniRef:UniRef50_O83409
+contig_1	cds	417627	418520	+	LIHGCB_00396	xerC	Tyrosine recombinase XerC	SO:0001217, UniRef:UniRef50_Q73NE4
+contig_1	cds	418668	419078	+	LIHGCB_00397		hypothetical protein	
+contig_1	cds	419096	419551	+	LIHGCB_00398	flgC	Flagellar basal-body rod protein FlgC	SO:0001217, UniRef:UniRef50_Q73NE1
+contig_1	cds	419607	419981	+	LIHGCB_00399	fliE	Flagellar hook-basal body complex protein FliE	SO:0001217, UniRef:UniRef50_O83413
+contig_1	cds	420098	421801	+	LIHGCB_00400	fliF	FliF	SO:0001217, UniRef:UniRef50_O06680
+contig_1	cds	421806	422864	+	LIHGCB_00401	fliG	Flagellar motor switch protein FliG	SO:0001217, UniRef:UniRef50_A0A514LEL7
+contig_1	cds	422912	423841	+	LIHGCB_00402		hypothetical protein	
+contig_1	cds	423869	425212	+	LIHGCB_00403		Flagellum-specific ATP synthase	SO:0001217, UniRef:UniRef50_P23445
+contig_1	cds	425241	425693	+	LIHGCB_00404		hypothetical protein	PFAM:PF02050.21
+contig_1	cds	425690	426223	-	LIHGCB_00405		hypothetical protein	
+contig_1	cds	426445	426687	+	LIHGCB_00406		hypothetical protein	
+contig_1	cds	426677	427666	+	LIHGCB_00407		Glutamate racemase	SO:0001217, UniRef:UniRef50_O83421
+contig_1	cds	427794	428450	+	LIHGCB_00408		HAD family hydrolase	SO:0001217, UniRef:UniRef50_F7XSL9
+contig_1	cds	428546	431800	+	LIHGCB_00409		hypothetical protein	SO:0001217, UniRef:UniRef50_F7XSM0
+contig_1	cds	431918	432295	+	LIHGCB_00410		hypothetical protein	
+contig_1	cds	432292	434043	+	LIHGCB_00411	secD	Protein translocase subunit SecD	SO:0001217, UniRef:UniRef50_O83425
+contig_1	cds	434040	435302	+	LIHGCB_00412	secF	Protein translocase subunit SecF	SO:0001217, UniRef:UniRef50_O83426
+contig_1	cds	435378	435683	-	LIHGCB_00413		hypothetical protein	
+contig_1	cds	435702	437600	-	LIHGCB_00414		hypothetical protein	PFAM:PF02878.22, PFAM:PF02880.22
+contig_1	cds	437658	439058	+	LIHGCB_00415		AGCS family alanine or glycine:sodium (Na+) or proton (H+) symporter	SO:0001217, UniRef:UniRef50_F7XSM5
+contig_1	cds	439075	439599	+	LIHGCB_00416		hypothetical protein	
+contig_1	cds	439520	440881	-	LIHGCB_00417		Signal recognition particle protein	SO:0001217, UniRef:UniRef50_A0A7X8CYC8
+contig_1	cds	440874	442553	-	LIHGCB_00418		Apolipoprotein N-acyltransferase 2	SO:0001217, UniRef:UniRef50_O83432
+contig_1	cds	442607	443773	+	LIHGCB_00419		Putative galactokinase	SO:0001217, UniRef:UniRef50_O83433
+contig_1	cds	443770	444522	+	LIHGCB_00420		hypothetical protein	PFAM:PF01975.23
+contig_1	cds	444707	446725	+	LIHGCB_00421	pknD	Serine/threonine-protein kinase PknD	SO:0001217, UniRef:UniRef50_A0A1V5TBT7
+contig_1	cds	446766	447734	+	LIHGCB_00422		hypothetical protein	
+contig_1	cds	447759	448565	+	LIHGCB_00423		hypothetical protein	
+contig_1	cds	448691	449305	+	LIHGCB_00424		hypothetical protein	
+contig_1	cds	449305	449850	+	LIHGCB_00425		hypothetical protein	
+contig_1	cds	449847	451616	+	LIHGCB_00426		V-type ATP synthase alpha chain	SO:0001217, UniRef:UniRef50_Q6MAJ5
+contig_1	cds	451620	452912	+	LIHGCB_00427		V-type ATP synthase beta chain	SO:0001217, UniRef:UniRef50_O51120
+contig_1	cds	452924	453544	+	LIHGCB_00428		V-type ATP synthase subunit D 1	SO:0001217, UniRef:UniRef50_O83443
+contig_1	cds	453541	455409	+	LIHGCB_00429		V-type ATP synthase subunit I 1	SO:0001217, UniRef:UniRef50_O83444
+contig_1	cds	455446	455868	+	LIHGCB_00430		V-type ATPase, K subunit	SO:0001217, UniRef:UniRef50_Q73M31
+contig_1	cds	455902	456723	+	LIHGCB_00431		Type III pantothenate kinase	SO:0001217, UniRef:UniRef50_O83446
+contig_1	cds	456784	457317	+	LIHGCB_00432		hypothetical protein	
+contig_1	cds	457372	459651	+	LIHGCB_00433		Acidic repeat protein	SO:0001217, UniRef:UniRef50_F7XSP3
+contig_1	cds	459749	460219	-	LIHGCB_00434		17 kDa lipoprotein	SO:0001217, UniRef:UniRef50_P29722
+contig_1	cds	460351	461433	-	LIHGCB_00435	nrnA	Bifunctional oligoribonuclease and PAP phosphatase NrnA	SO:0001217, UniRef:UniRef50_A0A1V5T6X9
+contig_1	cds	461399	461863	-	LIHGCB_00436		Uncharacterized protein TP_0437	SO:0001217, UniRef:UniRef50_O83451
+contig_1	cds	462004	462768	+	LIHGCB_00437		dITP/XTP pyrophosphatase	SO:0001217, UniRef:UniRef50_O83452
+contig_1	cds	462894	463367	+	LIHGCB_00438		CheW-like domain-containing protein	SO:0001217, UniRef:UniRef50_M2BJ49
+contig_1	cds	463457	464608	+	LIHGCB_00439		hypothetical protein	PFAM:PF01041.23
+contig_1	cds	464662	465522	+	LIHGCB_00440		hypothetical protein	PFAM:PF01513.26, PFAM:PF20143.4
+contig_1	cds	465515	467236	+	LIHGCB_00441	recN	DNA repair protein RecN	SO:0001217, UniRef:UniRef50_O83456
+contig_1	cds	467229	468032	+	LIHGCB_00442		Haloacid dehalogenase	SO:0001217, UniRef:UniRef50_Q73N56
+contig_1	cds	468038	469066	+	LIHGCB_00443		hypothetical protein	PFAM:PF01476.26, PFAM:PF01551.29, PFAM:PF23473.1
+contig_1	cds	469202	469831	+	LIHGCB_00444		hypothetical protein	PFAM:PF01965.30
+contig_1	cds	469828	471087	+	LIHGCB_00445		4-hydroxy-3-methylbut-2-en-1-yl diphosphate synthase (flavodoxin)	SO:0001217, UniRef:UniRef50_Q73N90
+contig_1	cds	471084	472208	+	LIHGCB_00446		Uncharacterized protein TP_0447	SO:0001217, UniRef:UniRef50_O83461
+contig_1	cds	472266	473348	+	LIHGCB_00447		Putative uracil phosphoribosyltransferase	SO:0001217, UniRef:UniRef50_O83462
+contig_1	cds	473352	473942	+	LIHGCB_00448		hypothetical protein	PFAM:PF12895.13, PFAM:PF13428.12, PFAM:PF14559.12
+contig_1	cds	474034	476130	+	LIHGCB_00449		Elongation factor G 2	SO:0001217, UniRef:UniRef50_O83464
+contig_1	cds	476391	479855	+	LIHGCB_00450		Isoleucine--tRNA ligase	SO:0001217, UniRef:UniRef50_O83466
+contig_1	cds	479899	480705	+	LIHGCB_00451		Outer membrane protein TP0453	SO:0001217, UniRef:UniRef50_O67998
+contig_1	cds	480721	481071	+	LIHGCB_00452		hypothetical protein	PFAM:PF13248.11
+contig_1	cds	481055	481744	-	LIHGCB_00453		hypothetical protein	
+contig_1	cds	481741	482715	-	LIHGCB_00454		DUF4139 domain-containing protein	SO:0001217, UniRef:UniRef50_Q73NR3
+contig_1	cds	482802	484118	-	LIHGCB_00455		hypothetical protein	
+contig_1	cds	484270	485967	+	LIHGCB_00456		hypothetical protein	SO:0001217, UniRef:UniRef50_O83470
+contig_1	cds	486058	486636	+	LIHGCB_00457	scpB	SMC-Scp complex subunit ScpB	SO:0001217, UniRef:UniRef50_O83471
+contig_1	cds	486599	487450	+	LIHGCB_00458	rsuA	RsuA family pseudouridine synthase	SO:0001217, UniRef:UniRef50_F7XSR8
+contig_1	cds	487580	488200	+	LIHGCB_00459		hypothetical protein	PFAM:PF00515.34, PFAM:PF07719.23, PFAM:PF13181.12, PFAM:PF13414.12, PFAM:PF13424.12, PFAM:PF13428.12, PFAM:PF13431.12, PFAM:PF13432.12, PFAM:PF14559.12, PFAM:PF23914.1
+contig_1	cds	488228	488617	+	LIHGCB_00460		HTH cro/C1-type domain-containing protein	SO:0001217, UniRef:UniRef50_O83474
+contig_1	cds	488669	489940	+	LIHGCB_00461		Uncharacterized lipoprotein TP_0462/TP_0463	SO:0001217, UniRef:UniRef50_O83475
+contig_1	cds	489999	490751	-	LIHGCB_00462		tRNA (guanine-N(7)-)-methyltransferase	SO:0001217, UniRef:UniRef50_O83477
+contig_1	cds	490748	491545	-	LIHGCB_00463		hypothetical protein	
+contig_1	cds	491550	492620	-	LIHGCB_00464		hypothetical protein	
+contig_1	cds	492928	494880	-	LIHGCB_00465		hypothetical protein	PFAM:PF00515.34, PFAM:PF07719.23, PFAM:PF12895.13, PFAM:PF13176.12, PFAM:PF13181.12, PFAM:PF13414.12, PFAM:PF13424.12, PFAM:PF13428.12, PFAM:PF13431.12, PFAM:PF13432.12, PFAM:PF14559.12, SO:0001217, UniRef:UniRef50_F7XSS5
+contig_1	cds	494873	495718	-	LIHGCB_00466		hypothetical protein	PFAM:PF00515.34, PFAM:PF07719.23, PFAM:PF12895.13, PFAM:PF13181.12, PFAM:PF13414.12, PFAM:PF13431.12, PFAM:PF13432.12, PFAM:PF14559.12
+contig_1	cds	495746	497119	+	LIHGCB_00467		Restriction endonuclease type IV Mrr domain-containing protein	SO:0001217, UniRef:UniRef50_O83484
+contig_1	cds	497132	499207	-	LIHGCB_00468		UvrABC system protein C	SO:0001217, UniRef:UniRef50_O83485
+contig_1	cds	499282	499908	-	LIHGCB_00469		hypothetical protein	
+contig_1	cds	499991	500728	-	LIHGCB_00470		putative transcriptional regulatory protein DET0444	SO:0001217, UniRef:UniRef50_Q3Z9B1
+contig_1	cds	500869	502476	-	LIHGCB_00471		Glucose-6-phosphate isomerase	SO:0001217, UniRef:UniRef50_O83488
+contig_1	cds	502540	503886	-	LIHGCB_00472		Acetate kinase	SO:0001217, UniRef:UniRef50_A0A0S7Y554
+contig_1	cds	503975	504679	-	LIHGCB_00473		hypothetical protein	PFAM:PF01182.26
+contig_1	cds	504740	506287	-	LIHGCB_00474		Glucose-6-phosphate 1-dehydrogenase	SO:0001217, UniRef:UniRef50_O83491
+contig_1	cds	506359	506964	-	LIHGCB_00475		DUF2715 domain-containing protein	SO:0001217, UniRef:UniRef50_O83492
+contig_1	cds	507146	507634	+	LIHGCB_00476		hypothetical protein	
+contig_1	cds	507666	509915	+	LIHGCB_00477		TIGR03545 family protein	SO:0001217, UniRef:UniRef50_F7XST7
+contig_1	cds	509982	511106	-	LIHGCB_00478		Uncharacterized protein TP_0483	SO:0001217, UniRef:UniRef50_O83496
+contig_1	cds	511093	513015	-	LIHGCB_00479		Uncharacterized protein TP_0484	SO:0001217, UniRef:UniRef50_O83497
+contig_1	cds	513002	514846	-	LIHGCB_00480		hypothetical protein	PFAM:PF00211.25, PFAM:PF00672.30
+contig_1	cds	514843	516438	-	LIHGCB_00481		Antigen, p83/100	SO:0001217, UniRef:UniRef50_O83499
+contig_1	cds	516527	518548	-	LIHGCB_00482		hypothetical protein	PFAM:PF13360.12, SO:0001217, UniRef:UniRef50_F7XSU2
+contig_1	cds	518627	520936	+	LIHGCB_00483		Methyl-accepting chemotaxis protein	SO:0001217, UniRef:UniRef50_S3LQU2
+contig_1	tRNA	521049	521123	+	LIHGCB_00484	trnT	tRNA-Thr(tgt)	SO:0000270
+contig_1	tRNA	521133	521214	+	LIHGCB_00485	trnY	tRNA-Tyr(gta)	SO:0000272
+contig_1	cds	521396	522364	+	LIHGCB_00486		Metallo-beta-lactamase domain-containing protein	SO:0001217, UniRef:UniRef50_O83502
+contig_1	cds	522361	522549	+	LIHGCB_00487		hypothetical protein	
+contig_1	cds	522556	523611	+	LIHGCB_00488		Endolytic murein transglycosylase	SO:0001217, UniRef:UniRef50_O83504
+contig_1	cds	523615	525432	+	LIHGCB_00489		DNA primase	SO:0001217, UniRef:UniRef50_O83505
+contig_1	cds	525432	527264	+	LIHGCB_00490	rpoD	RNA polymerase sigma factor RpoD	SO:0001217, UniRef:UniRef50_A0A098R2B9
+contig_1	cds	527274	528095	+	LIHGCB_00491		hypothetical protein	PFAM:PF02591.20
+contig_1	ncRNA	528116	528458	+	LIHGCB_00492	RNaseP_bact_a	Bacterial RNase P class A	RFAM:RF00010, SO:0000386
+contig_1	cds	528470	529414	+	LIHGCB_00493		Tetratricopeptide repeat protein	SO:0001217, UniRef:UniRef50_O83509
+contig_1	cds	529427	530461	+	LIHGCB_00494	mreB	Cell shape-determining protein MreB	SO:0001217, UniRef:UniRef50_A0A6N2UAA3
+contig_1	cds	530466	531329	+	LIHGCB_00495	mreC	Cell shape-determining protein MreC	SO:0001217, UniRef:UniRef50_F7XSV0
+contig_1	cds	531326	531832	+	LIHGCB_00496		hypothetical protein	
+contig_1	cds	531833	533707	+	LIHGCB_00497		Peptidoglycan glycosyltransferase	SO:0001217, UniRef:UniRef50_H7EM86
+contig_1	cds	533704	535005	+	LIHGCB_00498	rodA	Peptidoglycan glycosyltransferase RodA	SO:0001217, UniRef:UniRef50_U1FLW8
+contig_1	cds	535031	535927	+	LIHGCB_00499		hypothetical protein	PFAM:PF00023.36, PFAM:PF12796.13, PFAM:PF13606.12, PFAM:PF13637.12, PFAM:PF13857.12
+contig_1	cds	535927	536469	+	LIHGCB_00500		hypothetical protein	
+contig_1	cds	536600	537934	-	LIHGCB_00501		Hexokinase	SO:0001217, UniRef:UniRef50_F7XSV6
+contig_1	tRNA	538294	538366	+	LIHGCB_00502	trnK	tRNA-Lys(ctt)	SO:0000265
+contig_1	tRNA	538426	538506	+	LIHGCB_00503	trnL	tRNA-Leu(tag)	SO:0000264
+contig_1	tRNA	538517	538588	+	LIHGCB_00504	trnG	tRNA-Gly(gcc)	SO:0000260
+contig_1	cds	538669	539997	+	LIHGCB_00505		Trigger factor	SO:0001217, UniRef:UniRef50_O83519
+contig_1	cds	539990	540601	+	LIHGCB_00506		ATP-dependent Clp protease proteolytic subunit	SO:0001217, UniRef:UniRef50_A0A1X9SQ81
+contig_1	cds	540588	541835	+	LIHGCB_00507	clpX	ATP-dependent Clp protease ATP-binding subunit ClpX	SO:0001217, UniRef:UniRef50_A0A4Q3SQQ7
+contig_1	cds	541932	542498	+	LIHGCB_00508		Alkyl hydroperoxide reductase C	SO:0001217, UniRef:UniRef50_P0AE08
+contig_1	cds	542679	544487	-	LIHGCB_00509		Elongation factor 4	SO:0001217, UniRef:UniRef50_O83523
+contig_1	cds	544553	545164	+	LIHGCB_00510		CarD-like/TRCF RNAP-interacting domain-containing protein	SO:0001217, UniRef:UniRef50_S3L8C6
+contig_1	cds	545161	546408	+	LIHGCB_00511		Bifunctional enzyme IspD/IspF	SO:0001217, UniRef:UniRef50_O83525
+contig_1	cds	546428	547882	+	LIHGCB_00512		Trk family potassium (K+) transporter, membrane protein	SO:0001217, UniRef:UniRef50_F7XRD5
+contig_1	cds	547948	550878	+	LIHGCB_00513		UvrABC system protein A	SO:0001217, UniRef:UniRef50_O83527
+contig_1	cds	550875	553856	+	LIHGCB_00514	lptD	LptD C-terminal domain-containing protein	SO:0001217, UniRef:UniRef50_A0A0H3BKN6
+contig_1	cds	553870	555450	-	LIHGCB_00515	murJ	putative lipid II flippase MurJ	SO:0001217, UniRef:UniRef50_O83529
+contig_1	cds	555447	556037	-	LIHGCB_00516	ruvC	Crossover junction endodeoxyribonuclease RuvC	SO:0001217, UniRef:UniRef50_O83530
+contig_1	cds	556019	556711	-	LIHGCB_00517		Thiamine diphosphokinase	SO:0001217, UniRef:UniRef50_O83531
+contig_1	cds	556708	558084	-	LIHGCB_00518		Sigma-54 factor interaction domain-containing protein	SO:0001217, UniRef:UniRef50_M2BGQ4
+contig_1	cds	558094	559284	-	LIHGCB_00519		histidine kinase	SO:0001217, UniRef:UniRef50_C8PS47
+contig_1	cds	559281	560552	-	LIHGCB_00520		DNA-directed DNA polymerase III gamma and tau subunits	SO:0001217, UniRef:UniRef50_F7XSW9
+contig_1	cds	560563	561042	-	LIHGCB_00521		hypothetical protein	
+contig_1	cds	561039	562193	-	LIHGCB_00522		UDP-N-acetylglucosamine--N-acetylmuramyl-(pentapeptide) pyrophosphoryl-undecaprenol N-acetylglucosamine transferase	SO:0001217, UniRef:UniRef50_Q73L91
+contig_1	cds	562197	564842	-	LIHGCB_00523		Lon protease	SO:0001217, UniRef:UniRef50_C8PTN6
+contig_1	cds	564978	565541	+	LIHGCB_00524		Elongation factor P	SO:0001217, UniRef:UniRef50_O83537
+contig_1	cds	565689	567695	+	LIHGCB_00525		RNA helicase	SO:0001217, UniRef:UniRef50_O83538
+contig_1	cds	567743	568372	-	LIHGCB_00526		hypothetical protein	
+contig_1	cds	568467	569909	-	LIHGCB_00527		V-type ATP synthase beta chain	SO:0001217, UniRef:UniRef50_A0A373Q7I8
+contig_1	cds	569906	571723	-	LIHGCB_00528		V-type ATP synthase alpha chain 2	SO:0001217, UniRef:UniRef50_O83541
+contig_1	cds	571720	572346	-	LIHGCB_00529		hypothetical protein	
+contig_1	cds	572352	572669	-	LIHGCB_00530		hypothetical protein	
+contig_1	cds	572691	572987	-	LIHGCB_00531		hypothetical protein	PFAM:PF00137.26
+contig_1	cds	572989	574674	-	LIHGCB_00532		hypothetical protein	
+contig_1	cds	574667	575692	-	LIHGCB_00533		hypothetical protein	
+contig_1	cds	575696	575980	-	LIHGCB_00534		hypothetical protein	
+contig_1	cds	576037	576447	-	LIHGCB_00535		hypothetical protein	
+contig_1	cds	576602	577351	-	LIHGCB_00536		Triosephosphate isomerase	SO:0001217, UniRef:UniRef50_A0A1B3B858
+contig_1	cds	577502	578758	-	LIHGCB_00537		Phosphoglycerate kinase	SO:0001217, UniRef:UniRef50_O83549
+contig_1	tRNA	578976	579048	+	LIHGCB_00538	trnN	tRNA-Asn(gtt)	SO:0000257
+contig_1	cds	579234	579599	+	LIHGCB_00539		Anti-sigma factor antagonist	SO:0001217, UniRef:UniRef50_A0A1V5WP12
+contig_1	cds	579729	580688	+	LIHGCB_00540		GTPase Era	SO:0001217, UniRef:UniRef50_O83552
+contig_1	cds	580685	582406	-	LIHGCB_00541		Pyrophosphate--fructose 6-phosphate 1-phosphotransferase	SO:0001217, UniRef:UniRef50_Q9EZ02
+contig_1	cds	582465	583148	-	LIHGCB_00542		hypothetical protein	PFAM:PF00633.29, PFAM:PF01330.27, PFAM:PF14520.12, PFAM:PF21176.3
+contig_1	cds	583190	585064	-	LIHGCB_00543		hypothetical protein	PFAM:PF03372.29
+contig_1	cds	585089	586036	-	LIHGCB_00544	mglB	D-galactose/methyl-galactoside binding periplasmic protein MglB	SO:0001217, UniRef:UniRef50_O83556
+contig_1	cds	586135	587850	-	LIHGCB_00545		Periplasmic serine protease, putative	SO:0001217, UniRef:UniRef50_O83557
+contig_1	cds	587847	588908	-	LIHGCB_00546		4-hydroxy-3-methylbut-2-enyl diphosphate reductase	SO:0001217, UniRef:UniRef50_O83558
+contig_1	cds	589117	590430	+	LIHGCB_00547		UPF0164 protein TP_0548	SO:0001217, UniRef:UniRef50_O83559
+contig_1	cds	590580	593024	+	LIHGCB_00548	clpA	ClpA	SO:0001217, UniRef:UniRef50_E9KYV3
+contig_1	cds	593065	594552	-	LIHGCB_00549	mnmE	tRNA modification GTPase MnmE	SO:0001217, UniRef:UniRef50_O83561
+contig_1	cds	594556	595644	-	LIHGCB_00550		Phosphatase	SO:0001217, UniRef:UniRef50_O83562
+contig_1	cds	595657	596190	-	LIHGCB_00551		Uncharacterized protein TP_0552	SO:0001217, UniRef:UniRef50_O83563
+contig_1	tRNA	596266	596337	-	LIHGCB_00552	trnC	tRNA-Cys(gca)	SO:0000258
+contig_1	cds	596434	597645	+	LIHGCB_00553		Putative transport protein TP_0553	SO:0001217, UniRef:UniRef50_O83564
+contig_1	cds	597689	598348	+	LIHGCB_00554		HAD-superfamily hydrolase, subfamily IA	SO:0001217, UniRef:UniRef50_Q73J60
+contig_1	cds	598422	599603	-	LIHGCB_00555		DAACS family dicarboxylate/amino acid:sodium (Na+) or proton (H+) symporter	SO:0001217, UniRef:UniRef50_F7XT06
+contig_1	cds	599826	600818	-	LIHGCB_00556		Aspartate--ammonia ligase	SO:0001217, UniRef:UniRef50_P00963
+contig_1	cds	600923	601636	+	LIHGCB_00557		DUF1007 domain-containing protein	SO:0001217, UniRef:UniRef50_C8PSP8
+contig_1	cds	601666	602574	+	LIHGCB_00558		Nickel/cobalt efflux system	SO:0001217, UniRef:UniRef50_F7XT09
+contig_1	cds	602636	603841	+	LIHGCB_00559		putative tRNA sulfurtransferase	SO:0001217, UniRef:UniRef50_O83570
+contig_1	cds	603894	605879	-	LIHGCB_00560		Transketolase	SO:0001217, UniRef:UniRef50_O83571
+contig_1	cds	605990	606841	-	LIHGCB_00561		hypothetical protein	PFAM:PF04536.20
+contig_1	cds	607012	608148	+	LIHGCB_00562		N-acetylneuraminate synthase	SO:0001217, UniRef:UniRef50_F7XT13
+contig_1	cds	608145	608552	+	LIHGCB_00563		J domain-containing protein	SO:0001217, UniRef:UniRef50_O83574
+contig_1	cds	608549	610585	+	LIHGCB_00564		Uncharacterized protein TP_0564	SO:0001217, UniRef:UniRef50_O83575
+contig_1	cds	610467	611684	-	LIHGCB_00565		hypothetical protein	
+contig_1	cds	611698	613185	-	LIHGCB_00566		Alginate O-acetylation protein	SO:0001217, UniRef:UniRef50_F7XRE0
+contig_1	cds	613217	613837	-	LIHGCB_00567		hypothetical protein	
+contig_1	cds	613916	614548	-	LIHGCB_00568		2-dehydro-3-deoxy-phosphogluconate aldolase	SO:0001217, UniRef:UniRef50_A0A800JEI1
+contig_1	cds	614670	616910	-	LIHGCB_00569		Xaa-Pro aminopeptidase	SO:0001217, UniRef:UniRef50_F7XT17
+contig_1	cds	617019	617804	-	LIHGCB_00570		TPM domain-containing protein	SO:0001217, UniRef:UniRef50_O83580
+contig_1	cds	617891	618505	-	LIHGCB_00571	lemA	LemA family protein	SO:0001217, UniRef:UniRef50_S3K4E6
+contig_1	cds	618574	619656	-	LIHGCB_00572		hypothetical protein	PFAM:PF01794.25, PFAM:PF04205.19
+contig_1	cds	619766	621070	-	LIHGCB_00573		Putative DD-carboxypeptidase TP_0574	SO:0001217, UniRef:UniRef50_P29723
+contig_1	cds	621182	623239	+	LIHGCB_00574		Phosphoenolpyruvate-protein phosphotransferase	SO:0001217, UniRef:UniRef50_F7XT20
+contig_1	cds	623302	624408	+	LIHGCB_00575		Peptide chain release factor 2	SO:0001217, UniRef:UniRef50_B0KBU6
+contig_1	cds	624375	626120	+	LIHGCB_00576		Uncharacterized protein TP_0577	SO:0001217, UniRef:UniRef50_O83586
+contig_1	cds	626133	627014	+	LIHGCB_00577		hypothetical protein	PFAM:PF00448.28, PFAM:PF02881.24
+contig_1	cds	627011	627787	+	LIHGCB_00578		hypothetical protein	
+contig_1	cds	627780	629069	+	LIHGCB_00579		ABC3 transporter permease protein domain-containing protein	SO:0001217, UniRef:UniRef50_M2BQ49
+contig_1	cds	629062	629742	+	LIHGCB_00580	lolD	Lipoprotein-releasing system ATP-binding protein LolD	SO:0001217, UniRef:UniRef50_F5YM16
+contig_1	cds	629739	631226	+	LIHGCB_00581		Lipoprotein ABC superfamily ATP binding cassette transporter, membrane protein	SO:0001217, UniRef:UniRef50_F7XT27
+contig_1	cds	631322	632731	+	LIHGCB_00582		Uncharacterized protein TP_0584	SO:0001217, UniRef:UniRef50_O83593
+contig_1	cds	632724	634367	+	LIHGCB_00583		Oligopeptide ABC superfamily ATP binding cassette transporter, membrane/binding protein	SO:0001217, UniRef:UniRef50_F7XRE5
+contig_1	cds	634456	637092	+	LIHGCB_00584		Leucine--tRNA ligase	SO:0001217, UniRef:UniRef50_A4IRY3
+contig_1	cds	637072	638094	-	LIHGCB_00585		hypothetical protein	PFAM:PF21694.2
+contig_1	cds	638182	638448	-	LIHGCB_00586		hypothetical protein	PFAM:PF00381.24
+contig_1	cds	638493	639527	-	LIHGCB_00587		HPr kinase/phosphorylase	SO:0001217, UniRef:UniRef50_O83600
+contig_1	tRNA	639631	639703	+	LIHGCB_00588	trnR	tRNA-Arg(cct)	SO:0001036
+contig_1	tRNA	639714	639788	-	LIHGCB_00589	trnP	tRNA-Pro(cgg)	SO:0000268
+contig_1	tRNA	639840	639913	-	LIHGCB_00590	trnD	tRNA-Asp(gtc)	SO:0000256
+contig_1	tRNA	639983	640055	-	LIHGCB_00591	trnM	tRNA-Met(cat)	SO:0000266
+contig_1	cds	640215	641717	+	LIHGCB_00592		Peptidase M15C domain-containing protein	SO:0001217, UniRef:UniRef50_O83601
+contig_1	cds	641768	643687	+	LIHGCB_00593		Uncharacterized protein TP_0593	SO:0001217, UniRef:UniRef50_O83602
+contig_1	cds	643722	644312	-	LIHGCB_00594		DUF2147 domain-containing protein	SO:0001217, UniRef:UniRef50_O83603
+contig_1	cds	644416	645051	-	LIHGCB_00595		hypothetical protein	PFAM:PF00406.28, PFAM:PF05191.20, PFAM:PF13207.12
+contig_1	cds	645075	646187	-	LIHGCB_00596		Poly(A) polymerase	SO:0001217, UniRef:UniRef50_A0A0B7GWZ2
+contig_1	cds	646295	648415	-	LIHGCB_00597		Uncharacterized protein TP_0598	SO:0001217, UniRef:UniRef50_O83607
+contig_1	cds	648396	649049	-	LIHGCB_00598		hypothetical protein	
+contig_1	cds	649059	650411	-	LIHGCB_00599		Putative zinc metalloprotease TP_0600	SO:0001217, UniRef:UniRef50_O83609
+contig_1	cds	650408	651538	-	LIHGCB_00600		1-deoxy-D-xylulose 5-phosphate reductoisomerase	SO:0001217, UniRef:UniRef50_O83610
+contig_1	cds	651535	652398	-	LIHGCB_00601		Phosphatidate cytidylyltransferase	SO:0001217, UniRef:UniRef50_O83611
+contig_1	cds	652395	653081	-	LIHGCB_00602		Isoprenyl transferase	SO:0001217, UniRef:UniRef50_A0A2G6I0Y2
+contig_1	cds	653087	653638	-	LIHGCB_00603		Ribosome-recycling factor	SO:0001217, UniRef:UniRef50_B8DSA1
+contig_1	cds	653742	654614	-	LIHGCB_00604		Elongation factor Ts	SO:0001217, UniRef:UniRef50_O83614
+contig_1	cds	654705	655580	-	LIHGCB_00605		Small ribosomal subunit protein uS2	SO:0001217, UniRef:UniRef50_A5N828
+contig_1	tRNA	655777	655850	+	LIHGCB_00606	trnR	tRNA-Arg(ccg)	SO:0001036
+contig_1	cds	655945	656673	-	LIHGCB_00607		Uncharacterized protein TP_0608	SO:0001217, UniRef:UniRef50_O83617
+contig_1	cds	656937	658724	+	LIHGCB_00608		Asparagine--tRNA ligase	SO:0001217, UniRef:UniRef50_O83618
+contig_1	cds	658734	660815	+	LIHGCB_00609		Tpr protein H	SO:0001217, UniRef:UniRef50_F7XT50
+contig_1	cds	660957	661736	+	LIHGCB_00610		ABC superfamily ATP binding cassette transporter, ABC protein	SO:0001217, UniRef:UniRef50_F7XT51
+contig_1	cds	661817	663256	+	LIHGCB_00611	sufB	Fe-S cluster assembly protein SufB	SO:0001217, UniRef:UniRef50_A0A3G9KAX6
+contig_1	cds	663283	664431	+	LIHGCB_00612		SUF system FeS cluster assembly SufBD core domain-containing protein	SO:0001217, UniRef:UniRef50_O83622
+contig_1	cds	664428	665642	+	LIHGCB_00613		hypothetical protein	PFAM:PF00155.27, PFAM:PF00266.25, PFAM:PF01041.23
+contig_1	cds	665693	666136	+	LIHGCB_00614		Nitrogen fixation protein (NifU)	SO:0001217, UniRef:UniRef50_O83624
+contig_1	cds	666133	666921	+	LIHGCB_00615		Ribose-5-phosphate isomerase A	SO:0001217, UniRef:UniRef50_O83625
+contig_1	cds	666946	667650	-	LIHGCB_00616		Uncharacterized protein TP_0619	SO:0001217, UniRef:UniRef50_O83628
+contig_1	cds	667816	669528	-	LIHGCB_00617		hypothetical protein	PFAM:PF02722.21
+contig_1	cds	669701	669997	+	LIHGCB_00618		hypothetical protein	
+contig_1	cds	670144	671925	-	LIHGCB_00619		Tetratricopeptide repeat protein	SO:0001217, UniRef:UniRef50_O83630
+contig_1	cds	672089	673681	+	LIHGCB_00620		hypothetical protein	PFAM:PF01464.25, PFAM:PF01476.26
+contig_1	cds	673685	675112	+	LIHGCB_00621		OmpA-like domain-containing protein	SO:0001217, UniRef:UniRef50_S3LEG6
+contig_1	cds	675226	675864	+	LIHGCB_00622		hypothetical protein	
+contig_1	cds	675861	677036	+	LIHGCB_00623		Nuclease SbcCD subunit D	SO:0001217, UniRef:UniRef50_O83634
+contig_1	cds	677033	680176	+	LIHGCB_00624		Nuclease SbcCD subunit C	SO:0001217, UniRef:UniRef50_O83635
+contig_1	cds	680173	681654	+	LIHGCB_00625		Nicotinate phosphoribosyltransferase	SO:0001217, UniRef:UniRef50_A0A352B8W9
+contig_1	cds	681838	682650	+	LIHGCB_00626		Uncharacterized protein TP_0629	SO:0001217, UniRef:UniRef50_O83637
+contig_1	cds	682889	683731	+	LIHGCB_00627		protein-glutamate O-methyltransferase	SO:0001217, UniRef:UniRef50_Q73PZ7
+contig_1	cds	683716	684990	+	LIHGCB_00628		hypothetical protein	PFAM:PF00072.30, PFAM:PF01339.22
+contig_1	cds	685095	686108	+	LIHGCB_00629		Tryptophan--tRNA ligase	SO:0001217, UniRef:UniRef50_O84589
+contig_1	cds	686249	687124	+	LIHGCB_00630		Peptide methionine sulfoxide reductase MsrB/MsrA	SO:0001217, UniRef:UniRef50_O83641
+contig_1	cds	687243	689714	+	LIHGCB_00631		DNA ligase	SO:0001217, UniRef:UniRef50_O83642
+contig_1	cds	689749	690519	-	LIHGCB_00632		hypothetical protein	
+contig_1	cds	690557	691507	-	LIHGCB_00633		tRNA dimethylallyltransferase 2	SO:0001217, UniRef:UniRef50_Q73MR1
+contig_1	cds	691731	692165	-	LIHGCB_00634		hypothetical protein	
+contig_1	tRNA	692246	692319	-	LIHGCB_00635	trnR	tRNA-Arg(tcg)	SO:0001036
+contig_1	tRNA	692334	692405	-	LIHGCB_00636	trnH	tRNA-His(gtg)	SO:0000262
+contig_1	tRNA	692542	692614	+	LIHGCB_00637	trnF	tRNA-Phe(gaa)	SO:0000267
+contig_1	cds	694573	696417	+	LIHGCB_00638		Methyl-accepting chemotaxis protein	SO:0001217, UniRef:UniRef50_F7XT74
+contig_1	cds	696435	697838	-	LIHGCB_00639		Histidine--tRNA ligase	SO:0001217, UniRef:UniRef50_O83647
+contig_1	cds	697904	699664	+	LIHGCB_00640		Phosphomannomutase (ManB)	SO:0001217, UniRef:UniRef50_O83648
+contig_1	cds	699661	700308	+	LIHGCB_00641		3'-5' exonuclease	SO:0001217, UniRef:UniRef50_A0A0B7GYG6
+contig_1	cds	700305	701891	-	LIHGCB_00642		Lysine--tRNA ligase	SO:0001217, UniRef:UniRef50_O51603
+contig_1	cds	702157	703299	-	LIHGCB_00643		Lipoprotein	SO:0001217, UniRef:UniRef50_O83652
+contig_1	cds	703391	704671	-	LIHGCB_00644		Serine--tRNA ligase	SO:0001217, UniRef:UniRef50_O51244
+contig_1	cds	704721	706697	-	LIHGCB_00645		Tetratricopeptide repeat protein	SO:0001217, UniRef:UniRef50_M2BC36
+contig_1	cds	706714	707511	-	LIHGCB_00646		Magnesium/cobalt efflux protein	SO:0001217, UniRef:UniRef50_A0A660TX85
+contig_1	cds	707499	707981	-	LIHGCB_00647	ybeY	Endoribonuclease YbeY	SO:0001217, UniRef:UniRef50_O83656
+contig_1	cds	707987	710536	-	LIHGCB_00648		HD domain-containing protein	SO:0001217, UniRef:UniRef50_F7XRF0
+contig_1	cds	710594	711721	+	LIHGCB_00649	potA	Spermidine/putrescine import ATP-binding protein PotA	SO:0001217, UniRef:UniRef50_Q8RI39
+contig_1	cds	711718	712617	+	LIHGCB_00650		Spermidine/putrescine ABC transporter permease	SO:0001217, UniRef:UniRef50_A0A1G3LLX4
+contig_1	cds	712610	713428	+	LIHGCB_00651		ABC transmembrane type-1 domain-containing protein	SO:0001217, UniRef:UniRef50_S3JWD5
+contig_1	cds	713464	714510	+	LIHGCB_00652		Spermidine/putrescine-binding protein	SO:0001217, UniRef:UniRef50_A0AA45C4X2
+contig_1	cds	714565	714786	-	LIHGCB_00653	csrA	Translational regulator CsrA	SO:0001217, UniRef:UniRef50_Q8ENI0
+contig_1	cds	714780	715232	-	LIHGCB_00654	fliW	Flagellar assembly factor FliW	SO:0001217, UniRef:UniRef50_O83664
+contig_1	cds	715251	716501	-	LIHGCB_00655		Flagellar hook-associated protein 3	SO:0001217, UniRef:UniRef50_S3L8P6
+contig_1	cds	716535	718412	-	LIHGCB_00656		Flagellar hook-associated protein 1	SO:0001217, UniRef:UniRef50_F7XT88
+contig_1	cds	718518	719030	-	LIHGCB_00657		hypothetical protein	
+contig_1	cds	719153	720151	-	LIHGCB_00658		Fructose-1,6-bisphosphate aldolase, class II	SO:0001217, UniRef:UniRef50_B0P7X0
+contig_1	cds	720418	721146	+	LIHGCB_00659	flaA	Flagellar filament outer layer protein FlaA	SO:0001217, UniRef:UniRef50_A0A9D9HH76
+contig_1	cds	721143	721868	+	LIHGCB_00660	flaA	Flagellar filament outer layer protein FlaA	SO:0001217, UniRef:UniRef50_S3KE00
+contig_1	cds	721886	722641	-	LIHGCB_00661		hypothetical protein	
+contig_1	cds	722638	722814	-	LIHGCB_00662		hypothetical protein	
+contig_1	cds	722975	724630	-	LIHGCB_00663		Bifunctional phosphoribulokinase/uridine kinase	SO:0001217, UniRef:UniRef50_F7XT95
+contig_1	tRNA	724714	724786	+	LIHGCB_00664	trnP	tRNA-Pro(tgg)	SO:0000268
+contig_1	cds	724873	725475	-	LIHGCB_00665		hypothetical protein	SO:0001217, UniRef:UniRef50_F7XRF1
+contig_1	cds	725472	728984	-	LIHGCB_00666		DNA polymerase III subunit alpha	SO:0001217, UniRef:UniRef50_O83675
+contig_1	tRNA	729104	729177	+	LIHGCB_00667	trnR	tRNA-Arg(tct)	SO:0001036
+contig_1	cds	730331	731332	-	LIHGCB_00668		Ethanolaminephosphotransferase	SO:0001217, UniRef:UniRef50_F7XT98
+contig_1	cds	731396	732871	-	LIHGCB_00669		Glycine--tRNA ligase	SO:0001217, UniRef:UniRef50_F4GJE0
+contig_1	cds	732919	734622	-	LIHGCB_00670		Glutamate--tRNA ligase	SO:0001217, UniRef:UniRef50_O51345
+contig_1	cds	734709	735317	+	LIHGCB_00671		hypothetical protein	PFAM:PF01713.27
+contig_1	cds	735281	736321	+	LIHGCB_00672		Uncharacterized protein TP_0675	SO:0001217, UniRef:UniRef50_O83681
+contig_1	cds	736333	736611	-	LIHGCB_00673		hypothetical protein	
+contig_1	cds	736633	737241	-	LIHGCB_00674		hypothetical protein	
+contig_1	tRNA	737331	737402	+	LIHGCB_00675	trnV	tRNA-Val(cac)	SO:0000273
+contig_1	cds	737495	738418	+	LIHGCB_00676		hypothetical protein	
+contig_1	cds	738415	738732	+	LIHGCB_00677		hypothetical protein	
+contig_1	cds	738773	739831	-	LIHGCB_00678		tRNA N6-adenosine threonylcarbamoyltransferase	SO:0001217, UniRef:UniRef50_O83686
+contig_1	cds	739882	741015	-	LIHGCB_00679		hypothetical protein	PFAM:PF00842.27, PFAM:PF01168.26
+contig_1	cds	741044	741646	-	LIHGCB_00680		hypothetical protein	
+contig_1	cds	741700	742833	+	LIHGCB_00681		hypothetical protein	PFAM:PF00348.22
+contig_1	cds	743126	744337	+	LIHGCB_00682		Glucose/galactose-binding lipoprotein	SO:0001217, UniRef:UniRef50_Q08255
+contig_1	cds	744457	745947	+	LIHGCB_00683		Ribose/galactose/methyl galactoside import ATP-binding protein	SO:0001217, UniRef:UniRef50_A0A174H7S0
+contig_1	cds	745962	747557	+	LIHGCB_00684	mglC	Galactose/methyl galactoside import permease protein MglC	SO:0001217, UniRef:UniRef50_Q57321
+contig_1	cds	747685	749745	-	LIHGCB_00685	recG	ATP-dependent DNA helicase RecG	SO:0001217, UniRef:UniRef50_P96130
+contig_1	cds	749801	750793	-	LIHGCB_00686		hypothetical protein	PFAM:PF02016.21, PFAM:PF17676.7
+contig_1	cds	750815	752197	-	LIHGCB_00687		hypothetical protein	PFAM:PF00009.33, PFAM:PF00025.27, PFAM:PF00071.28, PFAM:PF00350.29, PFAM:PF00910.28, PFAM:PF02263.25, PFAM:PF02421.24, PFAM:PF03193.22, PFAM:PF04548.22, PFAM:PF04670.18, PFAM:PF08477.19, PFAM:PF09439.16, PFAM:PF14714.11
+contig_1	cds	752233	752814	-	LIHGCB_00688		Uncharacterized protein TP_0690	SO:0001217, UniRef:UniRef50_O83688
+contig_1	cds	752807	753565	-	LIHGCB_00689		Segregation and condensation protein A	SO:0001217, UniRef:UniRef50_H9UJ85
+contig_1	cds	753593	754816	-	LIHGCB_00690	recA	Protein RecA	SO:0001217, UniRef:UniRef50_W2CMV3
+contig_1	tRNA	754885	754958	-	LIHGCB_00691	trnI	tRNA-Ile2(cat)	SO:0000263
+contig_1	cds	755077	756399	-	LIHGCB_00692		hypothetical protein	
+contig_1	cds	756559	757236	+	LIHGCB_00693		hypothetical protein	
+contig_1	cds	757324	759117	+	LIHGCB_00694		Biotin carboxylase	SO:0001217, UniRef:UniRef50_F7XTC2
+contig_1	cds	759105	759923	-	LIHGCB_00695		putative nicotinamidase	SO:0001217, UniRef:UniRef50_F7XTC3
+contig_1	cds	760003	760638	-	LIHGCB_00696		DUF2715 domain-containing protein	SO:0001217, UniRef:UniRef50_O83695
+contig_1	cds	760642	761100	-	LIHGCB_00697		hypothetical protein	PFAM:PF10895.14
+contig_1	cds	761314	761706	-	LIHGCB_00698		hypothetical protein	
+contig_1	cds	761844	762047	-	LIHGCB_00699		DNA-directed RNA polymerase subunit omega	SO:0001217, UniRef:UniRef50_A0A0B7GZ33
+contig_1	tRNA	762128	762201	+	LIHGCB_00700	trnP	tRNA-Pro(ggg)	SO:0000268
+contig_1	cds	762218	763450	-	LIHGCB_00701		hypothetical protein	PFAM:PF01551.29
+contig_1	cds	763450	765744	-	LIHGCB_00702	recJ	Single-stranded-DNA-specific exonuclease RecJ	SO:0001217, UniRef:UniRef50_F7XTD0
+contig_1	cds	765713	768367	-	LIHGCB_00703		peptidoglycan glycosyltransferase	SO:0001217, UniRef:UniRef50_F7XTD1
+contig_1	cds	768664	769704	-	LIHGCB_00704	lysM	LysM domain-containing protein	SO:0001217, UniRef:UniRef50_O83704
+contig_1	cds	769652	770029	-	LIHGCB_00705		hypothetical protein	
+contig_1	cds	770196	770711	+	LIHGCB_00706		hypothetical protein	
+contig_1	cds	770767	771555	+	LIHGCB_00707		RNA polymerase sigma factor	SO:0001217, UniRef:UniRef50_A0A6I7QSV4
+contig_1	cds	771564	773534	+	LIHGCB_00708	khpB	RNA-binding protein KhpB N-terminal domain-containing protein	SO:0001217, UniRef:UniRef50_S6A820
+contig_1	cds	773571	774146	+	LIHGCB_00709		hypothetical protein	
+contig_1	cds	774161	775075	-	LIHGCB_00710	fleN	Flagellar synthesis regulator FleN	SO:0001217, UniRef:UniRef50_S6A2Y7
+contig_1	cds	775047	776360	-	LIHGCB_00711	flhF	Flagellar biosynthesis protein FlhF	SO:0001217, UniRef:UniRef50_Q56339
+contig_1	cds	776395	778518	-	LIHGCB_00712	flhA	Flagellar biosynthesis protein FlhA	SO:0001217, UniRef:UniRef50_Q56338
+contig_1	cds	778527	779657	-	LIHGCB_00713	flhB	Flagellar biosynthetic protein FlhB	SO:0001217, UniRef:UniRef50_O83710
+contig_1	cds	779654	780451	-	LIHGCB_00714	fliR	Flagellar biosynthetic protein FliR	SO:0001217, UniRef:UniRef50_P74932
+contig_1	cds	780464	780745	-	LIHGCB_00715	fliQ	Flagellar biosynthetic protein FliQ	SO:0001217, UniRef:UniRef50_P74931
+contig_1	cds	780767	781582	-	LIHGCB_00716	fliP	Flagellar biosynthetic protein FliP	SO:0001217, UniRef:UniRef50_Q44763
+contig_1	cds	781579	782349	-	LIHGCB_00717		Flagellar protein	SO:0001217, UniRef:UniRef50_F7IWE8
+contig_1	cds	782303	783349	-	LIHGCB_00718		hypothetical protein	
+contig_1	cds	783342	784376	-	LIHGCB_00719	fliM	Flagellar motor switch protein FliM	SO:0001217, UniRef:UniRef50_Q57511
+contig_1	cds	784398	784946	-	LIHGCB_00720	fliL	Flagellar protein FliL	SO:0001217, UniRef:UniRef50_O07888
+contig_1	cds	784925	785056	-	LIHGCB_00721		hypothetical protein	
+contig_1	cds	785056	785772	-	LIHGCB_00722		Motility protein B	SO:0001217, UniRef:UniRef50_O07887
+contig_1	cds	785778	786557	-	LIHGCB_00723		Motility protein A	SO:0001217, UniRef:UniRef50_O07886
+contig_1	cds	786573	786770	-	LIHGCB_00724		hypothetical protein	
+contig_1	cds	786828	788219	-	LIHGCB_00725	flgE	Flagellar hook protein FlgE	SO:0001217, UniRef:UniRef50_Q44767
+contig_1	cds	788290	788751	-	LIHGCB_00726		Flagellar hook capping protein	SO:0001217, UniRef:UniRef50_S3K4F3
+contig_1	cds	788829	790472	-	LIHGCB_00727	fliK	Flagellar hook-length control protein FliK	SO:0001217, UniRef:UniRef50_F7XRF4
+contig_1	cds	790687	791538	+	LIHGCB_00728		hypothetical protein	
+contig_1	cds	791612	792232	+	LIHGCB_00729		hypothetical protein	PFAM:PF00293.34
+contig_1	cds	792234	793259	-	LIHGCB_00730	folD	Bifunctional protein FolD	SO:0001217, UniRef:UniRef50_O83714
+contig_1	cds	793277	793915	+	LIHGCB_00731		Uncharacterized protein TP_0733	SO:0001217, UniRef:UniRef50_O83715
+contig_1	cds	793948	794649	-	LIHGCB_00732		Purine nucleoside phosphorylase DeoD-type	SO:0001217, UniRef:UniRef50_P77835
+contig_1	cds	794731	796137	-	LIHGCB_00733		NADPH-dependent glutamate synthase	SO:0001217, UniRef:UniRef50_A0A0B7GTF1
+contig_1	cds	796289	797131	-	LIHGCB_00734		FAD-binding FR-type domain-containing protein	SO:0001217, UniRef:UniRef50_M2AS83
+contig_1	cds	797365	798675	+	LIHGCB_00735		Sugar ABC superfamily ATP binding cassette transporter, binding protein	SO:0001217, UniRef:UniRef50_F7XTF8
+contig_1	cds	798721	799056	-	LIHGCB_00736		hypothetical protein	
+contig_1	cds	799053	800249	-	LIHGCB_00737	lytR	LytR family transcriptional regulator	SO:0001217, UniRef:UniRef50_O83721
+contig_1	cds	800323	801036	-	LIHGCB_00738		hypothetical protein	
+contig_1	cds	801017	801631	-	LIHGCB_00739		putative nicotinate-nucleotide adenylyltransferase	SO:0001217, UniRef:UniRef50_O83723
+contig_1	cds	801628	802758	-	LIHGCB_00740		GTPase Obg	SO:0001217, UniRef:UniRef50_V5WG69
+contig_1	cds	802877	803140	-	LIHGCB_00741		Large ribosomal subunit protein bL27	SO:0001217, UniRef:UniRef50_P9WHB3
+contig_1	cds	803170	803496	-	LIHGCB_00742		hypothetical protein	
+contig_1	cds	803509	803826	-	LIHGCB_00743		Large ribosomal subunit protein bL21	SO:0001217, UniRef:UniRef50_S3K0N7
+contig_1	cds	803933	806638	-	LIHGCB_00744		Pyruvate, phosphate dikinase	SO:0001217, UniRef:UniRef50_O83728
+contig_1	cds	806648	807682	-	LIHGCB_00745		Uncharacterized protein TP_0747	SO:0001217, UniRef:UniRef50_O83729
+contig_1	cds	807771	809807	-	LIHGCB_00746	cfpA	cytoplasmic filament protein CfpA	BlastRules:WP_010882193, SO:0001217, UniRef:UniRef50_Q56336
+contig_1	cds	809976	810647	+	LIHGCB_00747		hypothetical protein	PFAM:PF00092.34, PFAM:PF13519.12
+contig_1	cds	810684	811397	+	LIHGCB_00748	vwb	vascular adhesin/metalloprotease pallilysin	BlastRules:WP_010882196
+contig_1	cds	811535	812650	-	LIHGCB_00749		Uncharacterized protein TP_0752	SO:0001217, UniRef:UniRef50_O83733
+contig_1	cds	812758	813042	-	LIHGCB_00750		hypothetical protein	
+contig_1	cds	813039	814376	-	LIHGCB_00751		hypothetical protein	PFAM:PF01938.26, PFAM:PF04055.27
+contig_1	cds	814451	815140	-	LIHGCB_00752		hypothetical protein	PFAM:PF00359.27, PFAM:PF12728.13
+contig_1	cds	815193	816152	-	LIHGCB_00753		hypothetical protein	PFAM:PF00551.24, PFAM:PF02911.23
+contig_1	cds	816156	816644	-	LIHGCB_00754		Peptide deformylase	SO:0001217, UniRef:UniRef50_O83738
+contig_1	cds	816685	816894	-	LIHGCB_00755		hypothetical protein	
+contig_1	cds	817182	819047	+	LIHGCB_00756		PASTA domain-containing protein	SO:0001217, UniRef:UniRef50_M2BJK5
+contig_1	cds	819028	819906	+	LIHGCB_00757		hypothetical protein	
+contig_1	cds	819966	821117	+	LIHGCB_00758		Uncharacterized protein TP_0762	SO:0001217, UniRef:UniRef50_O83743
+contig_1	cds	821179	822012	-	LIHGCB_00759		hypothetical protein	
+contig_1	cds	822079	823254	+	LIHGCB_00760		HD-GYP domain-containing protein	SO:0001217, UniRef:UniRef50_O83745
+contig_1	cds	823236	825263	-	LIHGCB_00761	ftsH	ATP-dependent zinc metalloprotease FtsH	SO:0001217, UniRef:UniRef50_A0A849RSP7
+contig_1	cds	825468	826349	+	LIHGCB_00762		hypothetical protein	
+contig_1	cds	826554	828641	+	LIHGCB_00763		Elongation factor G 1	SO:0001217, UniRef:UniRef50_O30913
+contig_1	cds	828780	829817	+	LIHGCB_00764		Treponemal membrane protein A	SO:0001217, UniRef:UniRef50_P07643
+contig_1	cds	829814	830791	+	LIHGCB_00765		Treponemal membrane protein B	SO:0001217, UniRef:UniRef50_P29720
+contig_1	cds	830965	832779	+	LIHGCB_00766		RNA helicase	SO:0001217, UniRef:UniRef50_O83749
+contig_1	cds	832804	834465	-	LIHGCB_00767	phoU	PhoU domain-containing protein	SO:0001217, UniRef:UniRef50_A0AA87NQD7
+contig_1	cds	834631	835413	+	LIHGCB_00768		hypothetical protein	
+contig_1	tRNA	836664	836736	-	LIHGCB_00769	trnK	tRNA-Lys(ttt)	SO:0000265
+contig_1	tRNA	836880	836963	+	LIHGCB_00770	trnL	tRNA-Leu(cag)	SO:0000264
+contig_1	cds	836996	837670	+	LIHGCB_00771		MgtC/SapB/SrpB/YhiD N-terminal domain-containing protein	SO:0001217, UniRef:UniRef50_M2BSY2
+contig_1	cds	837750	838385	+	LIHGCB_00772		Endonuclease III	SO:0001217, UniRef:UniRef50_O05956
+contig_1	cds	838310	838465	-	LIHGCB_00773		hypothetical protein	
+contig_1	cds	838462	839238	-	LIHGCB_00774		hypothetical protein	
+contig_1	cds	839289	839513	-	LIHGCB_00775		Uncharacterized protein TP_0777	SO:0001217, UniRef:UniRef50_O83756
+contig_1	cds	839582	840490	-	LIHGCB_00776		putative nucleoside-triphosphate diphosphatase	SO:0001217, UniRef:UniRef50_F7XTJ5
+contig_1	cds	840490	841134	-	LIHGCB_00777		hypothetical protein	PFAM:PF09335.16
+contig_1	cds	841181	843205	-	LIHGCB_00778		Putative glutamine-dependent NAD(+) synthetase	SO:0001217, UniRef:UniRef50_O83759
+contig_1	cds	843257	844207	-	LIHGCB_00779		hypothetical protein	
+contig_1	cds	844236	845345	-	LIHGCB_00780		Uncharacterized protein TP_0783	SO:0001217, UniRef:UniRef50_O83762
+contig_1	cds	845349	845519	+	LIHGCB_00781		hypothetical protein	
+contig_1	cds	845535	846134	+	LIHGCB_00782		hypothetical protein	
+contig_1	cds	846131	846817	+	LIHGCB_00783		Organic solvent tolerance-like N-terminal domain-containing protein	SO:0001217, UniRef:UniRef50_O83764
+contig_1	cds	846947	847660	+	LIHGCB_00784	lptB	Lipopolysaccharide export system ATP-binding protein LptB	SO:0001217, UniRef:UniRef50_A0A2U2I7R3
+contig_1	cds	847707	848099	-	LIHGCB_00785		Uncharacterized protein TP_0787	SO:0001217, UniRef:UniRef50_O83766
+contig_1	cds	848208	849098	+	LIHGCB_00786		hypothetical protein	
+contig_1	cds	849111	849887	-	LIHGCB_00787		hypothetical protein	PFAM:PF17131.11
+contig_1	cds	849906	852557	-	LIHGCB_00788		SSD domain-containing protein	SO:0001217, UniRef:UniRef50_M2AQV8
+contig_1	cds	852946	853806	+	LIHGCB_00789	flaB1	Flagellin FlaB1	SO:0001217, UniRef:UniRef50_P21990
+contig_1	cds	853885	855504	+	LIHGCB_00790		hypothetical protein	
+contig_1	cds	855541	856731	-	LIHGCB_00791		S-adenosylmethionine synthase	SO:0001217, UniRef:UniRef50_Q2GBP1
+contig_1	cds	856934	857938	-	LIHGCB_00792		FAD:protein FMN transferase	SO:0001217, UniRef:UniRef50_O83774
+contig_1	cds	858083	858874	-	LIHGCB_00793		hypothetical protein	PFAM:PF03446.21, PFAM:PF14748.11
+contig_1	cds	858925	861360	-	LIHGCB_00794		Methionine--tRNA ligase	SO:0001217, UniRef:UniRef50_O83776
+contig_1	cds	861757	863160	+	LIHGCB_00795		Serine-type D-Ala-D-Ala carboxypeptidase	SO:0001217, UniRef:UniRef50_F7XTL4
+contig_1	cds	863221	863373	-	LIHGCB_00796		hypothetical protein	
+contig_1	cds	863333	865651	-	LIHGCB_00797	clpA	ATP-dependent Clp protease ATP-binding subunit ClpA	SO:0001217, UniRef:UniRef50_H7EJW8
+contig_1	cds	866040	867248	+	LIHGCB_00798		hypothetical protein	PFAM:PF01368.27
+contig_1	cds	867326	868489	+	LIHGCB_00799	ugpC	sn-glycerol-3-phosphate ABC transporter ATP-binding protein UgpC	SO:0001217, UniRef:UniRef50_A0A7X8X0G5
+contig_1	cds	868514	870616	-	LIHGCB_00800		putative exoribonuclease II	SO:0001217, UniRef:UniRef50_F7XTL9
+contig_1	cds	870616	872079	-	LIHGCB_00801	femA	FemA protein, putative	SO:0001217, UniRef:UniRef50_O83784
+contig_1	cds	872238	872426	+	LIHGCB_00802		hypothetical protein	
+contig_1	cds	872487	872723	+	LIHGCB_00803		Acyl carrier protein	SO:0001217, UniRef:UniRef50_Q73NX6
+contig_1	cds	872720	873484	+	LIHGCB_00804		hypothetical protein	PFAM:PF00035.32
+contig_1	cds	873515	874426	+	LIHGCB_00805		DNA adenine methylase	SO:0001217, UniRef:UniRef50_O33844
+contig_1	cds	874621	876072	+	LIHGCB_00806		hypothetical protein	
+contig_1	cds	876296	877318	-	LIHGCB_00807		hypothetical protein	
+contig_1	cds	877541	878464	+	LIHGCB_00808		Thioredoxin reductase	SO:0001217, UniRef:UniRef50_O83790
+contig_1	cds	878658	879569	+	LIHGCB_00809		N-acetyltransferase domain-containing protein	SO:0001217, UniRef:UniRef50_O83791
+contig_1	cds	879641	880285	-	LIHGCB_00810		hypothetical protein	
+contig_1	cds	880444	881742	-	LIHGCB_00811		Enolase	SO:0001217, UniRef:UniRef50_Q31QJ8
+contig_1	cds	881916	882842	-	LIHGCB_00812		Ribonuclease Z	SO:0001217, UniRef:UniRef50_Q73LB4
+contig_1	cds	882876	883637	-	LIHGCB_00813		Tetratricopeptide repeat protein	SO:0001217, UniRef:UniRef50_A0AA87NKK0
+contig_1	cds	883742	884548	-	LIHGCB_00814		Membrane lipoprotein TpN32	SO:0001217, UniRef:UniRef50_O07950
+contig_1	cds	884629	885570	-	LIHGCB_00815		Small-conductance mechanosensitive channel	SO:0001217, UniRef:UniRef50_S3L3E3
+contig_1	cds	885620	886006	-	LIHGCB_00816		Desulfoferrodoxin	SO:0001217, UniRef:UniRef50_A0A0B7GX85
+contig_1	cds	886403	888295	+	LIHGCB_00817		1-deoxy-D-xylulose-5-phosphate synthase	SO:0001217, UniRef:UniRef50_O83796
+contig_1	cds	888464	889285	+	LIHGCB_00818		Diadenylate cyclase	SO:0001217, UniRef:UniRef50_F5YEX8
+contig_1	cds	889263	890225	+	LIHGCB_00819		hypothetical protein	
+contig_1	cds	890222	890599	+	LIHGCB_00820		Holo-[acyl-carrier-protein] synthase	SO:0001217, UniRef:UniRef50_Q73LF7
+contig_1	cds	890596	891480	+	LIHGCB_00821		DUF2225 domain-containing protein	SO:0001217, UniRef:UniRef50_O83801
+contig_1	cds	891477	892262	+	LIHGCB_00822		tRNA pseudouridine synthase A	SO:0001217, UniRef:UniRef50_O83802
+contig_1	cds	892330	894099	-	LIHGCB_00823		hypothetical protein	PFAM:PF03485.21, PFAM:PF05746.21
+contig_1	cds	894122	894928	-	LIHGCB_00824		hypothetical protein	PFAM:PF10646.14
+contig_1	cds	895010	895726	+	LIHGCB_00825		Uncharacterized protein TP_0833	SO:0001217, UniRef:UniRef50_O83805
+contig_1	cds	895783	897033	-	LIHGCB_00826		Tyrosine--tRNA ligase	SO:0001217, UniRef:UniRef50_Q73PD8
+contig_1	cds	897120	899924	-	LIHGCB_00827		hypothetical protein	PFAM:PF00023.36, PFAM:PF12796.13, PFAM:PF13606.12, PFAM:PF13637.12, PFAM:PF13857.12
+contig_1	cds	900065	900889	-	LIHGCB_00828		hypothetical protein	
+contig_1	cds	901067	902815	+	LIHGCB_00829		Threonine--tRNA ligase	SO:0001217, UniRef:UniRef50_F2NWT7
+contig_1	cds	902864	904528	-	LIHGCB_00830		ABC transport system ATP-binding protein	SO:0001217, UniRef:UniRef50_R5Y8E8
+contig_1	cds	904603	905610	-	LIHGCB_00831		hypothetical protein	PFAM:PF13349.12
+contig_1	cds	905715	907964	+	LIHGCB_00832		hypothetical protein	PFAM:PF13646.12
+contig_1	cds	908026	909600	-	LIHGCB_00833		Putative periplasmic serine endoprotease DegP-like	SO:0001217, UniRef:UniRef50_A0A1V5WL69
+contig_1	cds	909796	910563	-	LIHGCB_00834		Methionine aminopeptidase	SO:0001217, UniRef:UniRef50_O83814
+contig_1	cds	910687	911484	-	LIHGCB_00835		J domain-containing protein	SO:0001217, UniRef:UniRef50_F7XQU1
+contig_1	cds	911604	912656	+	LIHGCB_00836		Glyceraldehyde-3-phosphate dehydrogenase	SO:0001217, UniRef:UniRef50_A0A2S0KLI5
+contig_1	cds	912710	913243	-	LIHGCB_00837		hypothetical protein	
+contig_1	cds	913281	913607	-	LIHGCB_00838		Uncharacterized protein TP_0846	SO:0001217, UniRef:UniRef50_O83818
+contig_1	cds	913607	913942	-	LIHGCB_00839		hypothetical protein	PFAM:PF06005.17
+contig_1	cds	913936	914304	-	LIHGCB_00840		Large ribosomal subunit protein bL20	SO:0001217, UniRef:UniRef50_O83820
+contig_1	cds	914337	914537	-	LIHGCB_00841		Large ribosomal subunit protein bL35	SO:0001217, UniRef:UniRef50_B2RZQ0
+contig_1	cds	914590	915111	-	LIHGCB_00842		Translation initiation factor IF-3	SO:0001217, UniRef:UniRef50_B5RL16
+contig_1	cds	915298	917466	+	LIHGCB_00843		hypothetical protein	PFAM:PF16314.11, PFAM:PF20683.2
+contig_1	cds	917495	918493	-	LIHGCB_00844		Phosphatidylglycerol--prolipoprotein diacylglyceryl transferase	SO:0001217, UniRef:UniRef50_S3K3L7
+contig_1	cds	918644	919780	-	LIHGCB_00845		CobQ/CobB/MinD/ParA nucleotide binding domain-containing protein	SO:0001217, UniRef:UniRef50_A0AA87NQU1
+contig_1	cds	919835	924436	-	LIHGCB_00846		HAMP domain-containing protein	SO:0001217, UniRef:UniRef50_O83826
+contig_1	cds	924433	927816	-	LIHGCB_00847		Uncharacterized protein TP_0855	SO:0001217, UniRef:UniRef50_O83827
+contig_1	cds	928044	929162	+	LIHGCB_00848		UPF0164 protein TP_0858	SO:0001217, UniRef:UniRef50_O83830
+contig_1	cds	929376	930494	+	LIHGCB_00849		UPF0164 protein TP_0858	SO:0001217, UniRef:UniRef50_O83830
+contig_1	cds	930630	931367	+	LIHGCB_00850		hypothetical protein	
+contig_1	cds	931342	932097	+	LIHGCB_00851		hypothetical protein	SO:0001217, UniRef:UniRef50_F7XQV7
+contig_1	cds	932172	934079	-	LIHGCB_00852		Glutamine--fructose-6-phosphate aminotransferase [isomerizing]	SO:0001217, UniRef:UniRef50_O83833
+contig_1	cds	934164	934295	-	LIHGCB_00853		hypothetical protein	
+contig_1	cds	934318	935085	-	LIHGCB_00854		hypothetical protein	PFAM:PF00254.34, PFAM:PF01346.23
+contig_1	cds	935247	936530	+	LIHGCB_00855		Bifunctional cysteine sulfinate desulfinase/cysteine desulfurase	SO:0001217, UniRef:UniRef50_F7XQW0
+contig_1	cds	936589	938142	-	LIHGCB_00856	lysM	LysM domain-containing protein	SO:0001217, UniRef:UniRef50_O83836
+contig_1	cds	938263	939690	-	LIHGCB_00857		UPF0164 protein TP_0865	SO:0001217, UniRef:UniRef50_O83837
+contig_1	cds	939779	941719	-	LIHGCB_00858		AAA+ ATPase domain-containing protein	SO:0001217, UniRef:UniRef50_F7XQW3
+contig_1	cds	942039	942899	+	LIHGCB_00859	flaB1	Flagellin FlaB1	SO:0001217, UniRef:UniRef50_P21990
+contig_1	cds	943178	944035	+	LIHGCB_00860	flaB1	Flagellin FlaB1	SO:0001217, UniRef:UniRef50_P21990
+contig_1	cds	944333	946501	+	LIHGCB_00861		Flagellar hook-associated protein 2	SO:0001217, UniRef:UniRef50_O83842
+contig_1	cds	946513	947115	+	LIHGCB_00862		hypothetical protein	
+contig_1	cds	947112	947387	+	LIHGCB_00863		hypothetical protein	
+contig_1	cds	947427	947834	+	LIHGCB_00864	tsaE	tRNA threonylcarbamoyladenosine biosynthesis protein TsaE	SO:0001217, UniRef:UniRef50_O83845
+contig_1	cds	947881	948546	+	LIHGCB_00865		hypothetical protein	
+contig_1	cds	948551	949648	+	LIHGCB_00866		HD-GYP domain-containing protein	SO:0001217, UniRef:UniRef50_O83847
+contig_1	cds	949661	950620	-	LIHGCB_00867		hypothetical protein	
+contig_1	cds	950617	952065	-	LIHGCB_00868		ABC-type uncharacterized transport system domain-containing protein	SO:0001217, UniRef:UniRef50_O83849
+contig_1	cds	952095	952820	-	LIHGCB_00869		Membrane spanning protein, putative	SO:0001217, UniRef:UniRef50_O83850
+contig_1	cds	952810	953652	-	LIHGCB_00870		ABC superfamily ATP binding cassette transporter, ABC protein	SO:0001217, UniRef:UniRef50_F7XQX6
+contig_1	cds	953695	955050	-	LIHGCB_00871		HEAT repeat domain-containing protein	SO:0001217, UniRef:UniRef50_O83852
+contig_1	cds	955163	956281	-	LIHGCB_00872		YjgP/YjgQ family permease	SO:0001217, UniRef:UniRef50_F7XQX7
+contig_1	cds	956278	957375	-	LIHGCB_00873		Conserved hypothetical integral membrane protein	SO:0001217, UniRef:UniRef50_O83854
+contig_1	cds	957396	957836	-	LIHGCB_00874		Deoxyuridine 5'-triphosphate nucleotidohydrolase	SO:0001217, UniRef:UniRef50_G4D5N7
+contig_1	cds	957833	959941	-	LIHGCB_00875		Polyribonucleotide nucleotidyltransferase	SO:0001217, UniRef:UniRef50_O83856
+contig_1	cds	960089	960358	-	LIHGCB_00876		Small ribosomal subunit protein uS15	SO:0001217, UniRef:UniRef50_B0JPD9
+contig_1	cds	960374	961201	-	LIHGCB_00877		hypothetical protein	
+contig_1	cds	961205	962290	-	LIHGCB_00878		tRNA pseudouridine synthase B	SO:0001217, UniRef:UniRef50_O83859
+contig_1	cds	962283	962663	-	LIHGCB_00879		hypothetical protein	
+contig_1	cds	962660	965356	-	LIHGCB_00880		hypothetical protein	PFAM:PF00009.33, PFAM:PF04760.21, PFAM:PF11987.13, PFAM:PF22042.2
+contig_1	cds	965364	966821	-	LIHGCB_00881		hypothetical protein	PFAM:PF08529.16, PFAM:PF13184.12
+contig_1	cds	966871	967341	-	LIHGCB_00882		hypothetical protein	PFAM:PF02576.22, PFAM:PF17384.8
+contig_1	cds	967362	967496	-	LIHGCB_00883		hypothetical protein	
+contig_1	cds	967515	968537	-	LIHGCB_00884		hypothetical protein	PFAM:PF01936.24, PFAM:PF12872.13
+contig_1	cds	968544	969071	-	LIHGCB_00885		hypothetical protein	PFAM:PF03625.19
+contig_1	cds	969246	970715	-	LIHGCB_00886		Tpr protein K	SO:0001217, UniRef:UniRef50_F7XRH7
+contig_1	cds	970775	974527	-	LIHGCB_00887		DNA 3'-5' helicase	SO:0001217, UniRef:UniRef50_F7XQY4
+contig_1	cds	974524	977484	-	LIHGCB_00888		Uncharacterized protein TP_0900	SO:0001217, UniRef:UniRef50_O83870
+contig_1	cds	977523	978935	-	LIHGCB_00889		MATE family multi antimicrobial extrusion protein OR	SO:0001217, UniRef:UniRef50_F7XQY5
+contig_1	cds	978976	979857	-	LIHGCB_00890		hypothetical protein	PFAM:PF00561.26, PFAM:PF12146.15, PFAM:PF12697.13
+contig_1	cds	979859	981457	+	LIHGCB_00891		hypothetical protein	PFAM:PF02875.26, PFAM:PF08245.18
+contig_1	cds	981664	982035	+	LIHGCB_00892		hypothetical protein	
+contig_1	cds	982044	982286	+	LIHGCB_00893	khpA	RNA-binding protein KhpA	SO:0001217, UniRef:UniRef50_Q97I96
+contig_1	cds	982337	982873	+	LIHGCB_00894		hypothetical protein	PFAM:PF01782.24, PFAM:PF24986.1
+contig_1	cds	982870	983622	+	LIHGCB_00895		tRNA (guanine-N(1)-)-methyltransferase	SO:0001217, UniRef:UniRef50_O51641
+contig_1	cds	983594	983965	+	LIHGCB_00896		Large ribosomal subunit protein bL19	SO:0001217, UniRef:UniRef50_A0A3R5WM69
+contig_1	cds	983962	984882	+	LIHGCB_00897		Uncharacterized protein TP_0910	SO:0001217, UniRef:UniRef50_O83880
+contig_1	cds	984904	985155	+	LIHGCB_00898		hypothetical protein	
+contig_1	cds	985240	986490	+	LIHGCB_00899		HD-GYP domain-containing protein	SO:0001217, UniRef:UniRef50_O83882
+contig_1	cds	986474	986854	+	LIHGCB_00900		hypothetical protein	
+contig_1	cds	986851	987033	+	LIHGCB_00901		hypothetical protein	
+contig_1	cds	987026	987412	+	LIHGCB_00902		hypothetical protein	
+contig_1	cds	987486	988820	+	LIHGCB_00903	yrrB	TPR repeat-containing protein YrrB	SO:0001217, UniRef:UniRef50_A0A1V5WJD3
+contig_1	cds	988989	990338	+	LIHGCB_00904	mgtE	Magnesium transporter MgtE	SO:0001217, UniRef:UniRef50_A0PZ65
+contig_1	cds	990618	991043	-	LIHGCB_00905		hypothetical protein	
+contig_1	cds	991151	991468	-	LIHGCB_00906		Thioredoxin	SO:0001217, UniRef:UniRef50_O84544
+contig_1	cds	991697	994120	+	LIHGCB_00907		TPR repeat-containing protein TP_0920	SO:0001217, UniRef:UniRef50_O83890
+contig_1	cds	994228	995565	+	LIHGCB_00908		NADH oxidase	SO:0001217, UniRef:UniRef50_Q5XC60
+contig_1	cds	995638	996690	+	LIHGCB_00909		hypothetical protein	PFAM:PF12804.13
+contig_1	cds	996634	997992	-	LIHGCB_00910		hypothetical protein	PFAM:PF13860.12
+contig_1	tRNA	998136	998208	+	LIHGCB_00911	trnA	tRNA-Ala(cgc)	SO:0000254
+contig_1	cds	998308	1000647	+	LIHGCB_00912		S1 motif domain-containing protein	SO:0001217, UniRef:UniRef50_A0A1T4JHD7
+contig_1	tRNA	1000748	1000820	-	LIHGCB_00913	trnT	tRNA-Thr(cgt)	SO:0000270
+contig_1	cds	1001013	1001453	+	LIHGCB_00914		Flavodoxin	SO:0001217, UniRef:UniRef50_O83895
+contig_1	cds	1001604	1003439	-	LIHGCB_00915		hypothetical protein	PFAM:PF10502.14
+contig_1	cds	1003613	1003825	+	LIHGCB_00916		hypothetical protein	
+contig_1	cds	1003979	1005448	+	LIHGCB_00917		hypothetical protein	PFAM:PF13145.12
+contig_1	cds	1005487	1007193	+	LIHGCB_00918		Uncharacterized protein TP_0930	SO:0001217, UniRef:UniRef50_O83900
+contig_1	cds	1007277	1008707	-	LIHGCB_00919		Mannosylglycerate hydrolase MGH1-like glycoside hydrolase domain-containing protein	SO:0001217, UniRef:UniRef50_A0A6N2E5T7
+contig_1	cds	1008819	1010441	-	LIHGCB_00920		UDP-N-acetylmuramyl-tripeptide synthetase	SO:0001217, UniRef:UniRef50_O83903
+contig_1	cds	1010577	1011800	+	LIHGCB_00921		Glutamate transporter, putative	SO:0001217, UniRef:UniRef50_O83904
+contig_1	cds	1011793	1012701	-	LIHGCB_00922		Alpha/beta hydrolase fold-3 domain-containing protein	SO:0001217, UniRef:UniRef50_F7XR16
+contig_1	tRNA	1012842	1012915	+	LIHGCB_00923	trnV	tRNA-Val(gac)	SO:0000273
+contig_1	cds	1012925	1013935	-	LIHGCB_00924		hypothetical protein	PFAM:PF00571.33, PFAM:PF03471.22
+contig_1	cds	1014170	1014805	-	LIHGCB_00925		hypothetical protein	PFAM:PF00149.33, PFAM:PF12850.12
+contig_1	cds	1014802	1015398	-	LIHGCB_00926		hypothetical protein	
+contig_1	cds	1015365	1015601	-	LIHGCB_00927		hypothetical protein	
+contig_1	cds	1015697	1019251	-	LIHGCB_00928		Pyruvate-flavodoxin oxidoreductase	SO:0001217, UniRef:UniRef50_A0A372DL81
+contig_1	cds	1019445	1019963	-	LIHGCB_00929		Uncharacterized protein TP_0941	SO:0001217, UniRef:UniRef50_O83911
+contig_1	cds	1020040	1020504	-	LIHGCB_00930		hypothetical protein	
+contig_1	cds	1020510	1020956	-	LIHGCB_00931	fliS	Flagellar secretion chaperone FliS	SO:0001217, UniRef:UniRef50_Q73RG9
+contig_1	cds	1021005	1022177	-	LIHGCB_00932		Tetratricopeptide repeat protein	SO:0001217, UniRef:UniRef50_A0AAE6M907
+contig_1	cds	1022348	1023004	-	LIHGCB_00933		Ribulose-phosphate 3-epimerase	SO:0001217, UniRef:UniRef50_A0A9D8RF89
+contig_1	cds	1023336	1023755	-	LIHGCB_00934		hypothetical protein	
+contig_1	cds	1023869	1024516	-	LIHGCB_00935		Peptidyl-prolyl cis-trans isomerase	SO:0001217, UniRef:UniRef50_A0A1V5G1X7
+contig_1	cds	1024513	1025208	-	LIHGCB_00936		hypothetical protein	PFAM:PF01424.28, PFAM:PF07650.23, PFAM:PF13083.13, PFAM:PF14804.11
+contig_1	cds	1025224	1027092	-	LIHGCB_00937	yidC	Membrane protein insertase YidC	SO:0001217, UniRef:UniRef50_O66103
+contig_1	cds	1027092	1027376	-	LIHGCB_00938		Putative membrane protein insertion efficiency factor	SO:0001217, UniRef:UniRef50_A0A7V4SP63
+contig_1	cds	1027380	1027781	-	LIHGCB_00939		hypothetical protein	
+contig_1	cds	1027787	1027942	-	LIHGCB_00940		Large ribosomal subunit protein bL34	SO:0001217, UniRef:UniRef50_P80340
+contig_1	cds	1028063	1029070	-	LIHGCB_00941		Lipase, putative	SO:0001217, UniRef:UniRef50_O83918
+contig_1	cds	1029182	1030360	-	LIHGCB_00942	traB	TraB family protein	SO:0001217, UniRef:UniRef50_F7XRI2
+contig_1	cds	1030458	1031894	-	LIHGCB_00943		hypothetical protein	PFAM:PF00515.34, PFAM:PF03704.23, PFAM:PF07719.23, PFAM:PF12895.13, PFAM:PF13174.12, PFAM:PF13176.12, PFAM:PF13181.12, PFAM:PF13371.12, PFAM:PF13374.12, PFAM:PF13414.12, PFAM:PF13424.12, PFAM:PF13428.12, PFAM:PF13431.12, PFAM:PF13432.12, PFAM:PF14559.12, PFAM:PF23914.1, PFAM:PF25058.1, PFAM:PF25060.1
+contig_1	cds	1032044	1032337	+	LIHGCB_00944		hypothetical protein	
+contig_1	cds	1032280	1033305	+	LIHGCB_00945		Uncharacterized protein TP_0956	SO:0001217, UniRef:UniRef50_O83922
+contig_1	cds	1033396	1034424	+	LIHGCB_00946		Tp33 protein	SO:0001217, UniRef:UniRef50_O83923
+contig_1	cds	1034455	1036353	+	LIHGCB_00947		TRAP-T family tripartite ATP-independent periplasmic transporter, membrane protein	SO:0001217, UniRef:UniRef50_F7XR38
+contig_1	cds	1036422	1036811	-	LIHGCB_00948		hypothetical protein	
+contig_1	cds	1036823	1037617	-	LIHGCB_00949	flgG	Flagellar basal-body rod protein FlgG	SO:0001217, UniRef:UniRef50_O51715
+contig_1	cds	1037693	1038508	-	LIHGCB_00950	flgF	Flagellar basal-body rod protein FlgF	SO:0001217, UniRef:UniRef50_A0A7T3RBL4
+contig_1	cds	1038594	1039826	-	LIHGCB_00951		hypothetical protein	PFAM:PF02687.27, PFAM:PF12704.14
+contig_1	cds	1039937	1041166	-	LIHGCB_00952		putative macrolide ABC superfamily ATP binding cassette transporter, ABC/membrane protein	SO:0001217, UniRef:UniRef50_F7XR42
+contig_1	cds	1041156	1041863	-	LIHGCB_00953	lolD	Lipoprotein-releasing system ATP-binding protein LolD	SO:0001217, UniRef:UniRef50_A0A1E2RWL6
+contig_1	cds	1041863	1042825	-	LIHGCB_00954		Efflux RND transporter periplasmic adaptor subunit	SO:0001217, UniRef:UniRef50_A0A0B7GRZ7
+contig_1	cds	1042850	1044514	-	LIHGCB_00955		Uncharacterized protein TP_0966	SO:0001217, UniRef:UniRef50_O83932
+contig_1	cds	1044536	1046074	-	LIHGCB_00956		Uncharacterized protein TP_0967	SO:0001217, UniRef:UniRef50_O83933
+contig_1	cds	1046071	1047693	-	LIHGCB_00957		Uncharacterized protein TP_0968	SO:0001217, UniRef:UniRef50_O83934
+contig_1	cds	1047690	1049234	-	LIHGCB_00958		Uncharacterized protein TP_0969	SO:0001217, UniRef:UniRef50_O83935
+contig_1	cds	1049446	1050060	-	LIHGCB_00959		34 kDa membrane antigen	SO:0001217, UniRef:UniRef50_P19478
+contig_1	cds	1050217	1051563	-	LIHGCB_00960		ILT iron/lead superfamily transporter	SO:0001217, UniRef:UniRef50_F7XRI8
+contig_1	cds	1051651	1053312	+	LIHGCB_00961		hypothetical protein	PFAM:PF01409.25
+contig_1	cds	1053364	1053642	-	LIHGCB_00962		hypothetical protein	
+contig_1	cds	1053697	1054521	-	LIHGCB_00963		Ribosomal RNA small subunit methyltransferase I	SO:0001217, UniRef:UniRef50_O83940
+contig_1	cds	1054632	1055951	+	LIHGCB_00964		Uncharacterized protein TP_0976	SO:0001217, UniRef:UniRef50_O83941
+contig_1	cds	1055938	1056798	+	LIHGCB_00965		GTP cyclohydrolase 1 type 2-like protein	SO:0001217, UniRef:UniRef50_O83942
+contig_1	cds	1056828	1057388	+	LIHGCB_00966		Lipoprotein signal peptidase	SO:0001217, UniRef:UniRef50_I0XBQ7
+contig_1	cds	1057558	1058331	+	LIHGCB_00967	ycfH	Deoxyribonuclease YcfH	SO:0001217, UniRef:UniRef50_A0A1V5RFS2
+contig_1	cds	1058306	1059361	+	LIHGCB_00968		hypothetical protein	PFAM:PF01207.24
+contig_1	cds	1059541	1060584	+	LIHGCB_00969		GGDEF domain-containing protein	SO:0001217, UniRef:UniRef50_F7XR55
+contig_1	cds	1060606	1061226	+	LIHGCB_00970	aarA	Rhomboid protease AarA	SO:0001217, UniRef:UniRef50_A0A1V5WMM9
+contig_1	cds	1061258	1061932	+	LIHGCB_00971		hypothetical protein	
+contig_1	cds	1061956	1063875	-	LIHGCB_00972	htpG	Chaperone protein HtpG	SO:0001217, UniRef:UniRef50_A0A258X2S1
+contig_1	cds	1064058	1065827	+	LIHGCB_00973		Aspartate--tRNA(Asp/Asn) ligase	SO:0001217, UniRef:UniRef50_Q73MC2
+contig_1	cds	1065883	1066767	+	LIHGCB_00974		DMT superfamily drug/metabolite transporter	SO:0001217, UniRef:UniRef50_A0AAU8RQE9
+contig_1	cds	1066813	1067196	-	LIHGCB_00975		hypothetical protein	
+contig_1	cds	1067287	1067886	+	LIHGCB_00976		UPF0056 inner membrane protein	SO:0001217, UniRef:UniRef50_F7XRJ0
+contig_1	cds	1067922	1068626	-	LIHGCB_00977		AMP-activated protein kinase glycogen-binding domain-containing protein	SO:0001217, UniRef:UniRef50_A0AA87NS89
+contig_1	cds	1068841	1071942	+	LIHGCB_00978		Tetratricopeptide repeat protein	SO:0001217, UniRef:UniRef50_O83955
+contig_1	cds	1072020	1072166	+	LIHGCB_00979		hypothetical protein	PFAM:PF00301.25
+contig_1	cds	1072200	1072487	+	LIHGCB_00980		hypothetical protein	
+contig_1	cds	1072557	1073582	-	LIHGCB_00981	rlpA	putative endolytic peptidoglycan transglycosylase RlpA	SO:0001217, UniRef:UniRef50_O83958
+contig_1	tRNA	1073700	1073785	-	LIHGCB_00982	trnL	tRNA-Leu(taa)	SO:0000264
+contig_1	cds	1073938	1074753	+	LIHGCB_00983		hypothetical protein	PFAM:PF01026.27, SO:0001217, UniRef:UniRef50_O83959
+contig_1	cds	1074828	1076162	+	LIHGCB_00984		Cyclic nucleotide-binding domain-containing protein	SO:0001217, UniRef:UniRef50_M2B987
+contig_1	tRNA	1077832	1077905	-	LIHGCB_00985	trnA	tRNA-Ala(ggc)	SO:0000254
+contig_1	cds	1077965	1079761	-	LIHGCB_00986		Signal peptide peptidase A	SO:0001217, UniRef:UniRef50_F7XR69
+contig_1	cds	1079795	1081183	-	LIHGCB_00987		hypothetical protein	
+contig_1	cds	1081369	1083768	+	LIHGCB_00988		hypothetical protein	PFAM:PF01580.24, PFAM:PF09397.16, PFAM:PF17854.6
+contig_1	cds	1084057	1084617	+	LIHGCB_00989		Uncharacterized protein TP_1000	SO:0001217, UniRef:UniRef50_O83965
+contig_1	cds	1084757	1085995	-	LIHGCB_00990		hypothetical protein	
+contig_1	cds	1085952	1086707	-	LIHGCB_00991		DUF2259 domain-containing protein	SO:0001217, UniRef:UniRef50_Q73MI9
+contig_1	cds	1086905	1087852	+	LIHGCB_00992		hypothetical protein	
+contig_1	cds	1087875	1088480	-	LIHGCB_00993	recR	Recombination protein RecR	SO:0001217, UniRef:UniRef50_O83969
+contig_1	cds	1088554	1090272	-	LIHGCB_00994		hypothetical protein	PFAM:PF00004.35, PFAM:PF05496.18, PFAM:PF07728.20, PFAM:PF13177.12, PFAM:PF22608.2
+contig_1	cds	1090331	1092244	-	LIHGCB_00995		DNA gyrase subunit B	SO:0001217, UniRef:UniRef50_O08399
+contig_1	cds	1092353	1093270	-	LIHGCB_00996		Flavin-dependent thymidylate synthase	SO:0001217, UniRef:UniRef50_A0A972AV03
+contig_1	cds	1093313	1095850	-	LIHGCB_00997		Ribonucleoside-diphosphate reductase	SO:0001217, UniRef:UniRef50_F8IJA6
+contig_1	cds	1095977	1097047	-	LIHGCB_00998		Glycerol-3-phosphate dehydrogenase [NAD(P)+]	SO:0001217, UniRef:UniRef50_O83973
+contig_1	cds	1097144	1097593	-	LIHGCB_00999		Nucleoside diphosphate kinase	SO:0001217, UniRef:UniRef50_Q1B625
+contig_1	cds	1097719	1098327	-	LIHGCB_01000		hypothetical protein	PFAM:PF01195.25
+contig_1	cds	1098362	1099252	-	LIHGCB_01001		hypothetical protein	PFAM:PF04542.20, PFAM:PF04545.22
+contig_1	cds	1099502	1099768	+	LIHGCB_01002		hypothetical protein	PFAM:PF00166.26
+contig_1	cds	1099779	1101713	-	LIHGCB_01003		hypothetical protein	
+contig_1	cds	1101679	1102104	-	LIHGCB_01004	nusB	Transcription antitermination protein NusB	SO:0001217, UniRef:UniRef50_O83979
+contig_1	cds	1102101	1103186	-	LIHGCB_01005		Basic membrane protein	SO:0001217, UniRef:UniRef50_P29725
+contig_1	cds	1103259	1105190	-	LIHGCB_01006		Alanine--tRNA ligase	SO:0001217, UniRef:UniRef50_O51238
+contig_1	cds	1105248	1106762	+	LIHGCB_01007		Ribonuclease Y	SO:0001217, UniRef:UniRef50_Q73R54
+contig_1	cds	1106784	1107227	+	LIHGCB_01008		hypothetical protein	
+contig_1	cds	1107228	1108748	+	LIHGCB_01009		Glutamyl-tRNA(Gln) amidotransferase subunit A	SO:0001217, UniRef:UniRef50_O83983
+contig_1	cds	1108741	1110270	+	LIHGCB_01010		Aspartyl/glutamyl-tRNA(Asn/Gln) amidotransferase subunit B	SO:0001217, UniRef:UniRef50_O83984
+contig_1	cds	1110366	1111733	-	LIHGCB_01011	radA	DNA repair protein RadA	SO:0001217, UniRef:UniRef50_O83985
+contig_1	cds	1111749	1112447	-	LIHGCB_01012		hypothetical protein	PFAM:PF02631.22, PFAM:PF21982.2
+contig_1	cds	1112401	1112790	-	LIHGCB_01013		Small ribosomal subunit protein uS9	SO:0001217, UniRef:UniRef50_Q3AQ24
+contig_1	cds	1112806	1113234	-	LIHGCB_01014		Large ribosomal subunit protein uL13	SO:0001217, UniRef:UniRef50_O51314
+contig_1	cds	1113231	1113473	-	LIHGCB_01015		hypothetical protein	
+contig_1	cds	1113667	1115436	+	LIHGCB_01016		Oligoendopeptidase, M3 family	SO:0001217, UniRef:UniRef50_A0A0B7GTG3
+contig_1	cds	1115459	1116334	+	LIHGCB_01017		Uridine phosphorylase	SO:0001217, UniRef:UniRef50_O83990
+contig_1	cds	1116350	1118392	-	LIHGCB_01018		DNA 3'-5' helicase	SO:0001217, UniRef:UniRef50_F7XRJ4
+contig_1	cds	1118445	1119113	-	LIHGCB_01019		Uncharacterized protein TP_1029	SO:0001217, UniRef:UniRef50_O83992
+contig_1	cds	1119400	1121277	+	LIHGCB_01020		Tpr protein L	SO:0001217, UniRef:UniRef50_A0AAU8RR26
+contig_1	cds	1121342	1121776	-	LIHGCB_01021		Uncharacterized protein TP_1032	SO:0001217, UniRef:UniRef50_O83995
+contig_1	cds	1121788	1122723	-	LIHGCB_01022		PNPLA domain-containing protein	SO:0001217, UniRef:UniRef50_O83996
+contig_1	cds	1122797	1123822	+	LIHGCB_01023		hypothetical protein	
+contig_1	cds	1123819	1126689	-	LIHGCB_01024		Valine--tRNA ligase	SO:0001217, UniRef:UniRef50_O83998
+contig_1	cds	1126843	1129221	+	LIHGCB_01025		hypothetical protein	PFAM:PF00403.32, PFAM:PF00702.32
+contig_1	cds	1129311	1130027	-	LIHGCB_01026		Hemolysin III	SO:0001217, UniRef:UniRef50_A0A1T4QAP4
+contig_1	cds	1130186	1130719	-	LIHGCB_01027		Antigen TpF1	SO:0001217, UniRef:UniRef50_P16665
+contig_1	cds	1130977	1131519	+	LIHGCB_01028		Adenine phosphoribosyltransferase	SO:0001217, UniRef:UniRef50_Q73M27
+contig_1	cds	1131542	1132597	-	LIHGCB_01029		Elongation factor P--(R)-beta-lysine ligase	SO:0001217, UniRef:UniRef50_A0A1V5WLA9
+contig_1	cds	1132597	1133196	-	LIHGCB_01030		ATP-dependent Clp protease proteolytic subunit 2	SO:0001217, UniRef:UniRef50_O84003

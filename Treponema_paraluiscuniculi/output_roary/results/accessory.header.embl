@@ -1,0 +1,199 @@
+ID   Genome standard; DNA; PRO; 1234 BP.
+XX
+FH   Key             Location/Qualifiers
+FH
+FT   misc_feature    30
+FT                   /label=group_13
+FT                   /locus_tag=group_13
+FT                   /colour=7
+FT   feature         13
+FT                   /label=Large ribosomal subunit protein bL34
+FT                   /locus_tag=Large ribosomal subunit protein bL34
+FT                   /colour=3
+FT   feature         12
+FT                   /label=Tpr protein L
+FT                   /locus_tag=Tpr protein L
+FT                   /colour=2
+FT   misc_feature    1
+FT                   /label=group_54
+FT                   /locus_tag=group_54
+FT                   /colour=3
+FT   misc_feature    5
+FT                   /label=group_34
+FT                   /locus_tag=group_34
+FT                   /colour=7
+FT   misc_feature    23
+FT                   /label=group_47
+FT                   /locus_tag=group_47
+FT                   /colour=7
+FT   misc_feature    4
+FT                   /label=group_46
+FT                   /locus_tag=group_46
+FT                   /colour=6
+FT   misc_feature    33
+FT                   /label=group_14
+FT                   /locus_tag=group_14
+FT                   /colour=2
+FT   misc_feature    31
+FT                   /label=group_859
+FT                   /locus_tag=group_859
+FT                   /colour=7
+FT   misc_feature    3
+FT                   /label=group_42
+FT                   /locus_tag=group_42
+FT                   /colour=5
+FT   feature         10
+FT                   /label=Uncharacterized lipoprotein TP_0462/TP_0463
+FT                   /locus_tag=Uncharacterized lipoprotein TP_0462/TP_0463
+FT                   /colour=6
+FT   misc_feature    2
+FT                   /label=group_877
+FT                   /locus_tag=group_877
+FT                   /colour=4
+FT   misc_feature    15
+FT                   /label=group_36
+FT                   /locus_tag=group_36
+FT                   /colour=5
+FT   misc_feature    29
+FT                   /label=group_32
+FT                   /locus_tag=group_32
+FT                   /colour=6
+FT   misc_feature    26
+FT                   /label=group_2
+FT                   /locus_tag=group_2
+FT                   /colour=4
+FT   feature         8
+FT                   /label=Acidic repeat protein
+FT                   /locus_tag=Acidic repeat protein
+FT                   /colour=4
+FT   misc_feature    22
+FT                   /label=group_35
+FT                   /locus_tag=group_35
+FT                   /colour=6
+FT   misc_feature    11
+FT                   /label=group_53
+FT                   /locus_tag=group_53
+FT                   /colour=7
+FT   misc_feature    14
+FT                   /label=group_48
+FT                   /locus_tag=group_48
+FT                   /colour=4
+FT   feature         28
+FT                   /label=Uncharacterized protein TP_0127
+FT                   /locus_tag=Uncharacterized protein TP_0127
+FT                   /colour=6
+FT   feature         32
+FT                   /label=Uncharacterized protein TP_0619
+FT                   /locus_tag=Uncharacterized protein TP_0619
+FT                   /colour=2
+FT   misc_feature    16
+FT                   /label=group_6
+FT                   /locus_tag=group_6
+FT                   /colour=6
+FT   misc_feature    9
+FT                   /label=group_4
+FT                   /locus_tag=group_4
+FT                   /colour=5
+FT   misc_feature    21
+FT                   /label=group_49
+FT                   /locus_tag=group_49
+FT                   /colour=5
+FT   feature         7
+FT                   /label=Tpr protein K
+FT                   /locus_tag=Tpr protein K
+FT                   /colour=3
+FT   misc_feature    18
+FT                   /label=group_55
+FT                   /locus_tag=group_55
+FT                   /colour=2
+FT   misc_feature    25
+FT                   /label=group_39
+FT                   /locus_tag=group_39
+FT                   /colour=3
+FT   misc_feature    27
+FT                   /label=group_37
+FT                   /locus_tag=group_37
+FT                   /colour=5
+FT   feature         20
+FT                   /label=UPF0164 protein TP_0548
+FT                   /locus_tag=UPF0164 protein TP_0548
+FT                   /colour=4
+FT   misc_feature    24
+FT                   /label=group_40
+FT                   /locus_tag=group_40
+FT                   /colour=2
+FT   misc_feature    19
+FT                   /label=group_50
+FT                   /locus_tag=group_50
+FT                   /colour=3
+FT   misc_feature    6
+FT                   /label=group_33
+FT                   /locus_tag=group_33
+FT                   /colour=2
+FT   misc_feature    17
+FT                   /label=group_8
+FT                   /locus_tag=group_8
+FT                   /colour=7
+FT   feature         10
+FT                   /colour=6
+FT   feature         2
+FT                   /colour=4
+FT   feature         5
+FT                   /colour=7
+FT   feature         21
+FT                   /colour=5
+FT   feature         22
+FT                   /colour=6
+FT   feature         14
+FT                   /colour=4
+FT   feature         15
+FT                   /colour=5
+FT   feature         8
+FT                   /colour=4
+FT   feature         7
+FT                   /colour=3
+FT   feature         13
+FT                   /colour=3
+FT   feature         25
+FT                   /colour=3
+FT   feature         17
+FT                   /colour=7
+FT   feature         1
+FT                   /colour=3
+FT   feature         19
+FT                   /colour=3
+FT   feature         20
+FT                   /colour=4
+FT   feature         27
+FT                   /colour=5
+FT   feature         16
+FT                   /colour=6
+FT   feature         23
+FT                   /colour=7
+FT   feature         9
+FT                   /colour=5
+FT   feature         4
+FT                   /colour=6
+FT   feature         28..29
+FT                   /colour=6
+FT   feature         18
+FT                   /colour=2
+FT   feature         12
+FT                   /colour=2
+FT   feature         11
+FT                   /colour=7
+FT   feature         30..31
+FT                   /colour=7
+FT   feature         24
+FT                   /colour=2
+FT   feature         3
+FT                   /colour=5
+FT   feature         6
+FT                   /colour=2
+FT   feature         26
+FT                   /colour=4
+FT   feature         32..33
+FT                   /colour=2
+XX
+SQ   Sequence 1234 BP; 789 A; 1717 C; 1693 G; 691 T; 0 other;
+//

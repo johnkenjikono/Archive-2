@@ -1,0 +1,992 @@
+Gene	GCA_000217655.1	GCA_030436145.1
+group_1	1	1
+group_10	1	1
+"Putative DD-carboxypeptidase TP_0574"	1	1
+aarA	1	1
+recR	1	1
+Desulfoferrodoxin	1	1
+group_104	1	1
+group_105	1	1
+group_106	1	1
+"Ribonuclease Y"	1	1
+"peptidoglycan glycosyltransferase"	1	1
+group_109	1	1
+group_11	1	1
+group_110	1	1
+group_111	1	1
+"Ribose-5-phosphate isomerase A"	1	1
+group_113	1	1
+"ATP-dependent Clp protease proteolytic subunit"	1	1
+group_115	1	1
+"Carhohydrate kinase (XylB)"	1	1
+group_117	1	1
+"Uncharacterized protein TP_0846"	1	1
+"Threonine--tRNA ligase"	1	1
+group_12	1	1
+group_120	1	1
+"Tp33 protein"	1	1
+group_122	1	1
+recN	1	1
+group_124	1	1
+group_125	1	1
+group_126	1	1
+"DNA-directed DNA polymerase III gamma and tau subunits"	1	1
+"Acetate kinase"	1	1
+fleN	1	1
+group_130	1	1
+fliM	1	1
+"Uncharacterized protein TP_1029"	1	1
+"Uncharacterized protein TP_0787"	1	1
+group_134	1	1
+"Alpha-amylase 1, putative"	1	1
+group_136	1	1
+group_137	1	1
+group_138	1	1
+group_139	1	1
+"Uncharacterized protein TP_0618"	1	1
+group_141	1	1
+group_142	1	1
+"Small ribosomal subunit protein uS8"	1	1
+group_144	1	1
+group_145	1	1
+"UvrABC system protein B"	1	1
+"DUF2225 domain-containing protein"	1	1
+group_148	1	1
+troD	1	1
+tmpC	1	1
+"Glycerophosphodiester phosphodiesterase"	1	1
+group_151	1	1
+group_152	1	1
+"Nuclease SbcCD subunit D"	1	1
+"DNA-T family bacterial competence-related DNA transformation transporter"	1	1
+group_155	1	1
+ftsW	1	1
+"Sugar ABC superfamily ATP binding cassette transporter, membrane protein"	1	1
+secA	1	1
+"Uncharacterized protein TP_0138"	1	1
+"Putative outer membrane protein assembly factor TP_0326"	1	1
+"Uncharacterized protein TP_0783"	1	1
+group_161	1	1
+group_162	1	1
+rfuA	1	1
+"DNA gyrase subunit A"	1	1
+group_165	1	1
+"DNA-directed RNA polymerase subunit alpha"	1	1
+"CTP synthase"	1	1
+"Glucose-6-phosphate 1-dehydrogenase"	1	1
+"Phosphatidate cytidylyltransferase"	1	1
+"Isoleucine--tRNA ligase"	1	1
+"Flavin-dependent thymidylate synthase"	1	1
+group_171	1	1
+group_172	1	1
+group_173	1	1
+"V-type ATP synthase subunit D 1"	1	1
+"GGDEF domain-containing protein"	1	1
+"Elongation factor P--(R)-beta-lysine ligase"	1	1
+"Beta sliding clamp"	1	1
+group_178	1	1
+"Elongation factor Ts"	1	1
+group_18	1	1
+group_180	1	1
+rlpA	1	1
+"Large ribosomal subunit protein bL19"	1	1
+group_183	1	1
+"Large ribosomal subunit protein uL24"	1	1
+group_185	1	1
+"NADH oxidase"	1	1
+group_187	1	1
+"Lipoprotein signal peptidase"	1	1
+"PASTA domain-containing protein"	1	1
+group_19	1	1
+"V-type ATPase, K subunit"	1	1
+"SsrA-binding protein"	1	1
+"Antigen, p83/100"	1	1
+ycfH	1	1
+group_194	1	1
+"tRNA (guanine-N(1)-)-methyltransferase"	1	1
+group_196	1	1
+"FAD-binding FR-type domain-containing protein"	1	1
+Aminopeptidase	1	1
+htpG	1	1
+mglB	1	1
+group_200	1	1
+group_201	1	1
+"Uncharacterized protein TP_0110"	1	1
+group_203	1	1
+"Cysteine--tRNA ligase"	1	1
+group_205	1	1
+group_206	1	1
+"Large ribosomal subunit protein uL22"	1	1
+fliL	1	1
+"Small ribosomal subunit protein uS4"	1	1
+"Uncharacterized protein TP_0577"	1	1
+group_210	1	1
+group_211	1	1
+group_212	1	1
+"Thiamine diphosphokinase"	1	1
+group_214	1	1
+group_215	1	1
+group_216	1	1
+"Uncharacterized protein TP_0483"	1	1
+group_218	1	1
+"Chaperonin GroEL"	1	1
+group_22	1	1
+"Nitrogen fixation protein (NifU)"	1	1
+"DNA polymerase I"	1	1
+parB	1	1
+group_223	1	1
+potA	1	1
+"Protein Tp75"	1	1
+"Putative transport protein TP_0553"	1	1
+recG	1	1
+"RNA polymerase sigma-54 factor"	1	1
+group_229	1	1
+"Uncharacterized protein TP_0733"	1	1
+group_230	1	1
+"Uncharacterized protein TP_0969"	1	1
+"DUF2715 domain-containing protein"	1	1
+"Uncharacterized protein TP_0941"	1	1
+group_234	1	1
+group_235	1	1
+group_236	1	1
+flhB	1	1
+group_238	1	1
+femA	1	1
+group_24	1	1
+"1-deoxy-D-xylulose-5-phosphate synthase"	1	1
+"DNA-directed RNA polymerase subunit beta'"	1	1
+group_242	1	1
+"DNA-directed RNA polymerase subunit beta"	1	1
+"histidine kinase"	1	1
+"UDP-N-acetylmuramyl-tripeptide synthetase"	1	1
+"CarD-like/TRCF RNAP-interacting domain-containing protein"	1	1
+group_247	1	1
+group_248	1	1
+"Asparagine--tRNA ligase"	1	1
+"putative nucleoside-triphosphate diphosphatase"	1	1
+"Small ribosomal subunit protein uS7"	1	1
+group_251	1	1
+"Glyceraldehyde-3-phosphate dehydrogenase"	1	1
+group_253	1	1
+group_254	1	1
+group_255	1	1
+"Nuclease SbcCD subunit C"	1	1
+"TPR domain protein"	1	1
+group_258	1	1
+group_259	1	1
+lptB	1	1
+group_260	1	1
+"Tetratricopeptide repeat protein"	1	1
+group_262	1	1
+"Conserved hypothetical integral membrane protein"	1	1
+"endopeptidase La"	1	1
+group_265	1	1
+group_266	1	1
+group_267	1	1
+group_268	1	1
+"FMN hydroxy acid dehydrogenase domain-containing protein"	1	1
+"UPF0164 protein TP_0858"	1	1
+nrnA	1	1
+"SMF family protein"	1	1
+"Large ribosomal subunit protein uL18"	1	1
+group_273	1	1
+"Anti-sigma factor antagonist"	1	1
+group_275	1	1
+group_276	1	1
+"Deoxyuridine 5'-triphosphate nucleotidohydrolase"	1	1
+"Isoprenyl transferase"	1	1
+lolD	1	1
+group_28	1	1
+"Alkyl hydroperoxide reductase C"	1	1
+flaB1	1	1
+ftsH	1	1
+group_283	1	1
+"N-acetyltransferase domain-containing protein"	1	1
+"Antigen TpF1"	1	1
+rfuB	1	1
+"DUF1007 domain-containing protein"	1	1
+group_288	1	1
+"Segregation and condensation protein A"	1	1
+"Uncharacterized protein TP_1000"	1	1
+group_290	1	1
+"Large ribosomal subunit protein bL28"	1	1
+group_292	1	1
+dnaB	1	1
+group_294	1	1
+group_295	1	1
+"V-type ATP synthase alpha chain 2"	1	1
+trkA	1	1
+group_298	1	1
+"Apolipoprotein N-acyltransferase 2"	1	1
+group_3	1	1
+group_30	1	1
+troC	1	1
+"Uncharacterized protein TP_0073"	1	1
+group_302	1	1
+"S-adenosylmethionine synthase"	1	1
+group_304	1	1
+group_305	1	1
+group_306	1	1
+"tRNA-specific adenosine deaminase"	1	1
+group_308	1	1
+"Mannosylglycerate hydrolase MGH1-like glycoside hydrolase domain-containing protein"	1	1
+"Valine--tRNA ligase"	1	1
+group_310	1	1
+group_311	1	1
+"Putative adenosine/adenine deaminase"	1	1
+rsmD	1	1
+group_314	1	1
+cfpA	1	1
+group_316	1	1
+"Pyrimidine 5'-nucleotidase"	1	1
+group_318	1	1
+"Putative uracil phosphoribosyltransferase"	1	1
+"Magnesium/cobalt efflux protein"	1	1
+"ribose-phosphate diphosphokinase"	1	1
+"Ribonuclease Z"	1	1
+"Small ribosomal subunit protein uS15"	1	1
+khpB	1	1
+group_325	1	1
+group_326	1	1
+"Polynucleotide adenylyltransferase"	1	1
+rodA	1	1
+"Outer membrane protein"	1	1
+tsaE	1	1
+group_331	1	1
+"Lon protease"	1	1
+"Uncharacterized protein TP_0374"	1	1
+"AGCS family alanine or glycine:sodium (Na+) or proton (H+) symporter"	1	1
+"Lysine--tRNA ligase"	1	1
+group_336	1	1
+fliP	1	1
+group_338	1	1
+group_339	1	1
+"hypothetical protein"	1	1
+group_341	1	1
+"UvrABC system protein A"	1	1
+"Purine nucleoside phosphorylase DeoD-type"	1	1
+"PTS EIIA type-2 domain-containing protein"	1	1
+"TPR repeat-containing protein TP_0123"	1	1
+"NAD 5'-nucleotidase"	1	1
+group_347	1	1
+"Uncharacterized protein TP_0629"	1	1
+group_349	1	1
+"DUF1361 domain-containing protein"	1	1
+group_351	1	1
+"N-acetylneuraminate synthase"	1	1
+"V-type ATP synthase beta chain"	1	1
+"Flagellar filament outer layer protein"	1	1
+group_355	1	1
+"Tyrosine--tRNA ligase"	1	1
+"DUF4139 domain-containing protein"	1	1
+"Uncharacterized protein TP_0900"	1	1
+"Alanine--tRNA ligase"	1	1
+group_360	1	1
+group_361	1	1
+"UDP-N-acetylenolpyruvoylglucosamine reductase"	1	1
+"tRNA N6-adenosine threonylcarbamoyltransferase"	1	1
+"OmpA-like domain-containing protein"	1	1
+group_365	1	1
+Hexokinase	1	1
+"Aspartyl/glutamyl-tRNA(Asn/Gln) amidotransferase subunit B"	1	1
+cheA	1	1
+group_369	1	1
+group_370	1	1
+znuC	1	1
+group_372	1	1
+"DNA polymerase III subunit alpha"	1	1
+group_374	1	1
+xerD	1	1
+"Uncharacterized protein TP_0376"	1	1
+"putative tRNA sulfurtransferase"	1	1
+"Uncharacterized protein TP_0777"	1	1
+group_379	1	1
+"Pseudouridylate synthase"	1	1
+group_381	1	1
+group_382	1	1
+"Uncharacterized AAA domain-containing protein ycf46"	1	1
+group_384	1	1
+"6-phosphogluconate dehydrogenase, decarboxylating"	1	1
+"Putative membrane protein insertion efficiency factor"	1	1
+"Ribosomal RNA small subunit methyltransferase H"	1	1
+group_388	1	1
+group_389	1	1
+group_390	1	1
+group_391	1	1
+"HAD family hydrolase"	1	1
+group_393	1	1
+"5'-methylthioadenosine/S-adenosylhomocysteine nucleosidase"	1	1
+"2,3-bisphosphoglycerate-dependent phosphoglycerate mutase"	1	1
+fliE	1	1
+group_397	1	1
+"Ribonucleoside-diphosphate reductase subunit beta"	1	1
+group_399	1	1
+group_400	1	1
+group_401	1	1
+group_402	1	1
+"Flagellar hook-associated protein 3"	1	1
+"AAA+ ATPase domain-containing protein"	1	1
+"Flagellar hook capping protein"	1	1
+ftsA	1	1
+"Uncharacterized protein TP_0552"	1	1
+csrA	1	1
+"ABC3 transporter permease protein domain-containing protein"	1	1
+"J domain-containing protein"	1	1
+"Endonuclease III"	1	1
+"Transcription termination factor Rho"	1	1
+"Treponemal membrane protein B"	1	1
+"DNA 3'-5' helicase"	1	1
+"Methionine--tRNA ligase"	1	1
+"1-deoxy-D-xylulose 5-phosphate reductoisomerase"	1	1
+troA	1	1
+"34 kDa membrane antigen"	1	1
+"TRAP-T family tripartite ATP-independent periplasmic transporter, membrane protein"	1	1
+group_420	1	1
+group_421	1	1
+"WecB/TagA/CpsF family glycosyl transferase"	1	1
+"putative nicotinate-nucleotide adenylyltransferase"	1	1
+"Ribosomal RNA small subunit methyltransferase I"	1	1
+group_425	1	1
+pfoR	1	1
+lytR	1	1
+"RNA helicase"	1	1
+"Tpr protein H"	1	1
+"Diadenylate cyclase"	1	1
+"DNA adenine methylase"	1	1
+troB	1	1
+"Uncharacterized protein TP_0762"	1	1
+fliQ	1	1
+group_435	1	1
+group_436	1	1
+group_437	1	1
+"Signal peptide peptidase A"	1	1
+group_439	1	1
+"Peptide chain release factor 1"	1	1
+group_441	1	1
+group_442	1	1
+"Small ribosomal subunit protein uS13"	1	1
+group_444	1	1
+group_445	1	1
+group_446	1	1
+group_447	1	1
+"Large ribosomal subunit protein bL21"	1	1
+"Ribosome-recycling factor"	1	1
+group_450	1	1
+"Fructose-1,6-bisphosphate aldolase, class II"	1	1
+"Motility protein A"	1	1
+Ethanolaminephosphotransferase	1	1
+"Amino acid ABC transporter, periplasmic binding protein (HisJ)"	1	1
+"Histidine--tRNA ligase"	1	1
+group_456	1	1
+"Membrane lipoprotein TpN32"	1	1
+"Large ribosomal subunit protein uL2"	1	1
+"UvrABC system protein C"	1	1
+"Putative periplasmic serine endoprotease DegP-like"	1	1
+group_461	1	1
+rfuD	1	1
+"Small ribosomal subunit protein uS10"	1	1
+ruvB	1	1
+"HPr kinase/phosphorylase"	1	1
+"Small ribosomal subunit protein bS18"	1	1
+"Hypothetical outer membrane protein"	1	1
+group_468	1	1
+group_469	1	1
+group_470	1	1
+group_471	1	1
+group_472	1	1
+"Small ribosomal subunit protein uS19"	1	1
+fliG	1	1
+pknD	1	1
+"Methionine ABC superfamily ATP binding cassette transporter, membrane protein"	1	1
+"MurNAc-LAA domain-containing protein"	1	1
+"Translation initiation factor IF-3"	1	1
+group_479	1	1
+"Small ribosomal subunit protein uS17"	1	1
+group_481	1	1
+"Putative glutamine-dependent NAD(+) synthetase"	1	1
+group_483	1	1
+clpB	1	1
+"ABC transmembrane type-1 domain-containing protein"	1	1
+"Large ribosomal subunit protein uL16"	1	1
+group_487	1	1
+"Ribose/galactose ABC transporter, ATP-binding protein (RbsA-2)"	1	1
+"Oligopeptide ABC superfamily ATP binding cassette transporter, membrane/binding protein"	1	1
+group_490	1	1
+hflC	1	1
+group_492	1	1
+group_493	1	1
+"tetrahydrofolate synthase"	1	1
+"Phosphomannomutase (ManB)"	1	1
+group_496	1	1
+group_497	1	1
+"GTPase Era"	1	1
+group_499	1	1
+clpA	1	1
+group_500	1	1
+"Pyruvate-flavodoxin oxidoreductase"	1	1
+"Efflux RND transporter periplasmic adaptor subunit"	1	1
+dnaK	1	1
+rpoD	1	1
+"Large ribosomal subunit protein uL10"	1	1
+group_506	1	1
+"4-hydroxy-3-methylbut-2-en-1-yl diphosphate synthase (flavodoxin)"	1	1
+flgC	1	1
+group_509	1	1
+"HD-GYP domain-containing protein"	1	1
+group_511	1	1
+"Uncharacterized protein TP_1032"	1	1
+Flavodoxin	1	1
+group_514	1	1
+"Peptide methionine sulfoxide reductase MsrB/MsrA"	1	1
+"DNA primase"	1	1
+group_517	1	1
+group_518	1	1
+"DNA topoisomerase 1"	1	1
+group_520	1	1
+group_521	1	1
+"Small ribosomal subunit protein bS20"	1	1
+group_523	1	1
+group_524	1	1
+"RNA polymerase sigma-24 factor (RpoE)"	1	1
+"Tryptophan--tRNA ligase"	1	1
+"Uncharacterized protein TP_0598"	1	1
+"C-terminal processing peptidase"	1	1
+group_529	1	1
+group_530	1	1
+"UDP-N-acetylglucosamine--N-acetylmuramyl-(pentapeptide) pyrophosphoryl-undecaprenol N-acetylglucosamine transferase"	1	1
+group_532	1	1
+"DMT superfamily drug/metabolite transporter"	1	1
+"Uncharacterized protein TP_0976"	1	1
+group_535	1	1
+"UDP-N-acetylglucosamine--peptide N-acetylglucosaminyltransferase SPINDLY"	1	1
+"DUF2259 domain-containing protein"	1	1
+"UDP-N-acetylglucosamine 1-carboxyvinyltransferase"	1	1
+"Phosphatidylglycerol--prolipoprotein diacylglyceryl transferase"	1	1
+group_540	1	1
+"Elongation factor Tu"	1	1
+"Uncharacterized protein TP_0608"	1	1
+group_543	1	1
+"YjgP/YjgQ family permease"	1	1
+"Glutamyl-tRNA(Gln) amidotransferase subunit A"	1	1
+group_546	1	1
+fliR	1	1
+group_548	1	1
+"TPR repeat-containing protein TP_0920"	1	1
+group_550	1	1
+"Oxaloacetate decarboxylase beta chain"	1	1
+"Pseudouridine synthase"	1	1
+group_553	1	1
+group_554	1	1
+vwb	1	1
+"Trigger factor"	1	1
+flgF	1	1
+group_558	1	1
+"Large ribosomal subunit protein uL13"	1	1
+"protein-glutamate O-methyltransferase"	1	1
+group_560	1	1
+"Nickel/cobalt efflux system"	1	1
+"Uncharacterized protein TP_0690"	1	1
+group_563	1	1
+group_564	1	1
+"Treponemal membrane protein A"	1	1
+"Large ribosomal subunit protein bL35"	1	1
+"AMP-activated protein kinase glycogen-binding domain-containing protein"	1	1
+group_568	1	1
+"UDP-4-keto-6-deoxy-N-acetylglucosamine 4-aminotransferase"	1	1
+Thioredoxin	1	1
+"Thioesterase family protein"	1	1
+"Spermidine/putrescine-binding protein"	1	1
+group_572	1	1
+group_573	1	1
+group_574	1	1
+group_575	1	1
+"Flagellar hook-associated protein 2"	1	1
+group_577	1	1
+"Uncharacterized protein TP_0833"	1	1
+"Hemolysin III"	1	1
+"Large ribosomal subunit protein uL15"	1	1
+"tRNA (guanine-N(7)-)-methyltransferase"	1	1
+group_581	1	1
+"2-dehydro-3-deoxy-phosphogluconate aldolase"	1	1
+group_583	1	1
+group_584	1	1
+group_585	1	1
+nusB	1	1
+group_587	1	1
+"HAD-superfamily hydrolase, subfamily IA"	1	1
+"Lipase, putative"	1	1
+group_59	1	1
+group_590	1	1
+group_591	1	1
+group_592	1	1
+group_593	1	1
+group_594	1	1
+group_595	1	1
+group_596	1	1
+ychF	1	1
+"Uncharacterized protein TP_0245"	1	1
+"Uncharacterized protein TP_0437"	1	1
+"Elongation factor G 1"	1	1
+"3'-5' exonuclease"	1	1
+group_601	1	1
+mutS	1	1
+"NSS family neurotransmitter:Na+ symporter"	1	1
+"Large ribosomal subunit protein bL33"	1	1
+"Uncharacterized protein TP_0222"	1	1
+"TPM domain-containing protein"	1	1
+"Peptide deformylase"	1	1
+"DNA-directed RNA polymerase subunit omega"	1	1
+"putative macrolide ABC superfamily ATP binding cassette transporter, ABC/membrane protein"	1	1
+"Xaa-Pro aminopeptidase"	1	1
+"tRNA(Ile)-lysidine synthase"	1	1
+"Ribulose-phosphate 3-epimerase"	1	1
+group_612	1	1
+group_613	1	1
+"Peptidase M23 domain-containing protein"	1	1
+"CobQ/CobB/MinD/ParA nucleotide binding domain-containing protein"	1	1
+group_616	1	1
+group_617	1	1
+ruvC	1	1
+"Large ribosomal subunit protein uL14"	1	1
+"Alpha/beta hydrolase fold-3 domain-containing protein"	1	1
+"Large ribosomal subunit protein uL30"	1	1
+group_621	1	1
+"Elongation factor G 2"	1	1
+group_623	1	1
+group_624	1	1
+"Soluble lytic transglycosylase, putative"	1	1
+"Large ribosomal subunit protein bL20"	1	1
+"tRNA dimethylallyltransferase 2"	1	1
+group_628	1	1
+"GTPase Obg"	1	1
+fliW	1	1
+group_630	1	1
+"Uncharacterized protein TP_0447"	1	1
+"Adenine DNA glycosylase"	1	1
+"Small ribosomal subunit protein uS5"	1	1
+group_634	1	1
+group_635	1	1
+"Flagellum-specific ATP synthase"	1	1
+"Polymer-forming cytoskeletal protein"	1	1
+group_638	1	1
+"dITP/XTP pyrophosphatase"	1	1
+group_64	1	1
+group_640	1	1
+group_641	1	1
+"putative rRNA (Adenosine-2'-O-)-methyltransferase"	1	1
+group_643	1	1
+group_644	1	1
+"Large ribosomal subunit protein uL5"	1	1
+troR	1	1
+"Serine--tRNA ligase"	1	1
+"Organic solvent tolerance-like N-terminal domain-containing protein"	1	1
+"Small ribosomal subunit protein uS11"	1	1
+group_65	1	1
+traB	1	1
+group_651	1	1
+group_652	1	1
+group_653	1	1
+mreB	1	1
+group_655	1	1
+"Glucose-6-phosphate isomerase"	1	1
+"Polyribonucleotide nucleotidyltransferase"	1	1
+"Serine-type D-Ala-D-Ala carboxypeptidase"	1	1
+group_659	1	1
+group_66	1	1
+group_660	1	1
+"Bifunctional phosphoribulokinase/uridine kinase"	1	1
+"Elongation factor P"	1	1
+group_663	1	1
+"Nucleoside diphosphate kinase"	1	1
+group_665	1	1
+"Ribose/galactose/methyl galactoside import ATP-binding protein"	1	1
+"Uncharacterized protein TP_0564"	1	1
+"DNA ligase"	1	1
+"Uncharacterized protein TP_0752"	1	1
+"Uncharacterized protein TP_0930"	1	1
+group_670	1	1
+group_671	1	1
+group_672	1	1
+group_673	1	1
+group_674	1	1
+group_675	1	1
+Glycosyltransferase	1	1
+group_677	1	1
+group_678	1	1
+group_679	1	1
+group_68	1	1
+group_680	1	1
+xerC	1	1
+Acyltransferase	1	1
+folD	1	1
+"S1 motif domain-containing protein"	1	1
+"17 kDa lipoprotein"	1	1
+"Ribonucleoside-diphosphate reductase"	1	1
+rsuA	1	1
+"UDP-N-acetylmuramoyl-tripeptide--D-alanyl-D-alanine ligase"	1	1
+"Glutamate 5-kinase"	1	1
+"Haloacid dehalogenase"	1	1
+group_690	1	1
+yidC	1	1
+flhA	1	1
+"Aspartate--ammonia ligase"	1	1
+group_694	1	1
+group_695	1	1
+"Amino acid ABC transporter, permease protein"	1	1
+group_697	1	1
+"Large ribosomal subunit protein uL3"	1	1
+group_699	1	1
+"Tpr protein A"	1	1
+group_70	1	1
+"Large ribosomal subunit protein uL1"	1	1
+group_701	1	1
+"BCCT family transporter"	1	1
+"GTP cyclohydrolase 1 type 2-like protein"	1	1
+"4Fe4S-binding SPASM domain-containing protein"	1	1
+"Metallo-beta-lactamase domain-containing protein"	1	1
+sufB	1	1
+"Small ribosomal subunit protein uS9"	1	1
+group_708	1	1
+"Glycine--tRNA ligase"	1	1
+group_71	1	1
+"Phosphate acetyltransferase"	1	1
+group_711	1	1
+group_712	1	1
+group_713	1	1
+group_714	1	1
+group_715	1	1
+"Nicotinate phosphoribosyltransferase"	1	1
+"PNPLA domain-containing protein"	1	1
+"Large ribosomal subunit protein bL31"	1	1
+"Large ribosomal subunit protein uL11"	1	1
+secD	1	1
+greA	1	1
+"RRM domain-containing protein"	1	1
+"Uncharacterized protein TP_0910"	1	1
+group_723	1	1
+flgG	1	1
+"50S ribosomal protein L33"	1	1
+group_726	1	1
+"Deoxyribose-phosphate aldolase"	1	1
+"DUF4034 domain-containing protein"	1	1
+"FAD:protein FMN transferase"	1	1
+"Small ribosomal subunit protein uS2"	1	1
+"ATP-dependent 6-phosphofructokinase"	1	1
+"Methionine transport system ATP-binding protein"	1	1
+"15 kDa lipoprotein"	1	1
+"Thiamine ABC transporter, permease protein, putative"	1	1
+lolA	1	1
+group_735	1	1
+"Coproporphyrinogen dehydrogenase"	1	1
+"Membrane spanning protein, putative"	1	1
+"Aspartate--tRNA(Asp/Asn) ligase"	1	1
+"DAACS family dicarboxylate/amino acid:sodium (Na+) or proton (H+) symporter"	1	1
+group_74	1	1
+"Divergent PAP2 family protein"	1	1
+"Uncharacterized protein TP_0352"	1	1
+"Phosphoenolpyruvate carboxykinase [GTP]"	1	1
+"Uncharacterized protein TP_0484"	1	1
+mgtE	1	1
+Phosphatase	1	1
+group_746	1	1
+group_747	1	1
+khpA	1	1
+ybeY	1	1
+"Uncharacterized protein TP_0855"	1	1
+pilZ	1	1
+capD	1	1
+"TPR repeat-containing protein TP_0095"	1	1
+"Acyl carrier protein"	1	1
+"Outer membrane protein Tpn50"	1	1
+group_755	1	1
+group_756	1	1
+group_757	1	1
+group_758	1	1
+Enolase	1	1
+"30S ribosomal protein S12"	1	1
+fliS	1	1
+group_761	1	1
+"Flagellar protein"	1	1
+group_763	1	1
+group_764	1	1
+group_765	1	1
+"Tpr protein B"	1	1
+clpX	1	1
+"Peptidyl-prolyl cis-trans isomerase"	1	1
+dnaJ	1	1
+"Oligoendopeptidase, M3 family"	1	1
+group_770	1	1
+"Uncharacterized protein TP_0593"	1	1
+"Glutamine--fructose-6-phosphate aminotransferase [isomerizing]"	1	1
+group_773	1	1
+"Phosphoenolpyruvate-protein phosphotransferase"	1	1
+"Peptide chain release factor 2"	1	1
+"HEAT repeat domain-containing protein"	1	1
+"Sugar ABC superfamily ATP binding cassette transporter, binding protein"	1	1
+group_778	1	1
+"K+ transport protein (NtpJ)"	1	1
+group_78	1	1
+group_780	1	1
+"ABC superfamily ATP binding cassette transporter, ABC protein"	1	1
+group_782	1	1
+"ABC transporter domain-containing protein"	1	1
+"Uridylate kinase"	1	1
+"DUF368 domain-containing protein"	1	1
+yrrB	1	1
+group_787	1	1
+"Small ribosomal subunit protein uS3"	1	1
+group_789	1	1
+group_79	1	1
+group_790	1	1
+"tRNA pseudouridine synthase B"	1	1
+group_792	1	1
+group_793	1	1
+"Phosphoglycerate kinase"	1	1
+"Signal recognition particle protein"	1	1
+group_796	1	1
+group_797	1	1
+"Adenine phosphoribosyltransferase"	1	1
+nusG	1	1
+group_80	1	1
+lysM	1	1
+group_801	1	1
+group_802	1	1
+"Holo-[acyl-carrier-protein] synthase"	1	1
+group_804	1	1
+"Exodeoxyribonuclease III"	1	1
+group_806	1	1
+group_807	1	1
+group_808	1	1
+"UPF0056 inner membrane protein"	1	1
+group_81	1	1
+"Uncharacterized protein TP_0226"	1	1
+group_811	1	1
+"DUF4015 domain-containing protein"	1	1
+"Spermidine/putrescine ABC transporter permease"	1	1
+group_814	1	1
+"putative transcriptional regulatory protein DET0444"	1	1
+group_816	1	1
+"DNA gyrase subunit B"	1	1
+ftsZ	1	1
+group_819	1	1
+radA	1	1
+"Uncharacterized protein TP_0021"	1	1
+group_821	1	1
+"Motility protein B"	1	1
+"ABC-type uncharacterized transport system domain-containing protein"	1	1
+"RNA polymerase sigma factor"	1	1
+group_825	1	1
+group_826	1	1
+group_827	1	1
+"Fibronectin type-III domain-containing protein"	1	1
+"ATP-dependent Clp protease proteolytic subunit 2"	1	1
+group_83	1	1
+"Single-stranded DNA-binding protein"	1	1
+"Ribonuclease H"	1	1
+"Endolytic murein transglycosylase"	1	1
+group_833	1	1
+scpB	1	1
+"Large ribosomal subunit protein bL27"	1	1
+lemA	1	1
+group_837	1	1
+"Glycerol-3-phosphate dehydrogenase [NAD(P)+]"	1	1
+"Peptidase M16C associated domain-containing protein"	1	1
+"Putative pyridoxine kinase"	1	1
+"4-diphosphocytidyl-2-C-methyl-D-erythritol kinase"	1	1
+Phospho-N-acetylmuramoyl-pentapeptide-transferase	1	1
+"Cytidylate kinase"	1	1
+"Translation initiation factor IF-1"	1	1
+group_844	1	1
+group_845	1	1
+"Glutamate transporter, putative"	1	1
+group_847	1	1
+"Lipoprotein ABC superfamily ATP binding cassette transporter, membrane protein"	1	1
+group_849	1	1
+"Triosephosphate isomerase"	1	1
+group_850	1	1
+"Putative galactokinase"	1	1
+"Putative zinc metalloprotease TP_0600"	1	1
+group_853	1	1
+group_854	1	1
+group_855	1	1
+"Basic membrane protein"	1	1
+recJ	1	1
+group_858	1	1
+"Proline--tRNA ligase"	1	1
+group_860	1	1
+"Sigma-54 factor interaction domain-containing protein"	1	1
+lptD	1	1
+"Large ribosomal subunit protein uL4"	1	1
+"HTH cro/C1-type domain-containing protein"	1	1
+"NADPH-dependent glutamate synthase"	1	1
+group_866	1	1
+group_867	1	1
+group_868	1	1
+secF	1	1
+group_87	1	1
+group_870	1	1
+"Bifunctional cysteine sulfinate desulfinase/cysteine desulfurase"	1	1
+"Methyl-accepting chemotaxis protein"	1	1
+fliK	1	1
+"DUF2147 domain-containing protein"	1	1
+group_875	1	1
+group_876	1	1
+cheX	1	1
+"Leucine--tRNA ligase"	1	1
+"SUF system FeS cluster assembly SufBD core domain-containing protein"	1	1
+"putative exoribonuclease II"	1	1
+ugpC	1	1
+"Glucose/galactose-binding lipoprotein"	1	1
+"Uncharacterized protein TP_0381"	1	1
+"TIGR03545 family protein"	1	1
+rnfC	1	1
+group_886	1	1
+group_887	1	1
+group_888	1	1
+group_889	1	1
+"Uncharacterized protein TP_0675"	1	1
+phoU	1	1
+"Uncharacterized protein TP_0956"	1	1
+"Pyruvate, phosphate dikinase"	1	1
+"Outer membrane protein beta-barrel domain-containing protein"	1	1
+group_894	1	1
+"Putative L-lysine 2,3-aminomutase"	1	1
+"Elongation factor 4"	1	1
+group_897	1	1
+"V-type ATP synthase subunit I 1"	1	1
+group_899	1	1
+group_90	1	1
+"Uridine phosphorylase"	1	1
+murJ	1	1
+"putative bifunctional choline-phosphate cytidylyltransferase/choline kinase"	1	1
+"Glutamate racemase"	1	1
+"Thioredoxin reductase"	1	1
+flgE	1	1
+flaA	1	1
+"Chromosome partition protein Smc"	1	1
+group_908	1	1
+recA	1	1
+group_91	1	1
+"Trk family potassium (K+) transporter, membrane protein"	1	1
+mnmE	1	1
+"76K protein"	1	1
+group_913	1	1
+"4-hydroxy-3-methylbut-2-enyl diphosphate reductase"	1	1
+"HD domain-containing protein"	1	1
+group_916	1	1
+group_917	1	1
+"Uncharacterized protein TP_0304"	1	1
+"Cyclic nucleotide-binding domain-containing protein"	1	1
+group_92	1	1
+"Cobalt ABC transporter, ATP-binding protein"	1	1
+group_921	1	1
+group_922	1	1
+group_923	1	1
+group_924	1	1
+"putative methyl-accepting chemotaxis protein"	1	1
+mglC	1	1
+"Sporulation initiation inhibitor protein Soj"	1	1
+"Uncharacterized protein TP_0747"	1	1
+group_929	1	1
+mraZ	1	1
+"Response regulatory domain-containing protein"	1	1
+fliF	1	1
+"Alginate O-acetylation protein"	1	1
+group_933	1	1
+"Periplasmic serine protease, putative"	1	1
+group_935	1	1
+"Bifunctional enzyme IspD/IspF"	1	1
+"ABC transport system ATP-binding protein"	1	1
+Transketolase	1	1
+"Large ribosomal subunit protein bL12"	1	1
+group_94	1	1
+"UDP-N-acetylmuramate--L-alanine ligase"	1	1
+group_941	1	1
+"Uncharacterized protein TP_0584"	1	1
+flhF	1	1
+"Type III pantothenate kinase"	1	1
+"Outer membrane protein TP0453"	1	1
+group_946	1	1
+group_947	1	1
+"Small-conductance mechanosensitive channel"	1	1
+"Flagellar hook-associated protein 1"	1	1
+group_95	1	1
+"Biotin carboxylase"	1	1
+"V-type ATP synthase alpha chain"	1	1
+"Glutamate--tRNA ligase"	1	1
+"Pyruvate carboxylase subunit B"	1	1
+group_954	1	1
+"Uncharacterized protein TP_0179"	1	1
+group_956	1	1
+group_957	1	1
+"MATE family multi antimicrobial extrusion protein OR"	1	1
+group_959	1	1
+group_96	1	1
+group_960	1	1
+"Peptidoglycan glycosyltransferase"	1	1
+group_962	1	1
+"Peptidase M15C domain-containing protein"	1	1
+"Uncharacterized protein TP_0966"	1	1
+"HAMP domain-containing protein"	1	1
+"Large ribosomal subunit protein uL6"	1	1
+mreC	1	1
+"Uncharacterized protein TP_0967"	1	1
+"SSD domain-containing protein"	1	1
+"Hemolysin, putative"	1	1
+group_970	1	1
+"Methionine aminopeptidase"	1	1
+"CheW-like domain-containing protein"	1	1
+"MgtC/SapB/SrpB/YhiD N-terminal domain-containing protein"	1	1
+"Long-chain-fatty-acid--CoA ligase"	1	1
+group_975	1	1
+"Poly(A) polymerase"	1	1
+group_977	1	1
+"tRNA pseudouridine synthase A"	1	1
+"putative nicotinamidase"	1	1
+group_98	1	1
+"Pyrophosphate--fructose 6-phosphate 1-phosphotransferase"	1	1
+"Primosomal protein N'"	1	1
+group_982	1	1
+"UPF0164 protein TP_0865"	1	1
+group_984	1	1
+"Uncharacterized protein TP_0968"	1	1
+"Uncharacterized lipoprotein TP_0134"	1	1
+group_987	1	1
+Lipoprotein	1	1
+group_989	1	1
+group_99	1	1
+"ILT iron/lead superfamily transporter"	1	1
+"Restriction endonuclease type IV Mrr domain-containing protein"	1	1
+group_13	1	0
+group_14	1	0
+group_2	0	1
+group_32	0	1
+group_33	0	1
+group_34	1	0
+group_35	1	0
+group_36	1	0
+group_37	1	0
+"Acidic repeat protein"	1	0
+group_39	1	0
+group_4	1	0
+group_40	1	0
+"Uncharacterized protein TP_0619"	1	0
+group_42	1	0
+"Large ribosomal subunit protein bL34"	1	0
+"Tpr protein L"	1	0
+"Uncharacterized protein TP_0127"	0	1
+group_46	0	1
+group_47	0	1
+group_48	0	1
+group_49	0	1
+group_50	0	1
+"Uncharacterized lipoprotein TP_0462/TP_0463"	0	1
+"UPF0164 protein TP_0548"	0	1
+group_53	0	1
+group_54	0	1
+group_55	0	1
+group_6	1	0
+group_8	1	0
+group_859	1	0
+group_877	0	1
+"Tpr protein K"	1	0
