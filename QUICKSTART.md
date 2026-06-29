@@ -3,9 +3,7 @@
 ## 🚀 First Time Setup
 
 ```bash
-cd /Users/carlofedolfi/Downloads/move_largest_numeric
-
-# Run setup script (optional - you already have VeryFastTree installed)
+# Run setup script
 bash setup.sh
 
 # Activate virtual environment

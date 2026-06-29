@@ -2,8 +2,8 @@ import os
 import random
 from Bio import SeqIO
 
-def create_rarefaction_fastas(input_fasta="Mycobacteroides_abscessus.fasta", 
-                              output_folder="rarefaction_fastas", 
+def create_rarefaction_fastas(input_fasta,
+                              output_folder="rarefaction_fastas",
                               gene_length=1000, 
                               gene_counts=None, 
                               trials_per_count=20, 
@@ -36,4 +36,11 @@ def create_rarefaction_fastas(input_fasta="Mycobacteroides_abscessus.fasta",
     print(f"✅ Done. Generated {len(gene_counts) * trials_per_count} FASTA files in '{output_folder}'.")
 
 if __name__ == "__main__":
-    create_rarefaction_fastas()
+    import sys
+    if len(sys.argv) < 2:
+        print("Usage: python Rarefaction_fasta_creation.py <input.fasta> [output_folder]")
+        sys.exit(1)
+    create_rarefaction_fastas(
+        input_fasta=sys.argv[1],
+        output_folder=sys.argv[2] if len(sys.argv) > 2 else "rarefaction_fastas",
+    )

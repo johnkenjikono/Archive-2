@@ -12,45 +12,33 @@ from pathlib import Path
 from datetime import datetime
 
 # For outgroup download
-from download_outgroup import download_ncbi_fasta
+from download_outgroup import download_ncbi_fasta, find_outgroup_species, find_typestrain
 
 # Imports for the tree and ecosim steps
 from move_largest_numeric import move_largest_numeric_to_top
-from run_trees import make_trees_batch
+from run_trees import make_trees_batch, write_error_log
 from reroot_tree import reroot_tree_by_first_fasta
 from Rarefaction_fasta_creation import create_rarefaction_fastas
 from run_ecosim import run_ecosim_batch
 from parsing import summarize_ecotypes_in_folder
 
-# Platform-independent path configuration for EcoSim
-def _resolve_ecosim_paths():
-    jar_env = os.environ.get("ECOSIM_JAR")
-    if jar_env:
-        jar_path = os.path.expanduser(jar_env)
-    else:
-        # Check standard default candidate locations
-        candidates = [
-            os.path.abspath("ecosim.jar"),
-            os.path.expanduser("~/Downloads/ecosim-main/ecosim.jar"),
-            "/Users/gfedolfi/ecosim/build/ecosim.jar"
-        ]
-        jar_path = candidates[1]  # Default to ~/Downloads if none exist
-        for candidate in candidates:
-            if os.path.exists(candidate):
-                jar_path = candidate
-                break
+ECOSIM_JAR = os.environ.get("ECOSIM_JAR")
+ECOSIM_DIR = os.environ.get("ECOSIM_DIR")
 
-    dir_env = os.environ.get("ECOSIM_DIR")
-    dir_path = os.path.expanduser(dir_env) if dir_env else os.path.dirname(jar_path) or "."
-    return jar_path, dir_path
+MAX_GFF_FILES = 201
 
-ECOSIM_JAR, ECOSIM_DIR = _resolve_ecosim_paths()
-
-def write_error_log(error_file, error_message):
-    """Write error message to a log file with timestamp."""
-    with open(error_file, "a") as f:
-        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        f.write(f"[{timestamp}] {error_message}\n")
+def _cleanup(path, label=None):
+    p = str(path)
+    name = label or os.path.basename(p)
+    try:
+        if os.path.isdir(p):
+            shutil.rmtree(p)
+            print(f"Removed: {name}")
+        elif os.path.isfile(p):
+            os.remove(p)
+            print(f"Removed: {name}")
+    except Exception as e:
+        print(f"Warning: could not remove {name}: {e}")
 
 def setup_directories(base_dir: Path):
     input_dir = base_dir / "input"
@@ -235,56 +223,40 @@ def run_roary(gff_files: list[Path], roary_dir: Path, threads: int, error_log=No
     if run_output_dir.exists():
         print(f"Removing previous Roary results directory at {run_output_dir}...")
         shutil.rmtree(run_output_dir)
-
-    # Roary's internal Perl scripts break on paths with spaces.
-    # Stage GFF3 files and output dir in a space-free temporary directory.
-    with tempfile.TemporaryDirectory(prefix="roary_") as tmp_dir:
-        tmp_gff_dir = os.path.join(tmp_dir, "gff_inputs")
-        tmp_out_dir = os.path.join(tmp_dir, "roary_out")
-        os.makedirs(tmp_gff_dir)
-
-        # Copy GFF3 files into the space-free temp input dir
-        tmp_gff_files = []
-        for gff in gff_files:
-            dest = os.path.join(tmp_gff_dir, gff.name)
-            shutil.copy2(str(gff), dest)
-            tmp_gff_files.append(dest)
-
-        cmd = [
-            "conda", "run", "-n", "roary_env", "roary",
-            "-f", tmp_out_dir,
-            "-e", "-n", "-v",  # Core gene alignment with verbose output
-            "-p", str(threads)
-        ]
-        cmd.extend(tmp_gff_files)
-
-        print(f"============================================================")
-        print(f"Running Roary on {len(gff_files)} files...")
-        print(f"Command: roary -f {run_output_dir} -e -n -v -p {threads} *.gff3")
-        print(f"============================================================")
-
-        try:
-            result = subprocess.run(cmd, check=True, capture_output=True, text=True)
-            # Move results from temp dir to intended output location
-            shutil.move(tmp_out_dir, str(run_output_dir))
-            success_msg = f"Successfully ran Roary! Results available in: {run_output_dir}"
-            print(f"\n✅ {success_msg}")
-            write_error_log(error_log, success_msg)
-        except subprocess.CalledProcessError as e:
-            error_msg = f"Roary failed with exit code {e.returncode}"
-            if e.stderr:
-                error_msg += f" | stderr: {e.stderr[:500]}"
-            print(f"\n❌ {error_msg}", file=sys.stderr)
-            write_error_log(error_log, error_msg)
-            print(f"Error log: {error_log}")
-            sys.exit(1)
-        except Exception as e:
-            error_msg = f"Exception running Roary: {str(e)}"
-            print(f"\n❌ {error_msg}", file=sys.stderr)
-            write_error_log(error_log, error_msg)
-            print(f"Error log: {error_log}")
-            sys.exit(1)
-
+    
+    cmd = [
+        "conda", "run", "-n", "roary_env", "roary",
+        "-f", str(run_output_dir),
+        "-e", "-n", "-v", # Core gene alignment with verbose output
+        "-p", str(threads)
+    ]
+    
+    cmd.extend(str(f) for f in gff_files)
+    
+    print(f"============================================================")
+    print(f"Running Roary on {len(gff_files)} files...")
+    print(f"Command: roary -f {run_output_dir} -e -n -v -p {threads} *.gff3")
+    print(f"============================================================")
+    
+    try:
+        result = subprocess.run(cmd, check=True, capture_output=True, text=True)
+        success_msg = f"Successfully ran Roary! Results available in: {run_output_dir}"
+        print(f"\n✅ {success_msg}")
+        write_error_log(error_log, success_msg)
+    except subprocess.CalledProcessError as e:
+        error_msg = f"Roary failed with exit code {e.returncode}"
+        if e.stderr:
+            error_msg += f" | stderr: {e.stderr[:300]}"
+        print(f"\n❌ {error_msg}", file=sys.stderr)
+        write_error_log(error_log, error_msg)
+        print(f"Error log: {error_log}")
+        sys.exit(1)
+    except Exception as e:
+        error_msg = f"Exception running Roary: {str(e)}"
+        print(f"\n❌ {error_msg}", file=sys.stderr)
+        write_error_log(error_log, error_msg)
+        print(f"Error log: {error_log}")
+        sys.exit(1)
 
 def run_tree_pipeline(input_fasta, start_step, outgroup_id, base_dir, output_tree_name=None, threads=12):
     if not os.path.exists(input_fasta):
@@ -363,7 +335,7 @@ def run_tree_pipeline(input_fasta, start_step, outgroup_id, base_dir, output_tre
     # --- Step 8: Run EcoSim ---
     if start_step <= 8:
         print(f"\n--- 8. Running EcoSim ---")
-        if os.path.exists(ECOSIM_JAR):
+        if ECOSIM_JAR and os.path.exists(ECOSIM_JAR):
             run_ecosim_batch(
                 fasta_dir=rarefaction_out_dir,
                 full_tree_path=rerooted_tree,
@@ -373,8 +345,9 @@ def run_tree_pipeline(input_fasta, start_step, outgroup_id, base_dir, output_tre
                 memory_gb=12
             )
         else:
-            print(f"EcoSim jar not found at {ECOSIM_JAR}")
-            print(f"   Set environment variable: export ECOSIM_JAR=/Users/gfedolfi/ecosim/build/ecosim.jar")
+            print(f"EcoSim jar not found. Set ECOSIM_JAR: export ECOSIM_JAR=~/ecosim/ecosim.jar")
+        _cleanup(rarefaction_out_dir, "rarefaction FASTAs")
+        _cleanup(rerooted_tree, "rerooted tree")
     else:
         print("\n--- Skipping Step 8 ---")
 
@@ -386,6 +359,13 @@ def run_tree_pipeline(input_fasta, start_step, outgroup_id, base_dir, output_tre
         if summary:
             for filename, count in sorted(summary.items()):
                 print(f"{filename}: {count} ecotypes")
+            csv_path = os.path.join(ecosim_out_dir, "ecotype_summary.csv")
+            with open(csv_path, "w", newline="") as f:
+                writer = csv.writer(f)
+                writer.writerow(["file", "ecotype_count"])
+                for filename, count in sorted(summary.items()):
+                    writer.writerow([filename, count])
+            print(f"Summary saved to {csv_path}")
         else:
             print("No ecotypes found or error in parsing.")
 
@@ -437,6 +417,7 @@ def run_pipeline_for_species(species_name, outgroup_name, args):
 
     core_alignment_path = None
     outgroup_fasta_path = None
+    typestrain_accession = None
 
     # --- Step 1: Download ---
     if args.start_step <= 1:
@@ -445,7 +426,26 @@ def run_pipeline_for_species(species_name, outgroup_name, args):
             sys.exit(1)
         process_species_genome(species_name, args.sample_size, str(input_dir))
 
-    # --- Outgroup Download (if requested) ---
+    # --- Auto-detect typestrain ---
+    print(f"\n--- Auto-detecting typestrain for {species_name} ---")
+    ts_acc, ts_org = find_typestrain(species_name)
+    if ts_acc:
+        typestrain_accession = ts_acc
+        print(f"Typestrain: {ts_org} ({ts_acc})")
+    else:
+        print("Could not identify typestrain from NCBI.")
+
+    # --- Outgroup: explicit arg, or auto-detect ---
+    if not outgroup_name and not args.no_auto_outgroup:
+        print(f"\n--- Auto-detecting outgroup for {species_name} ---")
+        og_acc, og_org = find_outgroup_species(species_name)
+        if og_acc:
+            outgroup_name = og_acc
+            print(f"Auto-detected outgroup: {og_org} ({og_acc})")
+        else:
+            print("Could not auto-detect outgroup; continuing without one.")
+
+    # --- Outgroup Download ---
     if outgroup_name:
         print(f"\n--- Downloading outgroup genome: {outgroup_name} ---")
         outgroup_fasta_path = download_ncbi_fasta(outgroup_name, str(input_dir))
@@ -467,15 +467,15 @@ def run_pipeline_for_species(species_name, outgroup_name, args):
 
         # Ensure deterministic ordering and cap the number of files Bakta will process
         fasta_files = sorted(fasta_files)
-        max_files = 201
-        if len(fasta_files) > max_files:
-            print(f"Found {len(fasta_files)} FASTA files; limiting to first {max_files} for Bakta processing.")
-            fasta_files = fasta_files[:max_files]
+        if len(fasta_files) > MAX_GFF_FILES:
+            print(f"Found {len(fasta_files)} FASTA files; limiting to first {MAX_GFF_FILES} for Bakta processing.")
+            fasta_files = fasta_files[:MAX_GFF_FILES]
 
         print(f"Found {len(fasta_files)} FASTA files to process.")
         for i, fasta in enumerate(fasta_files):
             print(f"\n[Tally] Processed {i+1}/{len(fasta_files)} files: {fasta.name}")
             run_bakta(fasta, bakta_dir, args.db, args.threads)
+        _cleanup(input_dir, "input genomes")
 
     # --- Step 3: Roary ---
     if args.start_step <= 3:
@@ -486,10 +486,9 @@ def run_pipeline_for_species(species_name, outgroup_name, args):
 
         # Ensure deterministic ordering and cap the number of GFF files Roary will process
         gff_files = sorted(gff_files)
-        max_files = 201
-        if len(gff_files) > max_files:
-            print(f"Found {len(gff_files)} GFF3 files; limiting to first {max_files} for Roary processing.")
-            gff_files = gff_files[:max_files]
+        if len(gff_files) > MAX_GFF_FILES:
+            print(f"Found {len(gff_files)} GFF3 files; limiting to first {MAX_GFF_FILES} for Roary processing.")
+            gff_files = gff_files[:MAX_GFF_FILES]
 
         # Setup error logging for Roary
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -497,6 +496,7 @@ def run_pipeline_for_species(species_name, outgroup_name, args):
         
         run_roary(gff_files, roary_dir, args.threads, error_log)
         core_alignment_path = roary_dir / "results" / "core_gene_alignment.aln"
+        _cleanup(bakta_dir, "Bakta annotations")
     else:
         # If starting from step 4+, require an input fasta or use a default one if it exists
         if args.input_fasta:
@@ -513,14 +513,27 @@ def run_pipeline_for_species(species_name, outgroup_name, args):
         if not core_alignment_path or not core_alignment_path.exists():
             print(f"\nError: Could not find core gene alignment file. Please provide --input-fasta or run previous steps.")
             sys.exit(1)
+        # Outgroup ID priority: explicit flag > downloaded outgroup > typestrain
+        if args.outgroup_id:
+            resolved_outgroup_id = args.outgroup_id
+        elif outgroup_fasta_path:
+            resolved_outgroup_id = "outgroup"
+        elif typestrain_accession:
+            print(f"\nNo external outgroup; using typestrain {typestrain_accession} as tree root.")
+            resolved_outgroup_id = typestrain_accession
+        else:
+            resolved_outgroup_id = None
+
         run_tree_pipeline(
             input_fasta=str(core_alignment_path),
             start_step=max(4, args.start_step),
-            outgroup_id="outgroup" if outgroup_fasta_path else None,
+            outgroup_id=resolved_outgroup_id,
             base_dir=str(base_dir),
             output_tree_name=species_name,
             threads=args.threads
         )
+        if args.start_step <= 3:
+            _cleanup(roary_dir, "Roary output")
 
 def run_csv_batch(csv_path, args):
     """Run the pipeline for every species/outgroup row in the CSV file."""
@@ -569,10 +582,7 @@ def main():
     # Bakta/Roary arguments
     parser.add_argument("-d", "--db", help="Path to the Bakta database. Required if starting at Step 2.")
     parser.add_argument("-w", "--workdir", default=".", help="Base directory for the pipeline (default: current directory)")
-    
-    cpu_count = os.cpu_count() or 1
-    default_threads = min(12, cpu_count)
-    parser.add_argument("-t", "--threads", type=int, default=default_threads, help=f"Number of threads to use for both Bakta and Roary (default: {default_threads})")
+    parser.add_argument("-t", "--threads", type=int, default=12, help="Number of threads to use for both Bakta and Roary (default: 12)")
     
     # Control flow arguments
     parser.add_argument("--start-step", type=int, default=1, choices=range(1, 10), 
@@ -585,15 +595,10 @@ def main():
     parser.add_argument("--setup-only", action="store_true", help="Only create the directory structure and exit")
 
     # Outgroup genome argument
-    parser.add_argument("--outgroup", help="NCBI accession or species name for outgroup genome to download and use as outgroup.")
+    parser.add_argument("--outgroup", help="NCBI accession or species name for outgroup genome to download. Auto-detected from genus if omitted.")
+    parser.add_argument("--no-auto-outgroup", action="store_true", help="Disable automatic outgroup detection; run without an outgroup unless --outgroup is set.")
     
     args = parser.parse_args()
-
-    # Cap threads to physical CPU count to avoid Bakta/Roary crashes
-    max_cpus = os.cpu_count() or 1
-    if args.threads > max_cpus:
-        print(f"Warning: Requested threads ({args.threads}) exceeds available CPU cores ({max_cpus}). Capping threads to {max_cpus}.")
-        args.threads = max_cpus
 
     if args.csv_file:
         run_csv_batch(args.csv_file, args)

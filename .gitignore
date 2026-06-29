@@ -1,0 +1,56 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+
+# Virtual environment
+venv/
+.venv/
+env/
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb_checkpoints/
+
+# Pipeline outputs — species-specific run dirs
+pipeline_temp_*/
+rerooted_trees/
+rarefaction_fastas_*/
+ecosim_output_*/
+
+# Downloaded genomes / annotation inputs (large, reproducible)
+*/input/*.fna
+*/intermediate_bakta/
+*/output_roary/
+
+# Bakta database (huge, downloaded separately)
+bakta_db/
+
+# NCBI zip artifacts
+*.zip
+ncbi_dataset/
+
+# Alignment and tree intermediates
+*.aln
+*.nwk
+*.newick
+*.tre
+
+# FASTA outputs (keep example/test ones explicitly if needed)
+# *.fasta
+# *.fa
+# *.fna
+
+# Logs
+*.log
+*.err
+
+# macOS
+.DS_Store
+
+# Editor
+.vscode/
+.idea/
+*.swp

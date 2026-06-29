@@ -35,37 +35,19 @@ def write_error_log(error_file, error_message):
         f.write(f"[{timestamp}] {error_message}\n")
 
 def find_fasttree_executable():
-    """
-    Find VeryFastTree executable in common locations or PATH.
-    Returns path to executable or raises error if not found.
-    """
-    common_paths = [
-        "veryfasttree",  # Try PATH first
-        "fasttree",      # Fallback to original FastTree
-        "FastTree",
-        "FastTreeMP",
-        "/usr/local/bin/veryfasttree",
-        "/usr/local/bin/fasttree",
-        "/opt/local/bin/veryfasttree",  # MacPorts
-        "C:\\Program Files\\VeryFastTree\\veryfasttree.exe",  # Windows
-        "C:\\ecosim\\bin\\veryfasttree.exe"
-    ]
-    
-    # First try PATH
-    tree_exe = shutil.which("veryfasttree") or shutil.which("fasttree") or shutil.which("FastTree")
-    if tree_exe:
-        return tree_exe
-    
-    # Then try common paths
-    for path in common_paths[2:]:
+    """Find VeryFastTree/FastTree on PATH or common install locations."""
+    exe = (shutil.which("veryfasttree") or shutil.which("fasttree")
+           or shutil.which("FastTree") or shutil.which("FastTreeMP"))
+    if exe:
+        return exe
+    for path in ["/usr/local/bin/veryfasttree", "/usr/local/bin/fasttree",
+                 "/opt/local/bin/veryfasttree"]:
         if os.path.exists(path):
             return path
-    
     raise FileNotFoundError(
-        "VeryFastTree not found! Install it or set PATH correctly.\n"
-        "macOS (brew): brew install veryfasttree\n"
-        "Linux (apt): sudo apt-get install veryfasttree\n"
-        "Fallback to FastTree: brew install fasttree"
+        "VeryFastTree not found. Install it and ensure it's on PATH.\n"
+        "macOS: brew install veryfasttree\n"
+        "Fallback: brew install fasttree"
     )
 
 def make_trees_batch(final_folder="tree_rdy_fastas", tree_folder="trees_final", 

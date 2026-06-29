@@ -39,12 +39,7 @@ if $CONDA_EXE env list | grep -q "roary_env"; then
     echo "✓ roary_env already exists"
 else
     echo "Creating roary_env..."
-    if [[ "$OSTYPE" == "darwin"* && "$(uname -m)" == "arm64" ]]; then
-        echo "Apple Silicon detected. Installing roary_env using osx-64 emulation..."
-        CONDA_SUBDIR=osx-64 $CONDA_EXE create -n roary_env -c conda-forge -c bioconda roary prank mafft -y
-    else
-        $CONDA_EXE create -n roary_env -c conda-forge -c bioconda roary prank mafft -y
-    fi
+    $CONDA_EXE create -n roary_env -c conda-forge -c bioconda roary prank mafft -y
 fi
 
 # 4. Check Python version for tree pipeline
@@ -78,7 +73,19 @@ if command -v datasets &> /dev/null; then
     echo "✓ NCBI datasets CLI found at: $(which datasets)"
 else
     echo "⚠ NCBI datasets CLI not found (needed for downloading genomes in Step 1)."
-    echo "  You can install it globally via: conda install -c conda-forge ncbi-datasets-cli"
+    echo "  Installing via conda..."
+    $CONDA_EXE install -c conda-forge ncbi-datasets-cli -y || \
+        echo "  ❌ Auto-install failed. Install manually: conda install -c conda-forge ncbi-datasets-cli"
+fi
+
+# 5b. Check Java (required for EcoSim)
+echo ""
+echo "--- Checking Java (required for EcoSim, Step 8) ---"
+if command -v java &> /dev/null; then
+    echo "✓ Java found: $(java -version 2>&1 | head -1)"
+else
+    echo "⚠ Java not found. EcoSim (Step 8) will not run without it."
+    echo "  Install a JDK: https://adoptium.net  or  conda install -c conda-forge openjdk"
 fi
 
 # 6. Check VeryFastTree / FastTree
@@ -141,7 +148,7 @@ echo "2. Download the Bakta database if you haven't already:"
 echo "   conda activate bakta_env"
 echo "   bakta_db download --output /path/to/db"
 echo "   conda deactivate"
-echo "3. Configure EcoSim paths (only needed if running step 7):"
+echo "3. Configure EcoSim paths (only needed if running step 8):"
 echo "   export ECOSIM_JAR=/path/to/ecosim.jar"
 echo "   export ECOSIM_DIR=/path/to/ecosim"
 echo "4. Run the full pipeline (including genome download):"

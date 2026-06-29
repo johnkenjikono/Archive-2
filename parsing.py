@@ -1,27 +1,19 @@
-import os
-import glob
 import xml.etree.ElementTree as ET
+from pathlib import Path
 
 def count_ecotypes_in_file(file_path):
     try:
-        tree = ET.parse(file_path)
-        root = tree.getroot()
-        # Adjust the tag below if 'ecotype' is nested within other elements
-        ecotypes = root.findall('.//ecotype')
-        return len(ecotypes)
+        return len(ET.parse(file_path).getroot().findall('.//ecotype'))
     except ET.ParseError as e:
         print(f"Error parsing {file_path}: {e}")
         return None
 
 def summarize_ecotypes_in_folder(folder_path):
-    xml_files = glob.glob(os.path.join(folder_path, '*.xml'))
     summary = {}
-
-    for xml_file in xml_files:
+    for xml_file in Path(folder_path).glob('*.xml'):
         count = count_ecotypes_in_file(xml_file)
         if count is not None:
-            summary[os.path.basename(xml_file)] = count
-
+            summary[xml_file.name] = count
     return summary
 
 if __name__ == "__main__":

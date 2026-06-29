@@ -1,7 +1,78 @@
+import json
 import os
 import subprocess
 import tempfile
+import zipfile
 from pathlib import Path
+
+
+def _datasets_summary(taxon):
+    """Run `datasets summary genome taxon` and yield parsed JSON records."""
+    cmd = [
+        "datasets", "summary", "genome", "taxon", taxon,
+        "--assembly-level", "chromosome,complete",
+        "--as-json-lines",
+    ]
+    try:
+        result = subprocess.run(cmd, check=True, capture_output=True, text=True)
+    except subprocess.CalledProcessError:
+        return
+    for line in result.stdout.splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            yield json.loads(line)
+        except json.JSONDecodeError:
+            continue
+
+
+def find_typestrain(species_name):
+    """
+    Return (accession, organism_name) for the typestrain of *species_name*.
+
+    Uses the NCBI RefSeq "reference genome" designation as a proxy for the
+    type strain — this is correct for the vast majority of species.
+    Returns (None, None) if nothing is found.
+    """
+    for record in _datasets_summary(species_name):
+        org_name = record.get("organism", {}).get("organism_name", "")
+        refseq_cat = record.get("assembly_info", {}).get("refseq_category", "")
+        accession = record.get("accession")
+        if accession and refseq_cat == "reference genome":
+            return accession, org_name
+    return None, None
+
+
+def find_outgroup_species(species_name):
+    """
+    Return (accession, organism_name) for a suitable outgroup: a reference
+    genome from the same genus but a different species.
+
+    Prefers RefSeq reference genomes; falls back to any complete genome in
+    the genus if no reference is available.
+    Returns (None, None) if nothing is found.
+    """
+    genus = species_name.split()[0]
+    species_lower = species_name.lower()
+    first_fallback = None
+
+    for record in _datasets_summary(genus):
+        org_name = record.get("organism", {}).get("organism_name", "")
+        accession = record.get("accession")
+        if not accession or not org_name:
+            continue
+        if not org_name.lower().startswith(genus.lower() + " "):
+            continue
+        if org_name.lower().startswith(species_lower):
+            continue
+        if record.get("assembly_info", {}).get("refseq_category") == "reference genome":
+            return accession, org_name
+        if first_fallback is None:
+            first_fallback = (accession, org_name)
+
+    return first_fallback or (None, None)
+
 
 def download_ncbi_fasta(identifier, output_dir):
     """
@@ -13,42 +84,30 @@ def download_ncbi_fasta(identifier, output_dir):
     if identifier.startswith("GCA_") or identifier.startswith("GCF_"):
         acc_list = [identifier]
     else:
-        # Use datasets summary to get one accession for the species
-        cmd = [
-            "datasets", "summary", "genome", "taxon", identifier,
-            "--assembly-level", "chromosome,complete",
-            "--as-json-lines"
-        ]
-        try:
-            result = subprocess.run(cmd, check=True, capture_output=True, text=True)
-            for line in result.stdout.splitlines():
-                if 'accession' in line or 'assembly_accession' in line:
-                    import json
-                    record = json.loads(line)
-                    acc = record.get("accession") or record.get("assembly_accession")
-                    if acc:
-                        acc_list = [acc]
-                        break
-            else:
-                return None
-        except Exception:
+        acc_list = None
+        for record in _datasets_summary(identifier):
+            acc = record.get("accession")
+            if acc:
+                acc_list = [acc]
+                break
+        if not acc_list:
             return None
-    # Write accessions to temp file
-    with tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".txt") as temp_file:
+
+    with tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".txt") as tmp:
         for acc in acc_list:
-            temp_file.write(f"{acc}\n")
-        accession_file = temp_file.name
+            tmp.write(f"{acc}\n")
+        accession_file = tmp.name
+
     zip_filename = os.path.join(output_dir, "outgroup_download.zip")
     cmd = [
         "datasets", "download", "genome", "accession",
         "--inputfile", accession_file,
         "--include", "genome",
-        "--filename", zip_filename
+        "--filename", zip_filename,
     ]
     try:
         subprocess.run(cmd, check=True)
-        import zipfile
-        with zipfile.ZipFile(zip_filename, 'r') as zip_ref:
+        with zipfile.ZipFile(zip_filename, "r") as zip_ref:
             zip_ref.extractall(output_dir)
         data_path = os.path.join(output_dir, "ncbi_dataset", "data")
         for root, dirs, files in os.walk(data_path):
