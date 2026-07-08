@@ -22,10 +22,24 @@ def create_rarefaction_fastas(input_fasta,
     if any(len(record.seq) != seq_len for record in sequences):
         raise ValueError("Not all sequences are the same length. Please align them first.")
 
+    # Valid window start positions are 0 .. seq_len - gene_length (inclusive).
+    max_start = seq_len - gene_length
+    if max_start < 0:
+        raise ValueError(
+            f"gene_length ({gene_length}) exceeds alignment length ({seq_len}); "
+            "cannot sample gene windows."
+        )
+    num_positions = max_start + 1  # +1 fixes the old off-by-one that dropped the last start
+    if max(gene_counts) > num_positions:
+        raise ValueError(
+            f"Requested up to {max(gene_counts)} gene windows but only {num_positions} "
+            f"distinct start positions exist (length {seq_len}, gene_length {gene_length})."
+        )
+
     # Main loop
     for gene_count in gene_counts:
         for trial in range(1, trials_per_count + 1):
-            starts = sorted(random.sample(range(seq_len - gene_length), gene_count))
+            starts = sorted(random.sample(range(num_positions), gene_count))
             output_file = os.path.join(output_folder, f"sim_species_g{gene_count}_t{trial}.fasta")
 
             with open(output_file, "w") as f_out:

@@ -50,7 +50,7 @@ def setup_directories(base_dir: Path):
         
     return input_dir, bakta_dir, roary_dir
 
-def get_random_accessions(species_name, sample_size=200):
+def get_random_accessions(species_name, sample_size=200, random_seed=42):
     cmd = [
         "datasets", "summary", "genome", "taxon", species_name,
         "--assembly-level", "chromosome,complete",
@@ -77,8 +77,9 @@ def get_random_accessions(species_name, sample_size=200):
         if accession:
             accessions.append(accession)
 
-    # Preserve first-seen order while removing duplicate accessions.
-    accessions = list(dict.fromkeys(accessions))
+    # Sort the deduplicated accessions so the sampling population is deterministic
+    # (independent of NCBI's response ordering).
+    accessions = sorted(set(accessions))
     if not accessions:
         return []
 
@@ -88,8 +89,10 @@ def get_random_accessions(species_name, sample_size=200):
         )
         return accessions
 
+    # Seed so the same species + seed always yields the same assemblies.
+    random.seed(random_seed)
     selected = random.sample(accessions, sample_size)
-    print(f"Selected {sample_size} random distinct assemblies out of {len(accessions)} total.")
+    print(f"Selected {sample_size} random distinct assemblies out of {len(accessions)} total (seed={random_seed}).")
     return selected
 
 def download_accessions_zip(accessions, zip_filename):
@@ -114,14 +117,14 @@ def download_accessions_zip(accessions, zip_filename):
         if os.path.exists(accession_file):
             os.remove(accession_file)
 
-def process_species_genome(species_name, sample_size, output_dir):
+def process_species_genome(species_name, sample_size, output_dir, random_seed=42):
     zip_filename = f"{species_name.replace(' ', '_')}.zip"
     
     print(f"\n============================================================")
     print(f"--- Downloading genomes for {species_name} ---")
     print(f"============================================================\n")
 
-    selected_accessions = get_random_accessions(species_name, sample_size)
+    selected_accessions = get_random_accessions(species_name, sample_size, random_seed)
     if not selected_accessions:
         print(f"No chromosome/complete assemblies found for {species_name}")
         sys.exit(1)
@@ -199,52 +202,55 @@ def run_bakta(fasta_file: Path, bakta_dir: Path, db_path: str, threads: int):
         print(f"Error running Bakta on {fasta_file.name}: {e}\n", file=sys.stderr)
         return None
 
-def run_roary(gff_files: list[Path], roary_dir: Path, threads: int, error_log=None):
+def run_panaroo(gff_files: list[Path], roary_dir: Path, threads: int, error_log=None):
+    # ponytail: dir/arg still named roary_* so the downstream core_gene_alignment.aln
+    # path keeps working unchanged.
     if not gff_files:
-        error_msg = "No GFF3 files found to run Roary."
+        error_msg = "No GFF3 files found to run Panaroo."
         print(error_msg, file=sys.stderr)
         if error_log:
             write_error_log(error_log, f"SKIP: {error_msg}")
         return
-    
+
     run_output_dir = roary_dir / "results"
-    
+
     if error_log is None:
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        error_log = str(roary_dir / f"roary_errors_{timestamp}.log")
-    
+        error_log = str(roary_dir / f"panaroo_errors_{timestamp}.log")
+
     # Initialize error log
     try:
         os.makedirs(os.path.dirname(error_log), exist_ok=True)
         open(error_log, "w").close()
     except Exception as e:
         print(f"Warning: Could not initialize error log at {error_log}: {e}")
-    
+
     if run_output_dir.exists():
-        print(f"Removing previous Roary results directory at {run_output_dir}...")
+        print(f"Removing previous Panaroo results directory at {run_output_dir}...")
         shutil.rmtree(run_output_dir)
-    
+    run_output_dir.mkdir(parents=True, exist_ok=True)
+
     cmd = [
-        "conda", "run", "-n", "roary_env", "roary",
-        "-f", str(run_output_dir),
-        "-e", "-n", "-v", # Core gene alignment with verbose output
-        "-p", str(threads)
+        "conda", "run", "-n", "panaroo_env", "panaroo",
+        "-i", *[str(f) for f in gff_files],
+        "-o", str(run_output_dir),
+        "--clean-mode", "strict",
+        "-a", "core",            # build core-gene alignment (core_gene_alignment.aln)
+        "-t", str(threads),
     ]
-    
-    cmd.extend(str(f) for f in gff_files)
-    
+
     print(f"============================================================")
-    print(f"Running Roary on {len(gff_files)} files...")
-    print(f"Command: roary -f {run_output_dir} -e -n -v -p {threads} *.gff3")
+    print(f"Running Panaroo on {len(gff_files)} files...")
+    print(f"Command: panaroo -i *.gff3 -o {run_output_dir} --clean-mode strict -a core -t {threads}")
     print(f"============================================================")
-    
+
     try:
         result = subprocess.run(cmd, check=True, capture_output=True, text=True)
-        success_msg = f"Successfully ran Roary! Results available in: {run_output_dir}"
+        success_msg = f"Successfully ran Panaroo! Results available in: {run_output_dir}"
         print(f"\n✅ {success_msg}")
         write_error_log(error_log, success_msg)
     except subprocess.CalledProcessError as e:
-        error_msg = f"Roary failed with exit code {e.returncode}"
+        error_msg = f"Panaroo failed with exit code {e.returncode}"
         if e.stderr:
             error_msg += f" | stderr: {e.stderr[:300]}"
         print(f"\n❌ {error_msg}", file=sys.stderr)
@@ -252,7 +258,7 @@ def run_roary(gff_files: list[Path], roary_dir: Path, threads: int, error_log=No
         print(f"Error log: {error_log}")
         sys.exit(1)
     except Exception as e:
-        error_msg = f"Exception running Roary: {str(e)}"
+        error_msg = f"Exception running Panaroo: {str(e)}"
         print(f"\n❌ {error_msg}", file=sys.stderr)
         write_error_log(error_log, error_msg)
         print(f"Error log: {error_log}")
@@ -424,7 +430,7 @@ def run_pipeline_for_species(species_name, outgroup_name, args):
         if not shutil.which("datasets"):
             print("Error: NCBI 'datasets' CLI tool not found. Please install it (e.g. via conda) and ensure it's in your PATH.", file=sys.stderr)
             sys.exit(1)
-        process_species_genome(species_name, args.sample_size, str(input_dir))
+        process_species_genome(species_name, args.sample_size, str(input_dir), args.seed)
 
     # --- Auto-detect typestrain ---
     print(f"\n--- Auto-detecting typestrain for {species_name} ---")
@@ -490,11 +496,11 @@ def run_pipeline_for_species(species_name, outgroup_name, args):
             print(f"Found {len(gff_files)} GFF3 files; limiting to first {MAX_GFF_FILES} for Roary processing.")
             gff_files = gff_files[:MAX_GFF_FILES]
 
-        # Setup error logging for Roary
+        # Setup error logging for Panaroo
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        error_log = str(roary_dir / f"roary_errors_{timestamp}.log")
-        
-        run_roary(gff_files, roary_dir, args.threads, error_log)
+        error_log = str(roary_dir / f"panaroo_errors_{timestamp}.log")
+
+        run_panaroo(gff_files, roary_dir, args.threads, error_log)
         core_alignment_path = roary_dir / "results" / "core_gene_alignment.aln"
         _cleanup(bakta_dir, "Bakta annotations")
     else:
@@ -578,6 +584,7 @@ def main():
     # Download Step arguments
     parser.add_argument("--species", help="Species name to download from NCBI (e.g., 'Treponema paraluiscuniculi'). Required if starting at Step 1.")
     parser.add_argument("--sample-size", type=int, default=200, help="Number of random distinct assemblies to download if starting at Step 1 (default: 200)")
+    parser.add_argument("--seed", type=int, default=42, help="Random seed for reproducible assembly sampling (default: 42)")
     
     # Bakta/Roary arguments
     parser.add_argument("-d", "--db", help="Path to the Bakta database. Required if starting at Step 2.")

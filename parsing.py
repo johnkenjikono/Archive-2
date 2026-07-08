@@ -3,7 +3,10 @@ from pathlib import Path
 
 def count_ecotypes_in_file(file_path):
     try:
-        return len(ET.parse(file_path).getroot().findall('.//ecotype'))
+        # Count only demarcated ecotypes (matches post_processing.py). A bare
+        # './/ecotype' also matches ecotype elements outside the demarcation
+        # block and inflates the count.
+        return len(ET.parse(file_path).getroot().findall('.//demarcation/ecotypes/ecotype'))
     except ET.ParseError as e:
         print(f"Error parsing {file_path}: {e}")
         return None

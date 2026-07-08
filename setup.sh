@@ -32,14 +32,14 @@ else
     $CONDA_EXE create -n bakta_env -c conda-forge -c bioconda bakta -y
 fi
 
-# 3. Setup Roary Environment
+# 3. Setup Panaroo Environment
 echo ""
-echo "--- Setting up Roary Environment (roary_env) ---"
-if $CONDA_EXE env list | grep -q "roary_env"; then
-    echo "✓ roary_env already exists"
+echo "--- Setting up Panaroo Environment (panaroo_env) ---"
+if $CONDA_EXE env list | grep -q "panaroo_env"; then
+    echo "✓ panaroo_env already exists"
 else
-    echo "Creating roary_env..."
-    $CONDA_EXE create -n roary_env -c conda-forge -c bioconda roary prank mafft -y
+    echo "Creating panaroo_env..."
+    $CONDA_EXE create -n panaroo_env -c conda-forge -c bioconda panaroo mafft -y
 fi
 
 # 4. Check Python version for tree pipeline
