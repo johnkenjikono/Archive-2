@@ -1,8 +1,12 @@
+import queue
+import sys
 import tempfile
+import time
 import unittest
 from pathlib import Path
 
 from ui import (
+    PipelineRunner,
     FormValues,
     build_command,
     copy_local_fastas,
@@ -284,6 +288,85 @@ class ResultPathTests(unittest.TestCase):
             two.write_text("file,ecotype_count\n")
             found = {path.resolve() for path in find_ecotype_summaries(root)}
             self.assertEqual(found, {one.resolve(), two.resolve()})
+
+
+class PipelineRunnerTests(unittest.TestCase):
+    def test_streams_output_and_exit_code(self):
+        events: queue.Queue = queue.Queue()
+        runner = PipelineRunner()
+        runner.start(
+            [sys.executable, "-c", "print('hello-ui'); raise SystemExit(0)"],
+            cwd=Path("."),
+            events=events,
+        )
+        lines = []
+        code = None
+        deadline = time.time() + 10
+        while time.time() < deadline:
+            try:
+                kind, payload = events.get(timeout=0.2)
+            except queue.Empty:
+                continue
+            if kind == "line":
+                lines.append(payload)
+            elif kind == "done":
+                code = payload
+                break
+        self.assertFalse(runner.running)
+        self.assertEqual(code, 0)
+        self.assertTrue(any("hello-ui" in line for line in lines))
+
+    def test_stop_kills_long_process(self):
+        events: queue.Queue = queue.Queue()
+        runner = PipelineRunner()
+        runner.start(
+            [sys.executable, "-c", "import time; time.sleep(30)"],
+            cwd=Path("."),
+            events=events,
+        )
+        time.sleep(0.3)
+        self.assertTrue(runner.running)
+        runner.stop()
+        deadline = time.time() + 10
+        code = None
+        while time.time() < deadline:
+            try:
+                kind, payload = events.get(timeout=0.2)
+            except queue.Empty:
+                continue
+            if kind == "done":
+                code = payload
+                break
+        self.assertFalse(runner.running)
+        self.assertTrue(runner.was_stopped)
+        self.assertIsNotNone(code)
+        self.assertNotEqual(code, 0)
+
+    def test_second_start_ignored_while_running(self):
+        events: queue.Queue = queue.Queue()
+        runner = PipelineRunner()
+        runner.start(
+            [sys.executable, "-c", "import time; time.sleep(5)"],
+            cwd=Path("."),
+            events=events,
+        )
+        time.sleep(0.2)
+        first_proc = runner._proc
+        runner.start(
+            [sys.executable, "-c", "print('should-not-run')"],
+            cwd=Path("."),
+            events=events,
+        )
+        self.assertIs(runner._proc, first_proc)
+        runner.stop()
+        deadline = time.time() + 10
+        while time.time() < deadline:
+            try:
+                kind, _payload = events.get(timeout=0.2)
+            except queue.Empty:
+                continue
+            if kind == "done":
+                break
 
 
 if __name__ == "__main__":

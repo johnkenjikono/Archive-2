@@ -1,6 +1,12 @@
 from __future__ import annotations
 
+import os
+import queue
 import shutil
+import signal
+import subprocess
+import threading
+import time
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal
@@ -150,3 +156,61 @@ def validate_form(values: FormValues) -> list[str]:
         if not default_alignment_path(values).is_file():
             errors.append("Choose a core-alignment FASTA, or lower the start step.")
     return errors
+
+
+class PipelineRunner:
+    def __init__(self) -> None:
+        self._proc: subprocess.Popen[str] | None = None
+        self._thread: threading.Thread | None = None
+        self.was_stopped = False
+
+    @property
+    def running(self) -> bool:
+        return self._proc is not None and self._proc.poll() is None
+
+    def start(self, argv: list[str], cwd: Path, events: queue.Queue) -> None:
+        if self.running:
+            return
+        self.was_stopped = False
+        self._proc = subprocess.Popen(
+            argv,
+            cwd=str(cwd),
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            start_new_session=True,
+        )
+        self._thread = threading.Thread(
+            target=self._pump, args=(events,), daemon=True
+        )
+        self._thread.start()
+
+    def stop(self) -> None:
+        proc = self._proc
+        if proc is None or proc.poll() is not None:
+            return
+        self.was_stopped = True
+        try:
+            os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
+        except ProcessLookupError:
+            return
+        deadline = time.time() + 5
+        while time.time() < deadline:
+            if proc.poll() is not None:
+                return
+            time.sleep(0.1)
+        try:
+            os.killpg(os.getpgid(proc.pid), signal.SIGKILL)
+        except ProcessLookupError:
+            return
+
+    def _pump(self, events: queue.Queue) -> None:
+        proc = self._proc
+        assert proc is not None
+        try:
+            assert proc.stdout is not None
+            for line in proc.stdout:
+                events.put(("line", line.rstrip("\n")))
+        finally:
+            code = proc.wait()
+            events.put(("done", code))
