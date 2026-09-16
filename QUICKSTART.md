@@ -8,10 +8,10 @@ bash setup.sh
 
 # Activate virtual environment
 source venv/bin/activate.fish
-```
 
 # Optional: open the desktop UI instead of typing flags
 bash run_ui.sh
+```
 
 ## ✅ Before Running
 
@@ -32,10 +32,10 @@ bash run_ui.sh
 
 ## 🏃 Running the Pipeline
 
+```bash
 # Desktop UI (no CLI flags)
 bash run_ui.sh
 
-```bash
 # Full pipeline (all steps)
 python pipeline.py your_sequences.fasta
 

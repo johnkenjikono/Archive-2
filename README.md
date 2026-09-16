@@ -59,6 +59,16 @@ export ECOSIM_DIR=/path/to/ecosim/
 
 ## Running the Pipeline
 
+### Graphical interface
+
+```bash
+bash run_ui.sh
+```
+
+Or, with the venv already active: `python ui.py`.
+
+Pick **Species name**, **Batch CSV**, or **Local genome folder**, fill in the same options as the CLI, and press **Run pipeline**. The log is the same output as the terminal. Results land under `<workdir>/<Species_name>/` (or `<workdir>/` for a CSV batch).
+
 ### Single species
 
 ```bash
