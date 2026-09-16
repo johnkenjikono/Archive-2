@@ -2,7 +2,17 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from ui import FormValues, build_command, default_alignment_path, species_folder_name, validate_form
+from ui import (
+    FormValues,
+    build_command,
+    copy_local_fastas,
+    default_alignment_path,
+    find_ecotype_summaries,
+    local_input_dir,
+    results_dir,
+    species_folder_name,
+    validate_form,
+)
 
 
 class SpeciesFolderTests(unittest.TestCase):
@@ -201,6 +211,79 @@ class BuildCommandTests(unittest.TestCase):
         self.assertNotIn("--input-fasta", argv)
         self.assertNotIn("--outgroup-id", argv)
         self.assertNotIn("--db", argv)
+
+
+class LocalCopyTests(unittest.TestCase):
+    def test_copies_fasta_extensions_non_recursive(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            src = Path(tmp) / "src"
+            nested = src / "nested"
+            dest = Path(tmp) / "dest"
+            src.mkdir()
+            nested.mkdir()
+            (src / "a.fna").write_text(">a\nA\n")
+            (src / "b.fasta").write_text(">b\nA\n")
+            (src / "c.fa").write_text(">c\nA\n")
+            (src / "skip.txt").write_text("nope")
+            (nested / "hidden.fna").write_text(">h\nA\n")
+            copied = copy_local_fastas(src, dest)
+            names = sorted(path.name for path in copied)
+            self.assertEqual(names, ["a.fna", "b.fasta", "c.fa"])
+            self.assertTrue((src / "a.fna").exists())
+            self.assertFalse((dest / "hidden.fna").exists())
+
+    def test_overwrite_same_name(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            src = Path(tmp) / "src"
+            dest = Path(tmp) / "dest"
+            src.mkdir()
+            dest.mkdir()
+            (src / "a.fna").write_text("new")
+            (dest / "a.fna").write_text("old")
+            copy_local_fastas(src, dest)
+            self.assertEqual((dest / "a.fna").read_text(), "new")
+
+    def test_missing_source_raises(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            with self.assertRaises(FileNotFoundError):
+                copy_local_fastas(Path(tmp) / "missing", Path(tmp) / "dest")
+
+
+class ResultPathTests(unittest.TestCase):
+    def test_local_input_dir_uses_species_folder(self):
+        values = FormValues(
+            mode="local",
+            species="Bacillus subtilis",
+            workdir="/work",
+        )
+        self.assertEqual(
+            local_input_dir(values),
+            Path("/work/Bacillus_subtilis/input"),
+        )
+
+    def test_results_dir_csv_is_workdir(self):
+        self.assertEqual(
+            results_dir(FormValues(mode="csv", workdir="/out")),
+            Path("/out"),
+        )
+
+    def test_results_dir_species_uses_folder_name(self):
+        self.assertEqual(
+            results_dir(FormValues(mode="species", species="Bacillus subtilis", workdir="/out")),
+            Path("/out/Bacillus_subtilis"),
+        )
+
+    def test_find_ecotype_summaries_in_species_and_batch_layouts(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            one = root / "ecosim_output_x" / "ecotype_summary.csv"
+            two = root / "Bacillus_subtilis" / "ecosim_output_y" / "ecotype_summary.csv"
+            one.parent.mkdir(parents=True)
+            two.parent.mkdir(parents=True)
+            one.write_text("file,ecotype_count\n")
+            two.write_text("file,ecotype_count\n")
+            found = {path.resolve() for path in find_ecotype_summaries(root)}
+            self.assertEqual(found, {one.resolve(), two.resolve()})
 
 
 if __name__ == "__main__":

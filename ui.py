@@ -1,8 +1,11 @@
 from __future__ import annotations
 
+import shutil
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal
+
+FASTA_SUFFIXES = (".fna", ".fasta", ".fa")
 
 Mode = Literal["species", "csv", "local"]
 
@@ -64,6 +67,42 @@ def build_command(values: FormValues, python_exe: str, pipeline_py: Path) -> lis
 
 def species_folder_name(species: str) -> str:
     return species.replace(" ", "_")
+
+
+def local_input_dir(values: FormValues) -> Path:
+    return Path(values.workdir) / species_folder_name(values.species) / "input"
+
+
+def results_dir(values: FormValues) -> Path:
+    if values.mode == "csv":
+        return Path(values.workdir)
+    return Path(values.workdir) / species_folder_name(values.species)
+
+
+def find_ecotype_summaries(root: Path) -> list[Path]:
+    direct = sorted(root.glob("ecosim_output_*/ecotype_summary.csv"))
+    nested = sorted(root.glob("*/ecosim_output_*/ecotype_summary.csv"))
+    seen: set[Path] = set()
+    out: list[Path] = []
+    for path in direct + nested:
+        resolved = path.resolve()
+        if resolved not in seen:
+            seen.add(resolved)
+            out.append(path)
+    return out
+
+
+def copy_local_fastas(src_folder: Path, dest_input: Path) -> list[Path]:
+    if not src_folder.is_dir():
+        raise FileNotFoundError(f"Genome folder does not exist: {src_folder}")
+    dest_input.mkdir(parents=True, exist_ok=True)
+    copied: list[Path] = []
+    for path in sorted(src_folder.iterdir()):
+        if path.is_file() and path.suffix.lower() in FASTA_SUFFIXES:
+            dest = dest_input / path.name
+            shutil.copy2(path, dest)
+            copied.append(dest)
+    return copied
 
 
 def default_alignment_path(values: FormValues) -> Path:
