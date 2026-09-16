@@ -71,6 +71,10 @@ def build_command(values: FormValues, python_exe: str, pipeline_py: Path) -> lis
     return argv
 
 
+def resolve_workdir(raw: str) -> str:
+    return str(Path(raw).expanduser().resolve())
+
+
 def species_folder_name(species: str) -> str:
     return species.replace(" ", "_")
 
@@ -212,8 +216,9 @@ class PipelineRunner:
         assert proc is not None
         try:
             assert proc.stdout is not None
-            for line in proc.stdout:
-                events.put(("line", line.rstrip("\n")))
+            with proc.stdout:
+                for line in proc.stdout:
+                    events.put(("line", line.rstrip("\n")))
         finally:
             code = proc.wait()
             events.put(("done", code))
@@ -377,7 +382,7 @@ def main() -> None:
                 seed=int(self.seed_var.get() or "42"),
                 csv_path=self.csv_var.get().strip(),
                 local_folder=self.local_folder_var.get().strip(),
-                workdir=self.workdir_var.get().strip() or ".",
+                workdir=resolve_workdir(self.workdir_var.get().strip() or "."),
                 db=self.db_var.get().strip(),
                 threads=int(self.threads_var.get() or "12"),
                 bakta_jobs=bakta_jobs,
@@ -444,11 +449,17 @@ def main() -> None:
             self._pending_values = values
             self._log(quote_command(argv))
             self._set_form_enabled(False)
-            self.runner.start(argv, REPO_ROOT, self.events)
+            try:
+                self.runner.start(argv, REPO_ROOT, self.events)
+            except OSError as exc:
+                self._set_form_enabled(True)
+                self._log(str(exc))
+                messagebox.showerror("Cannot start pipeline", str(exc))
 
         def _on_stop(self) -> None:
             if self.runner.running:
                 self._log("Stopping the run…")
+                self.update_idletasks()
                 self.runner.stop()
 
         def _drain_events(self) -> None:

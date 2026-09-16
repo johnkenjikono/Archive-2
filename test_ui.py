@@ -3,6 +3,7 @@ import sys
 import tempfile
 import time
 import unittest
+from io import StringIO
 from pathlib import Path
 from unittest import mock
 
@@ -14,6 +15,7 @@ from ui import (
     default_alignment_path,
     find_ecotype_summaries,
     local_input_dir,
+    resolve_workdir,
     results_dir,
     species_folder_name,
     validate_form,
@@ -151,6 +153,12 @@ class BuildCommandTests(unittest.TestCase):
         self.assertNotIn("--csv-file", argv)
         self.assertIn("--sample-size", argv)
         self.assertIn("--seed", argv)
+        self.assertIn("--workdir", argv)
+        self.assertEqual(argv[argv.index("--workdir") + 1], "/tmp/work")
+        self.assertIn("--threads", argv)
+        self.assertEqual(argv[argv.index("--threads") + 1], "8")
+        self.assertIn("--start-step", argv)
+        self.assertEqual(argv[argv.index("--start-step") + 1], "1")
 
     def test_csv_command_omits_species(self):
         argv = build_command(
@@ -291,11 +299,22 @@ class ResultPathTests(unittest.TestCase):
             self.assertEqual(found, {one.resolve(), two.resolve()})
 
 
+class ResolveWorkdirTests(unittest.TestCase):
+    def test_relative_path_resolves_against_cwd(self):
+        resolved = resolve_workdir(".")
+        self.assertTrue(Path(resolved).is_absolute())
+        self.assertEqual(Path(resolved), Path(".").expanduser().resolve())
+
+    def test_expands_user_home(self):
+        resolved = resolve_workdir("~")
+        self.assertEqual(Path(resolved), Path.home().resolve())
+
+
 class PipelineRunnerTests(unittest.TestCase):
     def test_start_sets_python_unbuffered_env(self):
         proc = mock.MagicMock()
         proc.poll.return_value = None
-        proc.stdout = iter(())
+        proc.stdout = StringIO("")
         proc.wait.return_value = 0
         events: queue.Queue = queue.Queue()
         with mock.patch("ui.subprocess.Popen", return_value=proc) as popen:
@@ -337,6 +356,7 @@ class PipelineRunnerTests(unittest.TestCase):
         self.assertFalse(runner.running)
         self.assertEqual(code, 0)
         self.assertTrue(any("hello-ui" in line for line in lines))
+        self.assertTrue(runner._proc.stdout.closed)
 
     def test_stop_kills_long_process(self):
         events: queue.Queue = queue.Queue()
