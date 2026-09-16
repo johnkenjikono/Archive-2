@@ -10,6 +10,9 @@ bash setup.sh
 source venv/bin/activate.fish
 ```
 
+# Optional: open the desktop UI instead of typing flags
+bash run_ui.sh
+
 ## ✅ Before Running
 
 1. **Ensure sequences are aligned** (all same length)
@@ -28,6 +31,9 @@ source venv/bin/activate.fish
    ```
 
 ## 🏃 Running the Pipeline
+
+# Desktop UI (no CLI flags)
+bash run_ui.sh
 
 ```bash
 # Full pipeline (all steps)
