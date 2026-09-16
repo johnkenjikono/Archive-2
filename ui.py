@@ -172,6 +172,8 @@ class PipelineRunner:
         if self.running:
             return
         self.was_stopped = False
+        env = os.environ.copy()
+        env["PYTHONUNBUFFERED"] = "1"
         self._proc = subprocess.Popen(
             argv,
             cwd=str(cwd),
@@ -179,6 +181,7 @@ class PipelineRunner:
             stderr=subprocess.STDOUT,
             text=True,
             start_new_session=True,
+            env=env,
         )
         self._thread = threading.Thread(
             target=self._pump, args=(events,), daemon=True

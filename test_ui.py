@@ -4,6 +4,7 @@ import tempfile
 import time
 import unittest
 from pathlib import Path
+from unittest import mock
 
 from ui import (
     PipelineRunner,
@@ -291,6 +292,27 @@ class ResultPathTests(unittest.TestCase):
 
 
 class PipelineRunnerTests(unittest.TestCase):
+    def test_start_sets_python_unbuffered_env(self):
+        proc = mock.MagicMock()
+        proc.poll.return_value = None
+        proc.stdout = iter(())
+        proc.wait.return_value = 0
+        events: queue.Queue = queue.Queue()
+        with mock.patch("ui.subprocess.Popen", return_value=proc) as popen:
+            runner = PipelineRunner()
+            runner.start([sys.executable, "-c", "pass"], Path("."), events)
+            env = popen.call_args.kwargs["env"]
+        self.assertEqual(env["PYTHONUNBUFFERED"], "1")
+        self.assertIn("PATH", env)
+        deadline = time.time() + 2
+        while time.time() < deadline:
+            try:
+                kind, _payload = events.get(timeout=0.1)
+            except queue.Empty:
+                continue
+            if kind == "done":
+                break
+
     def test_streams_output_and_exit_code(self):
         events: queue.Queue = queue.Queue()
         runner = PipelineRunner()
