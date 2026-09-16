@@ -8,6 +8,7 @@ import zipfile
 import json
 import random
 import tempfile
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from datetime import datetime
 
@@ -19,11 +20,12 @@ from move_largest_numeric import move_largest_numeric_to_top
 from run_trees import make_trees_batch, write_error_log
 from reroot_tree import reroot_tree_by_first_fasta
 from Rarefaction_fasta_creation import create_rarefaction_fastas
-from run_ecosim import run_ecosim_batch
+from run_ecosim import run_ecosim_batch, _resolve_ecosim_jar
 from parsing import summarize_ecotypes_in_folder
 
-ECOSIM_JAR = os.environ.get("ECOSIM_JAR")
-ECOSIM_DIR = os.environ.get("ECOSIM_DIR")
+# Falls back to the bundled ecosim.jar / repo dir (where bin/ lives) when env vars are unset.
+ECOSIM_JAR = _resolve_ecosim_jar()
+ECOSIM_DIR = os.environ.get("ECOSIM_DIR") or str(Path(__file__).resolve().parent)
 
 MAX_GFF_FILES = 201
 
@@ -90,8 +92,7 @@ def get_random_accessions(species_name, sample_size=200, random_seed=42):
         return accessions
 
     # Seed so the same species + seed always yields the same assemblies.
-    random.seed(random_seed)
-    selected = random.sample(accessions, sample_size)
+    selected = random.Random(random_seed).sample(accessions, sample_size)
     print(f"Selected {sample_size} random distinct assemblies out of {len(accessions)} total (seed={random_seed}).")
     return selected
 
@@ -185,6 +186,8 @@ def run_bakta(fasta_file: Path, bakta_dir: Path, db_path: str, threads: int):
         "--output", str(output_dir),
         "--prefix", sample_name,
         "--threads", str(threads),
+        # Panaroo only reads CDS features: skip the slow ncRNA (Infernal) searches and plots.
+        "--skip-ncrna", "--skip-ncrna-region", "--skip-plot",
         "--force",
         str(fasta_file)
     ]
@@ -296,8 +299,8 @@ def run_tree_pipeline(input_fasta, start_step, outgroup_id, base_dir, output_tre
         print(f"--- 4. Placing outgroup at the top ---")
         moved_ok = move_largest_numeric_to_top(input_fasta, sorted_fasta, target_id=outgroup_id)
         if not moved_ok:
-            print("Tree pipeline requires a Roary core-gene alignment with equal-length sequences.")
-            print("Please inspect the Roary output in output_roary/results/core_gene_alignment.aln.")
+            print("Tree pipeline requires a Panaroo core-gene alignment with equal-length sequences.")
+            print("Please inspect the Panaroo output in output_roary/results/core_gene_alignment.aln.")
             sys.exit(1)
     else:
         print("--- Skipping Step 4: Using existing sorted FASTA ---")
@@ -308,7 +311,7 @@ def run_tree_pipeline(input_fasta, start_step, outgroup_id, base_dir, output_tre
             print(f"\n--- Skipping Step 5: Existing tree found for {species_name} ---")
         else:
             print(f"\n--- 5. Building unrooted tree using FastTree ---")
-            make_trees_batch(final_folder=temp_tree_rdy, tree_folder=temp_trees_final)
+            make_trees_batch(final_folder=temp_tree_rdy, tree_folder=temp_trees_final, threads=threads)
 
             if not os.path.exists(unrooted_tree) or os.path.getsize(unrooted_tree) == 0:
                 print("FastTree failed to produce an output tree. Exiting pipeline.")
@@ -341,17 +344,21 @@ def run_tree_pipeline(input_fasta, start_step, outgroup_id, base_dir, output_tre
     # --- Step 8: Run EcoSim ---
     if start_step <= 8:
         print(f"\n--- 8. Running EcoSim ---")
-        if ECOSIM_JAR and os.path.exists(ECOSIM_JAR):
-            run_ecosim_batch(
-                fasta_dir=rarefaction_out_dir,
-                full_tree_path=rerooted_tree,
-                output_dir=ecosim_out_dir,
-                ecosim_jar=ECOSIM_JAR,
-                ecosim_dir=ECOSIM_DIR,
-                memory_gb=12
-            )
-        else:
-            print(f"EcoSim jar not found. Set ECOSIM_JAR: export ECOSIM_JAR=~/ecosim/ecosim.jar")
+        if not (ECOSIM_JAR and os.path.exists(ECOSIM_JAR)):
+            print("EcoSim jar not found. Set ECOSIM_JAR: export ECOSIM_JAR=~/ecosim/ecosim.jar")
+            sys.exit(1)  # keep rarefaction FASTAs + tree so the run can resume with --start-step 8
+        succeeded = run_ecosim_batch(
+            fasta_dir=rarefaction_out_dir,
+            full_tree_path=rerooted_tree,
+            output_dir=ecosim_out_dir,
+            ecosim_jar=ECOSIM_JAR,
+            ecosim_dir=ECOSIM_DIR,
+            memory_gb=12,
+            threads=threads,
+        )
+        if not succeeded:
+            print("EcoSim produced no results; keeping inputs for a rerun with --start-step 8.")
+            sys.exit(1)
         _cleanup(rarefaction_out_dir, "rarefaction FASTAs")
         _cleanup(rerooted_tree, "rerooted tree")
     else:
@@ -423,7 +430,6 @@ def run_pipeline_for_species(species_name, outgroup_name, args):
 
     core_alignment_path = None
     outgroup_fasta_path = None
-    typestrain_accession = None
 
     # --- Step 1: Download ---
     if args.start_step <= 1:
@@ -431,15 +437,6 @@ def run_pipeline_for_species(species_name, outgroup_name, args):
             print("Error: NCBI 'datasets' CLI tool not found. Please install it (e.g. via conda) and ensure it's in your PATH.", file=sys.stderr)
             sys.exit(1)
         process_species_genome(species_name, args.sample_size, str(input_dir), args.seed)
-
-    # --- Auto-detect typestrain ---
-    print(f"\n--- Auto-detecting typestrain for {species_name} ---")
-    ts_acc, ts_org = find_typestrain(species_name)
-    if ts_acc:
-        typestrain_accession = ts_acc
-        print(f"Typestrain: {ts_org} ({ts_acc})")
-    else:
-        print("Could not identify typestrain from NCBI.")
 
     # --- Outgroup: explicit arg, or auto-detect ---
     if not outgroup_name and not args.no_auto_outgroup:
@@ -451,8 +448,8 @@ def run_pipeline_for_species(species_name, outgroup_name, args):
         else:
             print("Could not auto-detect outgroup; continuing without one.")
 
-    # --- Outgroup Download ---
-    if outgroup_name:
+    # --- Outgroup Download (only needed when it will be annotated in Step 2) ---
+    if outgroup_name and args.start_step <= 2:
         print(f"\n--- Downloading outgroup genome: {outgroup_name} ---")
         outgroup_fasta_path = download_ncbi_fasta(outgroup_name, str(input_dir))
         if not outgroup_fasta_path:
@@ -477,23 +474,28 @@ def run_pipeline_for_species(species_name, outgroup_name, args):
             print(f"Found {len(fasta_files)} FASTA files; limiting to first {MAX_GFF_FILES} for Bakta processing.")
             fasta_files = fasta_files[:MAX_GFF_FILES]
 
-        print(f"Found {len(fasta_files)} FASTA files to process.")
-        for i, fasta in enumerate(fasta_files):
-            print(f"\n[Tally] Processed {i+1}/{len(fasta_files)} files: {fasta.name}")
-            run_bakta(fasta, bakta_dir, args.db, args.threads)
+        # Bakta scales poorly past a few threads, so run several genomes at once.
+        jobs = args.bakta_jobs or max(1, args.threads // 4)
+        threads_per_job = max(1, args.threads // jobs)
+        print(f"Found {len(fasta_files)} FASTA files to process ({jobs} parallel Bakta job(s), {threads_per_job} thread(s) each).")
+        with ThreadPoolExecutor(max_workers=jobs) as pool:
+            results = list(pool.map(lambda f: run_bakta(f, bakta_dir, args.db, threads_per_job), fasta_files))
+        failed = sum(r is None for r in results)
+        if failed:
+            print(f"Warning: Bakta failed on {failed}/{len(fasta_files)} genome(s).", file=sys.stderr)
         _cleanup(input_dir, "input genomes")
 
-    # --- Step 3: Roary ---
+    # --- Step 3: Panaroo ---
     if args.start_step <= 3:
         gff_files = find_gff_files(bakta_dir)
         if not gff_files:
-            print(f"No GFF3 files found in {bakta_dir}. Cannot run Roary.", file=sys.stderr)
+            print(f"No GFF3 files found in {bakta_dir}. Cannot run Panaroo.", file=sys.stderr)
             sys.exit(1)
 
-        # Ensure deterministic ordering and cap the number of GFF files Roary will process
+        # Ensure deterministic ordering and cap the number of GFF files Panaroo will process
         gff_files = sorted(gff_files)
         if len(gff_files) > MAX_GFF_FILES:
-            print(f"Found {len(gff_files)} GFF3 files; limiting to first {MAX_GFF_FILES} for Roary processing.")
+            print(f"Found {len(gff_files)} GFF3 files; limiting to first {MAX_GFF_FILES} for Panaroo processing.")
             gff_files = gff_files[:MAX_GFF_FILES]
 
         # Setup error logging for Panaroo
@@ -519,16 +521,19 @@ def run_pipeline_for_species(species_name, outgroup_name, args):
         if not core_alignment_path or not core_alignment_path.exists():
             print(f"\nError: Could not find core gene alignment file. Please provide --input-fasta or run previous steps.")
             sys.exit(1)
-        # Outgroup ID priority: explicit flag > downloaded outgroup > typestrain
+        # Outgroup ID priority: explicit flag > outgroup genome > typestrain
         if args.outgroup_id:
             resolved_outgroup_id = args.outgroup_id
-        elif outgroup_fasta_path:
+        elif outgroup_fasta_path or (outgroup_name and args.start_step > 2):
             resolved_outgroup_id = "outgroup"
-        elif typestrain_accession:
-            print(f"\nNo external outgroup; using typestrain {typestrain_accession} as tree root.")
-            resolved_outgroup_id = typestrain_accession
         else:
-            resolved_outgroup_id = None
+            print(f"\n--- Auto-detecting typestrain for {species_name} ---")
+            ts_acc, ts_org = find_typestrain(species_name)
+            if ts_acc:
+                print(f"No external outgroup; using typestrain {ts_org} ({ts_acc}) as tree root.")
+            else:
+                print("Could not identify typestrain from NCBI.")
+            resolved_outgroup_id = ts_acc
 
         run_tree_pipeline(
             input_fasta=str(core_alignment_path),
@@ -539,7 +544,7 @@ def run_pipeline_for_species(species_name, outgroup_name, args):
             threads=args.threads
         )
         if args.start_step <= 3:
-            _cleanup(roary_dir, "Roary output")
+            _cleanup(roary_dir, "Panaroo output")
 
 def run_csv_batch(csv_path, args):
     """Run the pipeline for every species/outgroup row in the CSV file."""
@@ -586,14 +591,15 @@ def main():
     parser.add_argument("--sample-size", type=int, default=200, help="Number of random distinct assemblies to download if starting at Step 1 (default: 200)")
     parser.add_argument("--seed", type=int, default=42, help="Random seed for reproducible assembly sampling (default: 42)")
     
-    # Bakta/Roary arguments
+    # Bakta/Panaroo arguments
     parser.add_argument("-d", "--db", help="Path to the Bakta database. Required if starting at Step 2.")
     parser.add_argument("-w", "--workdir", default=".", help="Base directory for the pipeline (default: current directory)")
-    parser.add_argument("-t", "--threads", type=int, default=12, help="Number of threads to use for both Bakta and Roary (default: 12)")
+    parser.add_argument("-t", "--threads", type=int, default=12, help="Total threads for Bakta, Panaroo, tree building and EcoSim (default: 12)")
+    parser.add_argument("--bakta-jobs", type=int, default=None, help="Genomes to annotate in parallel (default: threads // 4). Lower it if RAM is tight.")
     
     # Control flow arguments
     parser.add_argument("--start-step", type=int, default=1, choices=range(1, 10), 
-                        help="Step to start at (1=Download, 2=Bakta, 3=Roary, 4=Sort, 5=FastTree, 6=Reroot, 7=Rarefaction, 8=EcoSim, 9=Parse)")
+                        help="Step to start at (1=Download, 2=Bakta, 3=Panaroo, 4=Sort, 5=FastTree, 6=Reroot, 7=Rarefaction, 8=EcoSim, 9=Parse)")
     
     # Tree arguments
     parser.add_argument("--input-fasta", help="Optional: Path to core gene alignment FASTA. Required if starting from Step 4 or later.")

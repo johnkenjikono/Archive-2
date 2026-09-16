@@ -133,7 +133,7 @@ echo "Checking optional alignment tools (for manual tree checks)..."
 if command -v mafft &> /dev/null; then
     echo "✓ System MAFFT found at: $(which mafft)"
 else
-    echo "ℹ System MAFFT not installed (optional, Roary environment has its own)"
+    echo "ℹ System MAFFT not installed (optional, Panaroo environment has its own)"
 fi
 
 echo ""

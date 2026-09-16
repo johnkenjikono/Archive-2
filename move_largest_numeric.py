@@ -1,6 +1,6 @@
 import sys
 import re
-from Bio import SeqIO
+from Bio.SeqIO.FastaIO import SimpleFastaParser
 
 def get_numeric_value(text):
     """
@@ -19,17 +19,19 @@ def _normalize_record_id(text):
 def move_largest_numeric_to_top(input_fasta, output_fasta, target_id=None):
     print(f"Reading {input_fasta}...")
     
-    records = list(SeqIO.parse(input_fasta, "fasta"))
+    # (id, title, seq) tuples; avoids SeqRecord overhead on large core alignments.
+    with open(input_fasta) as handle:
+        records = [(title.split(None, 1)[0], title, seq) for title, seq in SimpleFastaParser(handle)]
     if not records:
         print("❌ No sequences found in the file!")
         return False
     
     # CRITICAL: Validate alignment (all sequences must be same length for tree building)
-    lengths = set(len(record.seq) for record in records)
+    lengths = set(len(seq) for _, _, seq in records)
     if len(lengths) > 1:
         print(f"⚠️  WARNING: Sequences have different lengths: {sorted(lengths)}")
         print(f"    This will cause FastTree to CRASH!")
-        print(f"    Please inspect the Roary core-gene alignment before proceeding")
+        print(f"    Please inspect the Panaroo core-gene alignment before proceeding")
         return False
     
     seq_len = list(lengths)[0]
@@ -39,28 +41,29 @@ def move_largest_numeric_to_top(input_fasta, output_fasta, target_id=None):
     if target_id:
         normalized_target = _normalize_record_id(target_id)
         for record in records:
-            record_id = _normalize_record_id(record.id)
+            record_id = _normalize_record_id(record[0])
             if record_id == normalized_target or normalized_target in record_id:
                 selected_record = record
                 break
 
         if selected_record:
-            print(f"✅ Found target sequence to move to top: {selected_record.id}")
+            print(f"✅ Found target sequence to move to top: {selected_record[0]}")
 
     if selected_record is None:
         # Fall back to the record with the largest numeric value in its ID.
-        selected_record = max(records, key=lambda r: get_numeric_value(r.id))
-        print(f"✅ Found sequence with largest numerical value: {selected_record.id}")
+        selected_record = max(records, key=lambda r: get_numeric_value(r[0]))
+        print(f"✅ Found sequence with largest numerical value: {selected_record[0]}")
 
     # Put the selected record at the top by filtering it out from the others and prepending it.
-    other_records = [r for r in records if r.id != selected_record.id]
+    other_records = [r for r in records if r[0] != selected_record[0]]
     final_records = [selected_record] + other_records
     
     print(f"Writing {len(final_records)} sequences to {output_fasta}...")
     
     # Write the new file
     with open(output_fasta, "w") as out_f:
-        SeqIO.write(final_records, out_f, "fasta")
+        for _, title, seq in final_records:
+            out_f.write(f">{title}\n{seq}\n")
         
     print("✅ Done! The selected sequence is now at the top of the file.")
     return True

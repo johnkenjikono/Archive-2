@@ -2,7 +2,7 @@ import os
 import subprocess
 import shutil
 import tempfile
-from Bio import SeqIO
+from Bio.SeqIO.FastaIO import SimpleFastaParser
 from datetime import datetime
 
 def validate_sequences(fasta_path):
@@ -11,19 +11,21 @@ def validate_sequences(fasta_path):
     Returns: (num_seqs, seq_length) or (None, None) if invalid
     """
     try:
-        sequences = list(SeqIO.parse(fasta_path, "fasta"))
-        if not sequences:
+        # Stream lengths only; don't hold the whole alignment in memory.
+        with open(fasta_path) as handle:
+            lengths = [len(seq) for _, seq in SimpleFastaParser(handle)]
+        if not lengths:
             print(f"  ⚠️  No sequences found in {os.path.basename(fasta_path)}")
             return None, None
-        
+
         # Check that all sequences have same length
-        lengths = set(len(record.seq) for record in sequences)
-        if len(lengths) > 1:
+        distinct = set(lengths)
+        if len(distinct) > 1:
             print(f"  ⚠️  ERROR: Sequences are not aligned!")
-            print(f"     Found {len(lengths)} different lengths: {sorted(lengths)}")
+            print(f"     Found {len(distinct)} different lengths: {sorted(distinct)}")
             return None, None
-            
-        return len(sequences), list(lengths)[0]
+
+        return len(lengths), lengths[0]
     except Exception as e:
         print(f"  ⚠️  ERROR reading FASTA: {e}")
         return None, None
@@ -51,8 +53,8 @@ def find_fasttree_executable():
     )
 
 def make_trees_batch(final_folder="tree_rdy_fastas", tree_folder="trees_final", 
-                     stable_mode=True, fasttree_exe=None, max_retries=2,
-                     max_sequences_per_run=300, error_log=None):
+                     stable_mode=True, fasttree_exe=None, max_retries=1,
+                     max_sequences_per_run=300, error_log=None, threads=None):
     """
     Build phylogenetic trees using FastTree.
     
@@ -61,9 +63,10 @@ def make_trees_batch(final_folder="tree_rdy_fastas", tree_folder="trees_final",
         tree_folder: Output tree directory
         stable_mode: If True, use conservative flags for stability. If False, use -fastest.
         fasttree_exe: Path to FastTree executable (auto-detect if None)
-        max_retries: Number of times to retry if FastTree crashes
+        max_retries: Number of attempts per file (FastTree is deterministic, so retries rarely help)
         max_sequences_per_run: Max sequences per FASTA file (uses first X sequences, None = no limit)
         error_log: Path to error log file (auto-generated if None)
+        threads: Threads for tree building (default: all CPUs)
     """
     os.makedirs(tree_folder, exist_ok=True)
 
@@ -87,15 +90,23 @@ def make_trees_batch(final_folder="tree_rdy_fastas", tree_folder="trees_final",
         write_error_log(error_log, error_msg)
         raise
 
-    # Choose flags based on stability mode
+    # Support values are never used downstream (EcoSim only needs topology + branch lengths),
+    # so skip computing them.
     if stable_mode:
         # Conservative flags: better for stability with diverse sequences
-        base_flags = ["-nt", "-gtr", "-gamma", "-boot", "50"]
-        print("Running in STABLE mode with 50 bootstrap replicates (recommended for large/diverse datasets)")
+        base_flags = ["-nt", "-gtr", "-gamma", "-nosupport"]
+        print("Running in STABLE mode (recommended for large/diverse datasets)")
     else:
         # Faster but less stable flags
-        base_flags = ["-nt", "-speediest", "-gtr", "-boot", "50"]
-        print("Running in FAST mode with 50 bootstrap replicates (less stable)")
+        base_flags = ["-nt", "-speediest", "-gtr", "-nosupport"]
+        print("Running in FAST mode (less stable)")
+
+    threads = threads or os.cpu_count() or 1
+    # VeryFastTree defaults to 1 thread; OpenMP FastTree builds read OMP_NUM_THREADS.
+    if "veryfasttree" in os.path.basename(fasttree_exe).lower():
+        base_flags += ["-threads", str(threads)]
+    run_env = {**os.environ, "OMP_NUM_THREADS": str(threads)}
+    print(f"Using {threads} thread(s)")
 
     if max_sequences_per_run is not None:
         print(f"Sequence cap per FASTA: {max_sequences_per_run}")
@@ -140,13 +151,11 @@ def make_trees_batch(final_folder="tree_rdy_fastas", tree_folder="trees_final",
             fd, temp_subset_path = tempfile.mkstemp(suffix=".fasta", prefix="tree_subset_")
             os.close(fd)
 
-            subset_records = []
-            for i, record in enumerate(SeqIO.parse(input_path, "fasta")):
-                if i >= max_sequences_per_run:
-                    break
-                subset_records.append(record)
-
-            SeqIO.write(subset_records, temp_subset_path, "fasta")
+            with open(input_path) as src, open(temp_subset_path, "w") as dst:
+                for i, (title, seq) in enumerate(SimpleFastaParser(src)):
+                    if i >= max_sequences_per_run:
+                        break
+                    dst.write(f">{title}\n{seq}\n")
             run_input_path = temp_subset_path
             truncated_files.append((file, num_seqs, run_num_seqs))
             print(
@@ -166,7 +175,8 @@ def make_trees_batch(final_folder="tree_rdy_fastas", tree_folder="trees_final",
                         cmd,
                         stdout=f,
                         stderr=subprocess.PIPE,
-                        text=True
+                        text=True,
+                        env=run_env,
                     )
 
                 if result.returncode == 0:

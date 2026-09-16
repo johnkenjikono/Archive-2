@@ -69,6 +69,7 @@ def run_ecosim_batch(
     ecosim_dir=None,
     memory_gb=12,
     full_tree_path=None,
+    threads=None,
 ):
     """Run EcoSim.jar on a batch of FASTA files.
 
@@ -88,6 +89,10 @@ def run_ecosim_batch(
         Java heap size in gigabytes.
     full_tree_path : str or Path, optional
         Tree file to reuse for every FASTA if no per-file tree exists.
+    threads : int, optional
+        EcoSim worker threads (EcoSim defaults to all CPUs).
+
+    Returns the number of FASTA files EcoSim succeeded on.
     """
 
     if not shutil.which("java"):
@@ -146,10 +151,11 @@ def run_ecosim_batch(
             f"-s={fasta_path}",
             f"-p={tree_path}",
             f"-o={xml_output}",
-            "-d",
             "-r",
             "-n",
         ]
+        if threads:
+            cmd.append(f"-t={threads}")
 
         try:
             result = subprocess.run(
@@ -181,6 +187,7 @@ def run_ecosim_batch(
     print(f"  ❌ Failed: {failed}")
     print(f"  📊 Output directory: {output_path}")
     print("=" * 50)
+    return succeeded
 
 
 if __name__ == "__main__":
