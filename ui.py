@@ -26,6 +26,42 @@ class FormValues:
     setup_only: bool = False
 
 
+def build_command(values: FormValues, python_exe: str, pipeline_py: Path) -> list[str]:
+    argv = [python_exe, str(pipeline_py)]
+    if values.mode == "csv":
+        argv.extend(["--csv-file", values.csv_path])
+        argv.extend(["--sample-size", str(values.sample_size), "--seed", str(values.seed)])
+    elif values.mode == "species":
+        argv.extend(["--species", values.species])
+        if values.outgroup.strip():
+            argv.extend(["--outgroup", values.outgroup.strip()])
+        argv.extend(["--sample-size", str(values.sample_size), "--seed", str(values.seed)])
+    else:
+        argv.extend(["--species", values.species])
+
+    argv.extend(
+        [
+            "--workdir",
+            values.workdir,
+            "--threads",
+            str(values.threads),
+            "--start-step",
+            str(values.start_step),
+        ]
+    )
+    if values.db.strip():
+        argv.extend(["--db", values.db.strip()])
+    if values.bakta_jobs is not None:
+        argv.extend(["--bakta-jobs", str(values.bakta_jobs)])
+    if values.input_fasta.strip():
+        argv.extend(["--input-fasta", values.input_fasta.strip()])
+    if values.outgroup_id.strip():
+        argv.extend(["--outgroup-id", values.outgroup_id.strip()])
+    if values.setup_only:
+        argv.append("--setup-only")
+    return argv
+
+
 def species_folder_name(species: str) -> str:
     return species.replace(" ", "_")
 

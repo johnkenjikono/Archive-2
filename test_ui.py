@@ -2,7 +2,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from ui import FormValues, default_alignment_path, species_folder_name, validate_form
+from ui import FormValues, build_command, default_alignment_path, species_folder_name, validate_form
 
 
 class SpeciesFolderTests(unittest.TestCase):
@@ -109,6 +109,98 @@ class ValidateFormTests(unittest.TestCase):
         finally:
             Path(csv_path).unlink()
         self.assertEqual(errors, [])
+
+
+class BuildCommandTests(unittest.TestCase):
+    def test_species_command_includes_species_and_outgroup(self):
+        argv = build_command(
+            FormValues(
+                mode="species",
+                species="Bacillus subtilis",
+                outgroup="Bacillus licheniformis",
+                sample_size=200,
+                seed=42,
+                workdir="/tmp/work",
+                db="/tmp/db",
+                threads=8,
+                start_step=1,
+            ),
+            python_exe="/usr/bin/python",
+            pipeline_py=Path("/repo/pipeline.py"),
+        )
+        self.assertEqual(argv[0], "/usr/bin/python")
+        self.assertEqual(argv[1], "/repo/pipeline.py")
+        self.assertIn("--species", argv)
+        self.assertEqual(argv[argv.index("--species") + 1], "Bacillus subtilis")
+        self.assertIn("--outgroup", argv)
+        self.assertNotIn("--csv-file", argv)
+        self.assertIn("--sample-size", argv)
+        self.assertIn("--seed", argv)
+
+    def test_csv_command_omits_species(self):
+        argv = build_command(
+            FormValues(
+                mode="csv",
+                csv_path="/data/batch.csv",
+                sample_size=50,
+                seed=7,
+                workdir=".",
+                threads=12,
+                start_step=1,
+            ),
+            python_exe="python",
+            pipeline_py=Path("pipeline.py"),
+        )
+        self.assertIn("--csv-file", argv)
+        self.assertEqual(argv[argv.index("--csv-file") + 1], "/data/batch.csv")
+        self.assertNotIn("--species", argv)
+        self.assertNotIn("--outgroup", argv)
+
+    def test_local_command_skips_sample_flags(self):
+        argv = build_command(
+            FormValues(
+                mode="local",
+                species="Treponema paraluiscuniculi",
+                local_folder="/genomes",
+                start_step=2,
+                workdir=".",
+                threads=12,
+            ),
+            python_exe="python",
+            pipeline_py=Path("pipeline.py"),
+        )
+        self.assertIn("--species", argv)
+        self.assertGreaterEqual(int(argv[argv.index("--start-step") + 1]), 2)
+        self.assertNotIn("--sample-size", argv)
+        self.assertNotIn("--seed", argv)
+        self.assertNotIn("--csv-file", argv)
+
+    def test_setup_only_flag(self):
+        argv = build_command(
+            FormValues(mode="species", species="X", start_step=3, setup_only=True),
+            python_exe="python",
+            pipeline_py=Path("pipeline.py"),
+        )
+        self.assertIn("--setup-only", argv)
+
+    def test_empty_optional_flags_omitted(self):
+        argv = build_command(
+            FormValues(
+                mode="species",
+                species="X",
+                start_step=3,
+                bakta_jobs=None,
+                input_fasta="",
+                outgroup_id="",
+                db="",
+            ),
+            python_exe="python",
+            pipeline_py=Path("pipeline.py"),
+        )
+        self.assertNotIn("--bakta-jobs", argv)
+        self.assertNotIn("--input-fasta", argv)
+        self.assertNotIn("--outgroup-id", argv)
+        self.assertNotIn("--db", argv)
 
 
 if __name__ == "__main__":
