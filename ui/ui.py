@@ -71,6 +71,19 @@ def build_command(values: FormValues, python_exe: str, pipeline_py: Path) -> lis
     return argv
 
 
+def build_fill_command(csv_path: str, use_llm: bool, python_exe: str, fill_py: Path) -> list[str]:
+    argv = [python_exe, str(fill_py), csv_path]
+    if use_llm:
+        argv.append("--llm")
+    return argv
+
+
+def filled_csv_path(csv_path: str) -> Path:
+    # Matches fill_outgroups.py's default output name.
+    path = Path(csv_path)
+    return path.with_name(f"{path.stem}_outgroups.csv")
+
+
 def resolve_workdir(raw: str) -> str:
     return str(Path(raw).expanduser().resolve())
 
@@ -229,6 +242,7 @@ import sys
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 PIPELINE_PY = REPO_ROOT / "pipeline.py"
+FILL_OUTGROUPS_PY = REPO_ROOT / "fill_outgroups.py"
 
 
 def quote_command(argv: list[str]) -> str:
@@ -248,6 +262,7 @@ def main() -> None:
             self.events: queue.Queue = queue.Queue()
             self._form_widgets: list[tk.Widget] = []
             self._pending_values = FormValues(mode="species")
+            self._pending_fill_csv: Path | None = None
             self._build()
             self.protocol("WM_DELETE_WINDOW", self._on_close)
             self.after(100, self._drain_events)
@@ -288,6 +303,7 @@ def main() -> None:
             self.input_fasta_var = tk.StringVar()
             self.outgroup_id_var = tk.StringVar()
             self.setup_only_var = tk.BooleanVar(value=False)
+            self.use_llm_var = tk.BooleanVar(value=False)
 
             mode = ttk.LabelFrame(self, text="Start mode")
             mode.pack(fill="x", padx=8, pady=6)
@@ -317,6 +333,14 @@ def main() -> None:
             self._row(self.csv_frame, 0, "CSV file", self.csv_var, browse="file")
             self._row(self.csv_frame, 1, "Sample size", self.sample_size_var)
             self._row(self.csv_frame, 2, "Random seed", self.seed_var)
+            fill = ttk.Frame(self.csv_frame)
+            fill.grid(row=3, column=1, sticky="w", padx=4, pady=2)
+            self._track(
+                ttk.Checkbutton(fill, text="Use Claude (LLM)", variable=self.use_llm_var)
+            ).pack(side="left")
+            self._track(
+                ttk.Button(fill, text="Fill blank outgroups", command=self._on_fill_outgroups)
+            ).pack(side="left", padx=8)
 
             self.local_frame = ttk.Frame(self)
             self._row(self.local_frame, 0, "Species", self.species_var)
@@ -456,6 +480,28 @@ def main() -> None:
                 self._log(str(exc))
                 messagebox.showerror("Cannot start pipeline", str(exc))
 
+        def _on_fill_outgroups(self) -> None:
+            if self.runner.running:
+                return
+            csv_path = self.csv_var.get().strip()
+            if not csv_path or not Path(csv_path).is_file():
+                messagebox.showerror("Cannot fill outgroups", "Choose an existing CSV file.")
+                return
+            csv_path = str(Path(csv_path).resolve())  # the script runs with cwd=REPO_ROOT
+            argv = build_fill_command(
+                csv_path, bool(self.use_llm_var.get()), sys.executable, FILL_OUTGROUPS_PY
+            )
+            self._pending_fill_csv = filled_csv_path(csv_path)
+            self._log(quote_command(argv))
+            self._set_form_enabled(False)
+            try:
+                self.runner.start(argv, REPO_ROOT, self.events)
+            except OSError as exc:
+                self._pending_fill_csv = None
+                self._set_form_enabled(True)
+                self._log(str(exc))
+                messagebox.showerror("Cannot fill outgroups", str(exc))
+
         def _on_stop(self) -> None:
             if self.runner.running:
                 self._log("Stopping the run…")
@@ -478,6 +524,14 @@ def main() -> None:
 
         def _on_done(self, code: int) -> None:
             self._set_form_enabled(True)
+            fill_csv, self._pending_fill_csv = self._pending_fill_csv, None
+            if fill_csv is not None:
+                if code == 0 and not self.runner.was_stopped:
+                    self.csv_var.set(str(fill_csv))
+                    self._log(f"CSV file set to {fill_csv}. Review the Outgroup Source column, then Run pipeline.")
+                else:
+                    self._log("Filling outgroups did not finish — the CSV file was not changed.")
+                return
             if self.runner.was_stopped:
                 self._log("Run stopped. Partial output was left on disk.")
                 return

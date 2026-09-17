@@ -11,6 +11,8 @@ from ui import (
     PipelineRunner,
     FormValues,
     build_command,
+    build_fill_command,
+    filled_csv_path,
     copy_local_fastas,
     default_alignment_path,
     find_ecotype_summaries,
@@ -224,6 +226,17 @@ class BuildCommandTests(unittest.TestCase):
         self.assertNotIn("--input-fasta", argv)
         self.assertNotIn("--outgroup-id", argv)
         self.assertNotIn("--db", argv)
+
+
+class FillOutgroupsCommandTests(unittest.TestCase):
+    def test_llm_flag_only_when_checked(self):
+        off = build_fill_command("s.csv", False, "python", Path("fill_outgroups.py"))
+        on = build_fill_command("s.csv", True, "python", Path("fill_outgroups.py"))
+        self.assertEqual(off, ["python", "fill_outgroups.py", "s.csv"])
+        self.assertEqual(on, ["python", "fill_outgroups.py", "s.csv", "--llm"])
+
+    def test_filled_csv_path_matches_script_default(self):
+        self.assertEqual(filled_csv_path("/data/species.csv"), Path("/data/species_outgroups.csv"))
 
 
 class LocalCopyTests(unittest.TestCase):

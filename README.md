@@ -136,7 +136,7 @@ That script activates `venv/` if it exists, then starts `ui/ui.py`. With the ven
 | Mode | What you provide | What it runs |
 |---|---|---|
 | **Species name** | Species, optional outgroup, sample size, random seed | NCBI download, then the full pipeline |
-| **Batch CSV** | A CSV file (column 1 = species, column 4 = optional outgroup) | One row after another, same as `--csv-file` |
+| **Batch CSV** | A CSV file (column 1 = species, column 4 = optional outgroup) | One row after another, same as `--csv-file`. **Fill blank outgroups** runs `fill_outgroups.py` first (add `--llm` with **Use Claude (LLM)**) and switches the CSV field to the filled file for review |
 | **Local genome folder** | Species (names the results folder) and a folder of `.fna` / `.fasta` / `.fa` files | Copies those genomes into `input/` and starts at step 2 (Bakta). Sample size and seed are hidden. Start step cannot be 1 |
 
 **Options** (always on the screen; Browse buttons pick files and folders):
@@ -179,6 +179,15 @@ Treponema paraluiscuniculi,,,
 ```
 
 If one species fails, the pipeline logs the failure and moves on to the next row. A success/failure tally prints at the end.
+
+To choose outgroups once and review them before a batch run, fill the blanks ahead of time:
+
+```bash
+python fill_outgroups.py species.csv          # NCBI heuristic (deterministic)
+python fill_outgroups.py species.csv --llm    # Claude picks from NCBI genomes in the genus
+```
+
+This writes `species_outgroups.csv`. Rows that already have an outgroup are left alone. A new **Outgroup Source** column records how each outgroup was chosen (heuristic, or the model name and its reason), and the pipeline ignores that column. `--llm` needs `pip install anthropic` and `ANTHROPIC_API_KEY`, and costs about $0.01–0.06 per species. If the Claude call fails, the script uses the heuristic for that row and records that in the source column.
 
 ### Resuming
 
