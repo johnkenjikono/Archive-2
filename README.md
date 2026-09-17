@@ -71,7 +71,7 @@ The ecotype counts land in `./Treponema_paraluiscuniculi/ecosim_output_core_gene
 | [VeryFastTree](https://github.com/citiususc/veryfasttree) (or FastTree) | Step 5 | Tries `brew` (macOS) or `apt` (Linux) |
 | Java 8+ | Step 8 (EcoSim) | No, only checked |
 
-**EcoSim is bundled.** `ecosim.jar` and its helper binaries in `bin/` ship with the repo. The binaries in `bin/` are **macOS arm64 (Apple Silicon)** builds. On any other platform, supply EcoSim binaries built for that platform (see [Configuration](#configuration)).
+**EcoSim is bundled.** `tools/ecosim.jar` and its helper binaries in `tools/bin/` ship with the repo. The binaries in `tools/bin/` are **macOS arm64 (Apple Silicon)** builds. On any other platform, supply EcoSim binaries built for that platform (see [Configuration](#configuration)).
 
 ---
 
@@ -114,8 +114,8 @@ No configuration is needed if you use the bundled EcoSim. To use your own copy, 
 
 | Variable | Default | Purpose |
 |---|---|---|
-| `ECOSIM_JAR` | `./ecosim.jar` | Path to the EcoSim jar |
-| `ECOSIM_DIR` | repo root | Working directory for EcoSim (must contain its `bin/` helpers) |
+| `ECOSIM_JAR` | `tools/ecosim.jar` | Path to the EcoSim jar |
+| `ECOSIM_DIR` | `tools/` | Working directory for EcoSim (must contain its `bin/` helpers) |
 
 ---
 
@@ -129,7 +129,7 @@ The window collects the same options as `pipeline.py` and runs it for you. You d
 bash run_ui.sh
 ```
 
-That script activates `venv/` if it exists, then starts `ui.py`. With the venv already active you can also run `python ui.py`.
+That script activates `venv/` if it exists, then starts `ui/ui.py`. With the venv already active you can also run `python ui/ui.py`.
 
 **Start mode** (only the fields for the chosen mode are shown):
 
@@ -275,7 +275,7 @@ ecosim_output_core_gene_alignment/
 For a spreadsheet of ecotype membership (which strains belong to which ecotype), run:
 
 ```bash
-python post_processing.py Species_name/ecosim_output_core_gene_alignment
+python steps/post_processing.py Species_name/ecosim_output_core_gene_alignment
 # → .../parsed_results/*.xlsx
 ```
 
@@ -300,24 +300,24 @@ Every module also works as a standalone script:
 
 ```bash
 # Put the outgroup (or the largest accession number) first
-python move_largest_numeric.py alignment.aln sorted.fasta
+python steps/move_largest_numeric.py alignment.aln sorted.fasta
 
 # Build trees for every *.fasta in ./tree_rdy_fastas → ./trees_final
-python run_trees.py [--fast] [--max-sequences N]
+python steps/run_trees.py [--fast] [--max-sequences N]
 
 # Root a tree
-python reroot_tree.py sorted.fasta unrooted.nwk rooted.nwk [outgroup_id]
+python steps/reroot_tree.py sorted.fasta unrooted.nwk rooted.nwk [outgroup_id]
 
 # Rarefaction sub-alignments
-python Rarefaction_fasta_creation.py sorted.fasta [output_folder]
+python steps/rarefaction.py sorted.fasta [output_folder]
 
 # EcoSim on a folder of FASTAs
-python run_ecosim.py rarefaction_fastas/ --full-tree-path rooted.nwk \
+python steps/run_ecosim.py rarefaction_fastas/ --full-tree-path rooted.nwk \
   --output-dir ecosim_results [--memory-gb 24]
 
 # Summaries
-python parsing.py                        # counts ecotypes in ./ecosim_results
-python post_processing.py ecosim_results # per-ecotype membership spreadsheets
+python steps/parsing.py                        # counts ecotypes in ./ecosim_results
+python steps/post_processing.py ecosim_results # per-ecotype membership spreadsheets
 ```
 
 ---
@@ -325,23 +325,27 @@ python post_processing.py ecosim_results # per-ecotype membership spreadsheets
 ## Repository layout
 
 ```
-pipeline.py                    Orchestrator: CLI, steps 1–9, batch mode
-ui.py                          Desktop window: same options, live log, Start/Stop
-run_ui.sh                      Activate venv if present, then python ui.py
-test_ui.py                     Unit tests for the window's validation and commands
-download_outgroup.py           NCBI outgroup / type-strain lookup and download
-move_largest_numeric.py        Step 4: alignment check and outgroup ordering
-run_trees.py                   Step 5: VeryFastTree/FastTree wrapper
-reroot_tree.py                 Step 6: outgroup rooting
-Rarefaction_fasta_creation.py  Step 7: gene-window sub-alignments
-run_ecosim.py                  Step 8: EcoSim batch runner
-parsing.py                     Step 9: ecotype counts
-post_processing.py             Optional: XML → Excel membership tables
-ecosim.jar, bin/               Bundled EcoSim and its native helpers (macOS arm64)
-setup.sh                       Environment setup
-requirements.txt               Python dependencies
-*.ipynb                        Original exploratory notebooks (Windows paths; reference only)
-Treponema_paraluiscuniculi/    Example outputs from a small test run
+pipeline.py        Orchestrator: CLI, steps 1–9, batch mode (start here)
+run_ui.sh          Activate venv if present, then launch the desktop window
+setup.sh           Environment setup
+requirements.txt   Python dependencies
+
+steps/             One module per pipeline step, each also runnable on its own
+  download_outgroup.py      NCBI outgroup / type-strain lookup and download
+  move_largest_numeric.py   Step 4: alignment check and outgroup ordering
+  run_trees.py              Step 5: VeryFastTree/FastTree wrapper
+  reroot_tree.py            Step 6: outgroup rooting
+  rarefaction.py            Step 7: gene-window sub-alignments
+  run_ecosim.py             Step 8: EcoSim batch runner
+  parsing.py                Step 9: ecotype counts
+  post_processing.py        Optional: XML → Excel membership tables
+
+ui/                Desktop window
+  ui.py                     Same options as pipeline.py, live log, Start/Stop
+  test_ui.py                Unit tests for the window's validation and commands
+
+tools/             Bundled EcoSim
+  ecosim.jar, bin/          EcoSim and its native helpers (macOS arm64)
 ```
 
 ---
@@ -350,8 +354,8 @@ Treponema_paraluiscuniculi/    Example outputs from a small test run
 
 | Symptom | Fix |
 |---|---|
-| `bash run_ui.sh` / `python ui.py` fails with `No module named '_tkinter'` | The venv's Python was built without Tk. On macOS with Homebrew: `brew install python-tk`, then recreate `venv/` with `bash setup.sh` |
-| `python: command not found` from `run_ui.sh` | Run `bash setup.sh` first, or activate `venv/` and use `python ui.py` |
+| `bash run_ui.sh` / `python ui/ui.py` fails with `No module named '_tkinter'` | The venv's Python was built without Tk. On macOS with Homebrew: `brew install python-tk`, then recreate `venv/` with `bash setup.sh` |
+| `python: command not found` from `run_ui.sh` | Run `bash setup.sh` first, or activate `venv/` and use `python ui/ui.py` |
 | Local genomes copied but Bakta says no FASTA files | Check **Working directory** — genomes are copied into `<workdir>/<Species_name>/input/` |
 | `NCBI 'datasets' CLI tool not found` | `conda install -c conda-forge ncbi-datasets-cli` |
 | `--db ... is required` | Starting at step 1 or 2 needs `--db /path/to/bakta_db/db` |
@@ -361,7 +365,7 @@ Treponema_paraluiscuniculi/    Example outputs from a small test run
 | `Outgroup ... could not be matched to any tree leaf` | Pass the exact leaf name with `--outgroup-id` (leaf names are the genome file names, e.g. `GCF_000217655.1` or `outgroup`) |
 | `gene_length (1000) exceeds alignment length` | The core alignment is too short for rarefaction, usually because too few genes are shared. Check the genome set and outgroup |
 | `EcoSim jar not found` / `Java not found` | Install Java 8+. Set `ECOSIM_JAR` if you moved the jar |
-| EcoSim fails on Linux or Intel Macs | The bundled `bin/` helpers are Apple Silicon only. Point `ECOSIM_DIR` at a directory with binaries for your platform |
+| EcoSim fails on Linux or Intel Macs | The bundled `tools/bin/` helpers are Apple Silicon only. Point `ECOSIM_DIR` at a directory with binaries for your platform |
 | A batch row failed | Look for `Row N failed` in the output, fix the problem, then rerun that species with `--species` |
 
 ---

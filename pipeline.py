@@ -13,19 +13,19 @@ from pathlib import Path
 from datetime import datetime
 
 # For outgroup download
-from download_outgroup import download_ncbi_fasta, find_outgroup_species, find_typestrain
+from steps.download_outgroup import download_ncbi_fasta, find_outgroup_species, find_typestrain
 
 # Imports for the tree and ecosim steps
-from move_largest_numeric import move_largest_numeric_to_top
-from run_trees import make_trees_batch, write_error_log
-from reroot_tree import reroot_tree_by_first_fasta
-from Rarefaction_fasta_creation import create_rarefaction_fastas
-from run_ecosim import run_ecosim_batch, _resolve_ecosim_jar
-from parsing import summarize_ecotypes_in_folder
+from steps.move_largest_numeric import move_largest_numeric_to_top
+from steps.run_trees import make_trees_batch, write_error_log
+from steps.reroot_tree import reroot_tree_by_first_fasta
+from steps.rarefaction import create_rarefaction_fastas
+from steps.run_ecosim import run_ecosim_batch, _resolve_ecosim_jar
+from steps.parsing import summarize_ecotypes_in_folder
 
-# Falls back to the bundled ecosim.jar / repo dir (where bin/ lives) when env vars are unset.
+# Falls back to the bundled tools/ecosim.jar / tools/ dir (where bin/ lives) when env vars are unset.
 ECOSIM_JAR = _resolve_ecosim_jar()
-ECOSIM_DIR = os.environ.get("ECOSIM_DIR") or str(Path(__file__).resolve().parent)
+ECOSIM_DIR = os.environ.get("ECOSIM_DIR") or str(Path(__file__).resolve().parent / "tools")
 
 MAX_GFF_FILES = 201
 

@@ -43,9 +43,9 @@ python pipeline.py your_sequences.fasta
 python pipeline.py your_sequences.fasta --start-step 3
 
 # Run individual tools
-python move_largest_numeric.py input.fasta output.fasta
-python run_trees.py                          # Build trees
-python reroot_tree.py sorted.fasta tree.nwk output.nwk
+python steps/move_largest_numeric.py input.fasta output.fasta
+python steps/run_trees.py                          # Build trees
+python steps/reroot_tree.py sorted.fasta tree.nwk output.nwk
 ```
 
 ## 📊 What to Expect
@@ -57,7 +57,7 @@ python reroot_tree.py sorted.fasta tree.nwk output.nwk
 - EcoSim: varies (hours for large datasets)
 
 **If FastTree crashes:**
-1. Check sequence alignment: `python move_largest_numeric.py input.fasta sorted.fasta`
+1. Check sequence alignment: `python steps/move_largest_numeric.py input.fasta sorted.fasta`
 2. Look for unaligned sequences error message
 3. Align sequences first or reduce dataset size
 
@@ -75,7 +75,7 @@ make_trees_batch(stable_mode=True)  # Using -gtr -gamma flags
 **FAST MODE (less stable):**
 ```python
 make_trees_batch(stable_mode=False)  # Using -speediest flag
-python run_trees.py --fast
+python steps/run_trees.py --fast
 ```
 
 ### Memory Settings
