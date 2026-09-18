@@ -247,7 +247,8 @@ Execution
 | 5 | **Tree** | Builds a maximum-likelihood tree with VeryFastTree (`-nt -gtr -gamma -nosupport`) on all threads. |
 | 6 | **Reroot** | Roots the tree on the outgroup with Biopython. GCA/GCF accession variants are matched automatically. |
 | 7 | **Rarefaction** | Creates 100 sub-alignments by concatenating randomly placed 1,000 bp windows: 1, 3, 7, 20 and 100 windows, 20 replicates each. This shows how the ecotype estimate changes with the amount of sequence. |
-| 8 | **EcoSim** | Runs `ecosim.jar` (demarcation mode, no GUI, 12 GB heap) on each sub-alignment against the full rooted tree. |
+| 7b | **Rarefaction trees** | Builds and reroots one tree per sub-alignment. EcoSim's binning is driven by the tree, so reusing the full-alignment tree for every replicate made the rarefaction curve flat by construction. |
+| 8 | **EcoSim** | Runs `ecosim.jar` (demarcation mode, no GUI, 6 GB heap) on each sub-alignment against its own rooted tree, falling back to the full rooted tree for any replicate whose tree could not be built or rerooted. |
 | 9 | **Parse** | Counts the demarcated ecotypes in each EcoSim XML file and writes `ecotype_summary.csv`. |
 
 **How the root is chosen, in order of priority:** `--outgroup-id` → the downloaded outgroup genome → the species' RefSeq reference genome (a proxy for the type strain) → the sequence whose accession number is largest.
@@ -267,6 +268,7 @@ Each species gets its own folder, `<workdir>/<Species_name>/`. **Intermediates a
 | `pipeline_temp_<alignment>/` (sorted FASTA, unrooted tree) | Deleted at the end |
 | `rerooted_trees/<Species name>.nwk` | Deleted after EcoSim succeeds |
 | `rarefaction_fastas_<alignment>/` | Deleted after EcoSim succeeds |
+| `rarefaction_trees_<alignment>/` | Deleted after EcoSim succeeds |
 | **`ecosim_output_<alignment>/`** | **Kept: the final results** |
 
 `<alignment>` is the alignment file name without its extension, which is `core_gene_alignment` in a normal run.
@@ -297,7 +299,7 @@ python steps/post_processing.py Species_name/ecosim_output_core_gene_alignment
 | `--threads` | Used by every step. VeryFastTree and EcoSim scale well with more threads. |
 | `--bakta-jobs` | Genomes annotated at the same time. Each job gets `threads / jobs` threads. Lower it if you run out of RAM, since every Bakta job loads its own database indexes. |
 | `--sample-size` | Bakta time grows linearly with genome count; Panaroo and tree building grow faster than that. |
-| `memory_gb` in `pipeline.py` | EcoSim Java heap (default 12 GB). Raise it for very large alignments. |
+| `memory_gb` in `pipeline.py` | EcoSim Java heap (default 6 GB). Raise it for very large alignments. |
 
 Steps 2 and 5 skip genomes and trees whose output already exists, so an interrupted run can be restarted without redoing that work.
 

@@ -1,5 +1,8 @@
 import argparse
+import contextlib
 import csv
+import glob
+import io
 import subprocess
 import sys
 import shutil
@@ -81,7 +84,9 @@ def get_random_accessions(species_name, sample_size=200, random_seed=42):
 
     # Sort the deduplicated accessions so the sampling population is deterministic
     # (independent of NCBI's response ordering).
-    accessions = sorted(set(accessions))
+    # GCA_x and GCF_x are the GenBank/RefSeq copies of one assembly; keep one (GCF sorts last, wins).
+    # Duplicate identical genomes crash Panaroo (KeyError in collapse_families).
+    accessions = sorted({a[4:]: a for a in sorted(set(accessions))}.values())
     if not accessions:
         return []
 
@@ -234,7 +239,9 @@ def run_panaroo(gff_files: list[Path], roary_dir: Path, threads: int, error_log=
     run_output_dir.mkdir(parents=True, exist_ok=True)
 
     cmd = [
-        "conda", "run", "-n", "panaroo_env", "panaroo",
+        # Wrapper works around a panaroo <=1.8.0 crash; see steps/panaroo_patched.py.
+        "conda", "run", "-n", "panaroo_env", "python",
+        str(Path(__file__).parent / "steps" / "panaroo_patched.py"),
         "-i", *[str(f) for f in gff_files],
         "-o", str(run_output_dir),
         "--clean-mode", "strict",
@@ -254,10 +261,9 @@ def run_panaroo(gff_files: list[Path], roary_dir: Path, threads: int, error_log=
         write_error_log(error_log, success_msg)
     except subprocess.CalledProcessError as e:
         error_msg = f"Panaroo failed with exit code {e.returncode}"
-        if e.stderr:
-            error_msg += f" | stderr: {e.stderr[:300]}"
         print(f"\n❌ {error_msg}", file=sys.stderr)
-        write_error_log(error_log, error_msg)
+        # Full stderr to the log: the real traceback sits between tqdm bars and conda's command echo.
+        write_error_log(error_log, f"{error_msg} | stderr:\n{e.stderr}")
         print(f"Error log: {error_log}")
         sys.exit(1)
     except Exception as e:
@@ -267,7 +273,7 @@ def run_panaroo(gff_files: list[Path], roary_dir: Path, threads: int, error_log=
         print(f"Error log: {error_log}")
         sys.exit(1)
 
-def run_tree_pipeline(input_fasta, start_step, outgroup_id, base_dir, output_tree_name=None, threads=12):
+def run_tree_pipeline(input_fasta, start_step, outgroup_id, base_dir, output_tree_name=None, threads=8):
     if not os.path.exists(input_fasta):
         print(f" Error: Input fasta '{input_fasta}' does not exist.")
         sys.exit(1)
@@ -282,6 +288,8 @@ def run_tree_pipeline(input_fasta, start_step, outgroup_id, base_dir, output_tre
     temp_trees_final = os.path.join(base_dir, f"pipeline_temp_{species_name}", "trees_final")
     final_rerooted_dir = os.path.join(base_dir, "rerooted_trees")
     rarefaction_out_dir = os.path.join(base_dir, f"rarefaction_fastas_{species_name}")
+    rarefaction_tree_dir = os.path.join(base_dir, f"rarefaction_trees_{species_name}")
+    temp_rare_trees = os.path.join(base_dir, f"pipeline_temp_{species_name}", "rarefaction_trees_unrooted")
     ecosim_out_dir = os.path.join(base_dir, f"ecosim_output_{species_name}")
 
     os.makedirs(temp_tree_rdy, exist_ok=True)
@@ -338,8 +346,36 @@ def run_tree_pipeline(input_fasta, start_step, outgroup_id, base_dir, output_tre
     if start_step <= 7:
         print(f"\n--- 7. Creating Rarefaction FASTAs ---")
         create_rarefaction_fastas(input_fasta=sorted_fasta, output_folder=rarefaction_out_dir)
+        print(f"\n--- 7b. Building one tree per rarefaction replicate ---")
+        make_trees_batch(
+            final_folder=rarefaction_out_dir,
+            tree_folder=temp_rare_trees,
+            threads=threads,
+        )
+        os.makedirs(rarefaction_tree_dir, exist_ok=True)
+        rerooted = 0
+        for fasta in sorted(glob.glob(os.path.join(rarefaction_out_dir, "*.fasta"))):
+            stem = Path(fasta).stem
+            unrooted = os.path.join(temp_rare_trees, f"{stem}_tree.nwk")
+            if not (os.path.exists(unrooted) and os.path.getsize(unrooted) > 0):
+                continue
+            # Rerooting is chatty and runs 100x; only show the log when it fails.
+            log = io.StringIO()
+            with contextlib.redirect_stdout(log):
+                ok = reroot_tree_by_first_fasta(
+                    fasta,
+                    unrooted,
+                    os.path.join(rarefaction_tree_dir, f"{stem}_tree.nwk"),
+                    outgroup_name=outgroup_id,
+                )
+            if ok:
+                rerooted += 1
+            else:
+                print(f"  {stem}: reroot failed, falling back to the full tree")
+                print(log.getvalue())
+        print(f"Rerooted {rerooted} sub-alignment trees in {rarefaction_tree_dir}")
     else:
-        print("\n--- Skipping Step 7: Using existing rarefaction FASTAs ---")
+        print("\n--- Skipping Step 7: Using existing rarefaction FASTAs and trees ---")
 
     # --- Step 8: Run EcoSim ---
     if start_step <= 8:
@@ -349,17 +385,19 @@ def run_tree_pipeline(input_fasta, start_step, outgroup_id, base_dir, output_tre
             sys.exit(1)  # keep rarefaction FASTAs + tree so the run can resume with --start-step 8
         succeeded = run_ecosim_batch(
             fasta_dir=rarefaction_out_dir,
+            tree_dir=rarefaction_tree_dir,
             full_tree_path=rerooted_tree,
             output_dir=ecosim_out_dir,
             ecosim_jar=ECOSIM_JAR,
             ecosim_dir=ECOSIM_DIR,
-            memory_gb=12,
+            memory_gb=6,
             threads=threads,
         )
         if not succeeded:
             print("EcoSim produced no results; keeping inputs for a rerun with --start-step 8.")
             sys.exit(1)
         _cleanup(rarefaction_out_dir, "rarefaction FASTAs")
+        _cleanup(rarefaction_tree_dir, "rarefaction trees")
         _cleanup(rerooted_tree, "rerooted tree")
     else:
         print("\n--- Skipping Step 8 ---")
@@ -594,7 +632,7 @@ def main():
     # Bakta/Panaroo arguments
     parser.add_argument("-d", "--db", help="Path to the Bakta database. Required if starting at Step 2.")
     parser.add_argument("-w", "--workdir", default=".", help="Base directory for the pipeline (default: current directory)")
-    parser.add_argument("-t", "--threads", type=int, default=12, help="Total threads for Bakta, Panaroo, tree building and EcoSim (default: 12)")
+    parser.add_argument("-t", "--threads", type=int, default=8, help="Total threads for Bakta, Panaroo, tree building and EcoSim (default: 8)")
     parser.add_argument("--bakta-jobs", type=int, default=None, help="Genomes to annotate in parallel (default: threads // 4). Lower it if RAM is tight.")
     
     # Control flow arguments

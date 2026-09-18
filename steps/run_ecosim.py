@@ -36,9 +36,7 @@ def _iter_fasta_files(fasta_dir):
 def _resolve_tree_path(fasta_path, tree_dir=None, full_tree_path=None):
     if tree_dir:
         tree_root = Path(tree_dir)
-        if not tree_root.is_dir():
-            raise FileNotFoundError(f"Tree directory not found: {tree_dir}")
-
+        # A missing tree_dir is not fatal: fall through to full_tree_path below.
         stem = fasta_path.stem
         candidates = [
             tree_root / f"{stem}_tree.nwk",
@@ -47,7 +45,7 @@ def _resolve_tree_path(fasta_path, tree_dir=None, full_tree_path=None):
             tree_root / f"{stem}.newick",
         ]
         for candidate in candidates:
-            if candidate.exists():
+            if candidate.is_file():
                 return candidate.resolve()
 
     if full_tree_path:
