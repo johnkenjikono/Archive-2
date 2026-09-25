@@ -189,7 +189,8 @@ def run_bakta(fasta_file: Path, bakta_dir: Path, db_path: str, threads: int):
     output_dir.mkdir(parents=True, exist_ok=True)
 
     cmd = [
-        "conda", "run", "-n", "bakta_env", "bakta",
+        # --no-capture-output streams Bakta's log live instead of dumping it when the genome finishes.
+        "conda", "run", "--no-capture-output", "-n", "bakta_env", "bakta",
         "--db", str(db_path),
         "--output", str(output_dir),
         "--prefix", sample_name,

@@ -20,6 +20,7 @@ Run it from the desktop window (`bash run_ui.sh`) or from the terminal, one spec
   - [Graphical interface](#graphical-interface)
   - [One species](#one-species)
   - [Many species from a CSV](#many-species-from-a-csv)
+  - [On Modal (cloud Linux)](#on-modal-cloud-linux)
 - [How the pipeline works](#how-the-pipeline-works)
 - [Outputs](#outputs)
 - [Performance tuning](#performance-tuning)
@@ -189,6 +190,22 @@ python fill_outgroups.py species.csv --llm    # Claude picks from NCBI genomes i
 
 This writes `species_outgroups.csv`. Rows that already have an outgroup are left alone. A new **Outgroup Source** column records how each outgroup was chosen (heuristic, or the model name and its reason), and the pipeline ignores that column. `--llm` needs `pip install anthropic` and `ANTHROPIC_API_KEY`, and costs about $0.01–0.06 per species. If the Claude call fails, the script uses the heuristic for that row and records that in the source column.
 
+### On Modal (cloud Linux)
+
+`modal_app.py` runs the same `pipeline.py` in a Linux container on [Modal](https://modal.com). The image holds both conda envs, `datasets`, VeryFastTree, Java and Linux builds of the EcoSim helpers (built by `tools/build_ecosim_linux.sh`). The Bakta database and all results live in Modal Volumes (`bakta-db`, `ecotype-results`), so they survive between runs and `--start-step` resumes work.
+
+```bash
+pip install -r requirements.txt && modal setup                 # one-time: installs the client, logs in
+modal run modal_app.py::download_bakta_db                      # one-time; add --light for db-light (then pass --db db-light)
+
+modal run modal_app.py --species "Treponema paraluiscuniculi" --extra "--sample-size 5"
+modal run modal_app.py --csv-file species.csv                  # one container per row, all in parallel
+
+modal volume get ecotype-results Treponema_paraluiscuniculi/ecosim_output_core_gene_alignment .
+```
+
+`--extra` passes any other `pipeline.py` flags, e.g. `--extra "--start-step 8 --outgroup-id outgroup"`. Each container gets 16 CPUs and 64 GB RAM (`CPUS` / `MEMORY_MB` at the top of `modal_app.py`) and a 24-hour limit, which is Modal's maximum. If a run fails, whatever it wrote is kept in the volume.
+
 ### Resuming
 
 Every step can be skipped with `--start-step N`. For example, to rebuild the tree and everything after it from an existing core alignment:
@@ -339,6 +356,7 @@ python steps/post_processing.py ecosim_results # per-ecotype membership spreadsh
 pipeline.py        Orchestrator: CLI, steps 1–9, batch mode (start here)
 run_ui.sh          Activate venv if present, then launch the desktop window
 setup.sh           Environment setup
+modal_app.py       Run the pipeline on Modal (see "On Modal")
 requirements.txt   Python dependencies
 
 steps/             One module per pipeline step, each also runnable on its own
@@ -357,6 +375,7 @@ ui/                Desktop window
 
 tools/             Bundled EcoSim
   ecosim.jar, bin/          EcoSim and its native helpers (macOS arm64)
+  build_ecosim_linux.sh     Builds the Linux helpers (used by setup.sh and modal_app.py)
 ```
 
 ---
@@ -376,7 +395,7 @@ tools/             Bundled EcoSim
 | `Outgroup ... could not be matched to any tree leaf` | Pass the exact leaf name with `--outgroup-id` (leaf names are the genome file names, e.g. `GCF_000217655.1` or `outgroup`) |
 | `gene_length (1000) exceeds alignment length` | The core alignment is too short for rarefaction, usually because too few genes are shared. Check the genome set and outgroup |
 | `EcoSim jar not found` / `Java not found` | Install Java 8+. Set `ECOSIM_JAR` if you moved the jar |
-| EcoSim fails on Linux or Intel Macs | The bundled `tools/bin/` helpers are Apple Silicon only. Point `ECOSIM_DIR` at a directory with binaries for your platform |
+| EcoSim fails on Linux or Intel Macs | The bundled `tools/bin/` helpers are Apple Silicon only. On Linux, `bash setup.sh` builds them into `tools/linux/bin` (via `tools/build_ecosim_linux.sh`). Elsewhere, point `ECOSIM_DIR` at a directory with binaries for your platform |
 | A batch row failed | Look for `Row N failed` in the output, fix the problem, then rerun that species with `--species` |
 
 ---
