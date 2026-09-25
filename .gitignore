@@ -54,3 +54,6 @@ ncbi_dataset/
 .vscode/
 .idea/
 *.swp
+
+# Linux builds of EcoSim tools (made by setup.sh)
+tools/linux/

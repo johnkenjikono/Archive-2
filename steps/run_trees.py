@@ -42,14 +42,17 @@ def find_fasttree_executable():
            or shutil.which("FastTree") or shutil.which("FastTreeMP"))
     if exe:
         return exe
+    # Last resort: the FastTree setup.sh builds on Linux.
+    bundled = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "tools", "linux", "bin", "fasttree")
     for path in ["/usr/local/bin/veryfasttree", "/usr/local/bin/fasttree",
-                 "/opt/local/bin/veryfasttree"]:
+                 "/opt/local/bin/veryfasttree", bundled]:
         if os.path.exists(path):
             return path
     raise FileNotFoundError(
         "VeryFastTree not found. Install it and ensure it's on PATH.\n"
         "macOS: brew install veryfasttree\n"
-        "Fallback: brew install fasttree"
+        "Fallback: brew install fasttree\n"
+        "Linux: bash setup.sh (builds tools/linux/bin/fasttree)"
     )
 
 def make_trees_batch(final_folder="tree_rdy_fastas", tree_folder="trees_final", 

@@ -153,7 +153,8 @@ def run_ecosim_batch(
             "-n",
         ]
         if threads:
-            cmd.append(f"-t={threads}")
+            # EcoSim exits 1 if -t exceeds the CPU count.
+            cmd.append(f"-t={min(threads, os.cpu_count() or threads)}")
 
         try:
             result = subprocess.run(

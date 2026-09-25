@@ -28,7 +28,10 @@ from steps.parsing import summarize_ecotypes_in_folder
 
 # Falls back to the bundled tools/ecosim.jar / tools/ dir (where bin/ lives) when env vars are unset.
 ECOSIM_JAR = _resolve_ecosim_jar()
-ECOSIM_DIR = os.environ.get("ECOSIM_DIR") or str(Path(__file__).resolve().parent / "tools")
+# tools/bin holds macOS arm64 binaries; setup.sh builds Linux ones into tools/linux/bin.
+ECOSIM_DIR = os.environ.get("ECOSIM_DIR") or str(
+    Path(__file__).resolve().parent / "tools" / ("linux" if sys.platform.startswith("linux") else "")
+)
 
 MAX_GFF_FILES = 201
 

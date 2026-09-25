@@ -98,6 +98,7 @@ make_trees_batch(fasttree_exe="fasttree")
 | `VeryFastTree/FastTree not found` | `brew install veryfasttree` (macOS) or `apt install veryfasttree` (Linux) |
 | `Sequences not aligned` | Use `mafft your.fasta > aligned.fasta` |
 | `FastTree crashes` | Ensure sequences have same length |
+| EcoSim fails on Linux / Arch | `bash setup.sh` — installs deps via pacman and builds Linux EcoSim tools into `tools/linux/bin` (the bundled `tools/bin` is macOS-only) |
 | `EcoSim jar not found` | Set `export ECOSIM_JAR=/path/to/ecosim.jar` and ensure Java is installed |
 | `Tree rooting failed` | Check sequence IDs match exactly in FASTA and tree file |
 

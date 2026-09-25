@@ -2,11 +2,18 @@
 # Setup script for full pipeline dependencies
 
 set -e
+cd "$(dirname "$0")"  # paths below (venv, tools/) are repo-relative
 
 echo "================================================================"
 echo "Ecotype Pipeline Setup Tool"
 echo "================================================================"
 echo ""
+
+# 0. Arch Linux system packages (compilers for EcoSim's tools, Java, Tk for the UI)
+if command -v pacman &> /dev/null; then
+    echo "--- Installing Arch Linux packages ---"
+    sudo pacman -S --needed --noconfirm base-devel gcc-fortran git jre-openjdk python tk
+fi
 
 # 1. Check for conda/mamba
 echo "--- Checking for Conda/Mamba ---"
@@ -88,6 +95,28 @@ else
     echo "  Install a JDK: https://adoptium.net  or  conda install -c conda-forge openjdk"
 fi
 
+# 5c. EcoSim's native tools. tools/bin ships macOS arm64 builds; Linux needs its own,
+# built from the EcoSim 2.1.7 source that matches tools/ecosim.jar.
+if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+    echo ""
+    echo "--- Building EcoSim native tools for Linux (tools/linux/bin) ---"
+    if [ -x tools/linux/bin/hillclimb ] && [ -x tools/linux/bin/fasttree ]; then
+        echo "✓ Already built"
+    else
+        src=$(mktemp -d)
+        git clone -q https://github.com/sandain/ecosim.git "$src"
+        git -C "$src" checkout -q fc1e01973e4ee882fba8f01bd08bbe5064145c64
+        # FC must be explicit: make's built-in FC=f77 overrides the Makefile's "FC ?= gfortran".
+        make -C "$src" FC=gfortran CC=gcc build/c/fasttree \
+            build/fortran/hillclimb build/fortran/npopCI build/fortran/omegaCI \
+            build/fortran/sigmaCI build/fortran/demarcation
+        mkdir -p tools/linux/bin
+        cp "$src"/build/c/fasttree "$src"/build/fortran/{hillclimb,npopCI,omegaCI,sigmaCI,demarcation} tools/linux/bin/
+        rm -rf "$src"
+        echo "✓ Built into tools/linux/bin"
+    fi
+fi
+
 # 6. Check VeryFastTree / FastTree
 echo ""
 echo "--- Checking Tree Builders ---"
@@ -115,13 +144,14 @@ else
             sudo apt-get update && sudo apt-get install -y veryfasttree
             echo "✓ VeryFastTree installed!"
         else
-            echo "❌ apt-get not found. Install with your package manager: veryfasttree"
+            echo "ℹ No veryfasttree package here; the pipeline falls back to tools/linux/bin/fasttree."
+            echo "  For faster trees: conda install -c conda-forge -c bioconda veryfasttree"
         fi
     fi
 fi
 
 # Verify installation
-if command -v veryfasttree &> /dev/null || command -v fasttree &> /dev/null; then
+if command -v veryfasttree &> /dev/null || command -v fasttree &> /dev/null || [ -x tools/linux/bin/fasttree ]; then
     echo "✓ Tree builder is ready!"
 else
     echo "⚠ VeryFastTree/FastTree still not found. You may need to install manually."
