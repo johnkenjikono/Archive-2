@@ -1,9 +1,9 @@
 """Run the ecotype pipeline on Modal.
 
 One-time:  modal run modal_app.py::download_bakta_db            (add --light for the small db)
-One run:   modal run modal_app.py --species "Treponema paraluiscuniculi" --extra "--sample-size 5"
+One run:   modal run modal_app.py --species "Treponema pallidum" --outgroup "Treponema paraluiscuniculi" --extra "--sample-size 10"
 Batch:     modal run modal_app.py --csv-file species.csv         (one container per species, in parallel)
-Results:   modal volume get ecotype-results Treponema_paraluiscuniculi/ecosim_output_core_gene_alignment .
+Results:   modal volume get ecotype-results Treponema_pallidum/ecosim_output_core_gene_alignment .
 """
 import shlex
 import subprocess

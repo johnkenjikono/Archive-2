@@ -9,10 +9,12 @@ echo "Ecotype Pipeline Setup Tool"
 echo "================================================================"
 echo ""
 
-# 0. Arch Linux system packages (compilers for EcoSim's tools, Java, Tk for the UI)
+# 0. Arch Linux system packages (compilers for EcoSim's tools, Java). Only prompts for sudo when something is missing.
 if command -v pacman &> /dev/null; then
-    echo "--- Installing Arch Linux packages ---"
-    sudo pacman -S --needed --noconfirm base-devel gcc-fortran git jre-openjdk python tk
+    if ! command -v gfortran &> /dev/null || ! command -v java &> /dev/null || ! command -v git &> /dev/null; then
+        echo "--- Installing Arch Linux packages ---"
+        sudo pacman -S --needed --noconfirm base-devel gcc-fortran git jre-openjdk
+    fi
 fi
 
 # 1. Check for conda/mamba
@@ -28,25 +30,27 @@ else
     echo "   https://docs.conda.io/en/latest/miniconda.html"
     exit 1
 fi
+# conda-forge + bioconda only: skips the "defaults" channel (and its Terms of Service prompt).
+CHANNELS="--override-channels -c conda-forge -c bioconda --strict-channel-priority"
 
 # 2. Setup Bakta Environment
 echo ""
 echo "--- Setting up Bakta Environment (bakta_env) ---"
-if $CONDA_EXE env list | grep -q "bakta_env"; then
+if $CONDA_EXE env list | grep -q "^bakta_env "; then
     echo "✓ bakta_env already exists"
 else
     echo "Creating bakta_env..."
-    $CONDA_EXE create -n bakta_env -c conda-forge -c bioconda bakta -y
+    $CONDA_EXE create -n bakta_env $CHANNELS bakta -y
 fi
 
 # 3. Setup Panaroo Environment
 echo ""
 echo "--- Setting up Panaroo Environment (panaroo_env) ---"
-if $CONDA_EXE env list | grep -q "panaroo_env"; then
+if $CONDA_EXE env list | grep -q "^panaroo_env "; then
     echo "✓ panaroo_env already exists"
 else
     echo "Creating panaroo_env..."
-    $CONDA_EXE create -n panaroo_env -c conda-forge -c bioconda panaroo mafft -y
+    $CONDA_EXE create -n panaroo_env $CHANNELS panaroo mafft -y
 fi
 
 # 4. Check Python version for tree pipeline
@@ -73,17 +77,27 @@ else
 fi
 deactivate
 
-# 5. Check NCBI Datasets CLI
+# 5. NCBI datasets CLI + VeryFastTree. They live in their own env (keeps conda base clean)
+# and get linked into venv/bin, so `source venv/bin/activate` puts them on PATH.
 echo ""
-echo "--- Checking NCBI Datasets CLI ---"
-if command -v datasets &> /dev/null; then
-    echo "✓ NCBI datasets CLI found at: $(which datasets)"
+echo "--- Setting up CLI tools (ecotools env: datasets, veryfasttree) ---"
+if $CONDA_EXE env list | grep -q "^ecotools "; then
+    echo "✓ ecotools already exists"
 else
-    echo "⚠ NCBI datasets CLI not found (needed for downloading genomes in Step 1)."
-    echo "  Installing via conda..."
-    $CONDA_EXE install -c conda-forge ncbi-datasets-cli -y || \
-        echo "  ❌ Auto-install failed. Install manually: conda install -c conda-forge ncbi-datasets-cli"
+    $CONDA_EXE create -n ecotools $CHANNELS ncbi-datasets-cli veryfasttree -y
 fi
+ECOTOOLS_BIN="$($CONDA_EXE env list | awk '$1=="ecotools" {print $NF}')/bin"
+# bioconda names the binary VeryFastTree; link it as veryfasttree too.
+for tool in datasets dataformat VeryFastTree; do
+    if [ -x "$ECOTOOLS_BIN/$tool" ]; then
+        ln -sf "$ECOTOOLS_BIN/$tool" "venv/bin/$tool"
+        [ "$tool" = VeryFastTree ] && ln -sf "$ECOTOOLS_BIN/$tool" venv/bin/veryfasttree
+        echo "✓ Linked $tool into venv/bin"
+    else
+        echo "⚠ $tool not found in $ECOTOOLS_BIN"
+    fi
+done
+export PATH="$PWD/venv/bin:$PATH"  # so the checks below see the linked tools
 
 # 5b. Check Java (required for EcoSim)
 echo ""
@@ -92,7 +106,7 @@ if command -v java &> /dev/null; then
     echo "✓ Java found: $(java -version 2>&1 | head -1)"
 else
     echo "⚠ Java not found. EcoSim (Step 8) will not run without it."
-    echo "  Install a JDK: https://adoptium.net  or  conda install -c conda-forge openjdk"
+    echo "  Arch: sudo pacman -S jre-openjdk   (or https://adoptium.net)"
 fi
 
 # 5c. EcoSim's native tools. tools/bin ships macOS arm64 builds; Linux needs its own,
@@ -165,12 +179,8 @@ echo "Next steps:"
 echo "1. Activate your python virtual environment:"
 echo "   source venv/bin/activate"
 echo "2. Download the Bakta database if you haven't already:"
-echo "   conda activate bakta_env"
-echo "   bakta_db download --output /path/to/db"
-echo "   conda deactivate"
-echo "3. Configure EcoSim paths (only needed if running step 8):"
-echo "   export ECOSIM_JAR=/path/to/ecosim.jar"
-echo "   export ECOSIM_DIR=/path/to/ecosim"
+echo "   conda run -n bakta_env bakta_db download --output bakta_db --type light   (or --type full, ~70 GB)"
+echo "3. EcoSim needs no config: it uses tools/ecosim.jar and the Linux helpers in tools/linux/bin."
 echo "4. Run the full pipeline (including genome download):"
-echo "   python pipeline.py --species 'Treponema paraluiscuniculi' --sample-size 5 --db /path/to/bakta/db"
+echo "   python pipeline.py --species 'Treponema pallidum' --sample-size 10 --outgroup 'Treponema paraluiscuniculi' --db bakta_db/db-light"
 echo ""

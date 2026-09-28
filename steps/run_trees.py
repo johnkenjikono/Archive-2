@@ -38,7 +38,7 @@ def write_error_log(error_file, error_message):
 
 def find_fasttree_executable():
     """Find VeryFastTree/FastTree on PATH or common install locations."""
-    exe = (shutil.which("veryfasttree") or shutil.which("fasttree")
+    exe = (shutil.which("veryfasttree") or shutil.which("VeryFastTree") or shutil.which("fasttree")
            or shutil.which("FastTree") or shutil.which("FastTreeMP"))
     if exe:
         return exe

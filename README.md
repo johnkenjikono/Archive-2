@@ -48,13 +48,16 @@ The same run from the terminal:
 
 ```bash
 python pipeline.py \
-  --species "Treponema paraluiscuniculi" \
-  --sample-size 5 \
+  --species "Treponema pallidum" \
+  --sample-size 10 \
+  --outgroup "Treponema paraluiscuniculi" \
   --db ~/bakta_db/db \
   --threads 8
 ```
 
-The ecotype counts land in `./Treponema_paraluiscuniculi/ecosim_output_core_gene_alignment/ecotype_summary.csv`.
+The ecotype counts land in `./Treponema_pallidum/ecosim_output_core_gene_alignment/ecotype_summary.csv`. This exact run (with `db-light`) takes about 25 minutes on an 8-core laptop.
+
+> Pick a species with several complete genomes and a close outgroup. With very few genomes and a distant auto-detected outgroup, Panaroo can find 0 core genes (see `output_roary/results/summary_statistics.txt`), and the run stops before step 4.
 
 > A full run of 200 genomes takes hours, mostly in Bakta and EcoSim.
 
@@ -66,13 +69,13 @@ The ecotype counts land in `./Treponema_paraluiscuniculi/ecosim_output_core_gene
 |---|---|---|
 | [Conda / Miniforge](https://github.com/conda-forge/miniforge) | Bakta and Panaroo environments | No, install it first |
 | Python ≥ 3.10 | The pipeline and the desktop window (stdlib `tkinter`) | Creates `venv/` from `requirements.txt` |
-| [NCBI Datasets CLI](https://www.ncbi.nlm.nih.gov/datasets/docs/v2/download-and-install/) (`datasets`) | Step 1, outgroup/type-strain lookup | Tries `conda install ncbi-datasets-cli` |
+| [NCBI Datasets CLI](https://www.ncbi.nlm.nih.gov/datasets/docs/v2/download-and-install/) (`datasets`) | Step 1, outgroup/type-strain lookup | Yes: `ecotools` conda env, linked into `venv/bin` |
 | [Bakta](https://github.com/oschwengers/bakta) + its database | Step 2 | Creates `bakta_env`. You download the database |
 | [Panaroo](https://github.com/gtonkinhill/panaroo) + MAFFT | Step 3 | Creates `panaroo_env` |
-| [VeryFastTree](https://github.com/citiususc/veryfasttree) (or FastTree) | Step 5 | Tries `brew` (macOS) or `apt` (Linux) |
-| Java 8+ | Step 8 (EcoSim) | No, only checked |
+| [VeryFastTree](https://github.com/citiususc/veryfasttree) (or FastTree) | Step 5 | Linux: `ecotools` conda env, linked into `venv/bin`. macOS: `brew` |
+| Java 8+ | Step 8 (EcoSim) | Arch: `pacman` (with `gcc-fortran` for the EcoSim helpers). Elsewhere only checked |
 
-**EcoSim is bundled.** `tools/ecosim.jar` and its helper binaries in `tools/bin/` ship with the repo. The binaries in `tools/bin/` are **macOS arm64 (Apple Silicon)** builds. On any other platform, supply EcoSim binaries built for that platform (see [Configuration](#configuration)).
+**EcoSim is bundled.** `tools/ecosim.jar` and its helper binaries in `tools/bin/` ship with the repo. The binaries in `tools/bin/` are **macOS arm64 (Apple Silicon)** builds. On Linux, `setup.sh` builds them into `tools/linux/bin`, which the pipeline picks up automatically. On any other platform, supply EcoSim binaries built for that platform (see [Configuration](#configuration)).
 
 ---
 
@@ -85,17 +88,16 @@ bash setup.sh
 ```
 
 This script:
-- creates the `bakta_env` and `panaroo_env` conda environments (skips any that already exist)
-- creates `venv/` and installs `biopython`, `pandas` and `openpyxl`
-- checks for `datasets`, `java` and `veryfasttree`, and installs what it can
+- on Arch Linux, installs `gcc-fortran`, `jre-openjdk`, `git` and `base-devel` with `pacman` if any are missing (asks for sudo)
+- creates the `bakta_env`, `panaroo_env` and `ecotools` (`datasets`, VeryFastTree) conda environments from conda-forge + bioconda only (skips any that already exist)
+- creates `venv/`, installs `requirements.txt`, and links `datasets` and `veryfasttree` into `venv/bin`
+- on Linux, builds EcoSim's helpers into `tools/linux/bin`
 
 ### 2. Bakta database (one-time)
 
 ```bash
-conda activate bakta_env
-bakta_db download --output /path/to/bakta_db              # full database (recommended)
-# bakta_db download --output /path/to/bakta_db --type light  # much smaller, less precise
-conda deactivate
+conda run -n bakta_env bakta_db download --output bakta_db                # full database (recommended, ~70 GB unpacked)
+# conda run -n bakta_env bakta_db download --output bakta_db --type light  # much smaller, less precise
 ```
 
 Pass the **`db` (or `db-light`) subfolder** to the pipeline, e.g. `--db /path/to/bakta_db/db`.
@@ -198,10 +200,10 @@ This writes `species_outgroups.csv`. Rows that already have an outgroup are left
 pip install -r requirements.txt && modal setup                 # one-time: installs the client, logs in
 modal run modal_app.py::download_bakta_db                      # one-time; add --light for db-light (then pass --db db-light)
 
-modal run modal_app.py --species "Treponema paraluiscuniculi" --extra "--sample-size 5"
+modal run modal_app.py --species "Treponema pallidum" --outgroup "Treponema paraluiscuniculi" --extra "--sample-size 10"
 modal run modal_app.py --csv-file species.csv                  # one container per row, all in parallel
 
-modal volume get ecotype-results Treponema_paraluiscuniculi/ecosim_output_core_gene_alignment .
+modal volume get ecotype-results Treponema_pallidum/ecosim_output_core_gene_alignment .
 ```
 
 `--extra` passes any other `pipeline.py` flags, e.g. `--extra "--start-step 8 --outgroup-id outgroup"`. Each container gets 16 CPUs and 64 GB RAM (`CPUS` / `MEMORY_MB` at the top of `modal_app.py`) and a 24-hour limit, which is Modal's maximum. If a run fails, whatever it wrote is kept in the volume.
@@ -387,7 +389,7 @@ tools/             Bundled EcoSim
 | `bash run_ui.sh` / `python ui/ui.py` fails with `No module named '_tkinter'` | The venv's Python was built without Tk. On macOS with Homebrew: `brew install python-tk`, then recreate `venv/` with `bash setup.sh` |
 | `python: command not found` from `run_ui.sh` | Run `bash setup.sh` first, or activate `venv/` and use `python ui/ui.py` |
 | Local genomes copied but Bakta says no FASTA files | Check **Working directory** — genomes are copied into `<workdir>/<Species_name>/input/` |
-| `NCBI 'datasets' CLI tool not found` | `conda install -c conda-forge ncbi-datasets-cli` |
+| `NCBI 'datasets' CLI tool not found` | Activate the venv (`source venv/bin/activate`); `setup.sh` links `datasets` there. Or rerun `bash setup.sh` |
 | `--db ... is required` | Starting at step 1 or 2 needs `--db /path/to/bakta_db/db` |
 | Bakta fails right away | Check that `--db` points to the `db`/`db-light` subfolder, and that `conda run -n bakta_env bakta --version` works |
 | Bakta is killed or the machine swaps | Lower `--bakta-jobs` |

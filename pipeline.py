@@ -48,6 +48,16 @@ def _cleanup(path, label=None):
     except Exception as e:
         print(f"Warning: could not remove {name}: {e}")
 
+def conda_run_env():
+    """Environment for `conda run`: an activated venv would otherwise stay first on PATH,
+    so `conda run -n panaroo_env python` would start the venv's python (no panaroo module)."""
+    env = dict(os.environ)
+    venv = env.pop("VIRTUAL_ENV", None)
+    if venv:
+        venv_bin = os.path.join(venv, "bin")
+        env["PATH"] = os.pathsep.join(p for p in env.get("PATH", "").split(os.pathsep) if p != venv_bin)
+    return env
+
 def setup_directories(base_dir: Path):
     input_dir = base_dir / "input"
     bakta_dir = base_dir / "intermediate_bakta"
@@ -207,7 +217,7 @@ def run_bakta(fasta_file: Path, bakta_dir: Path, db_path: str, threads: int):
     print(f"============================================================")
     
     try:
-        subprocess.run(cmd, check=True)
+        subprocess.run(cmd, check=True, env=conda_run_env())
         print(f"Successfully processed {fasta_file.name}\n")
         return expected_gff
     except subprocess.CalledProcessError as e:
@@ -259,7 +269,7 @@ def run_panaroo(gff_files: list[Path], roary_dir: Path, threads: int, error_log=
     print(f"============================================================")
 
     try:
-        result = subprocess.run(cmd, check=True, capture_output=True, text=True)
+        result = subprocess.run(cmd, check=True, capture_output=True, text=True, env=conda_run_env())
         success_msg = f"Successfully ran Panaroo! Results available in: {run_output_dir}"
         print(f"\n✅ {success_msg}")
         write_error_log(error_log, success_msg)
@@ -546,7 +556,11 @@ def run_pipeline_for_species(species_name, outgroup_name, args):
 
         run_panaroo(gff_files, roary_dir, args.threads, error_log)
         core_alignment_path = roary_dir / "results" / "core_gene_alignment.aln"
-        _cleanup(bakta_dir, "Bakta annotations")
+        # Keep annotations when Panaroo finds no core genes, so a rerun needn't redo Bakta.
+        if core_alignment_path.exists():
+            _cleanup(bakta_dir, "Bakta annotations")
+        else:
+            print(f"No core gene alignment produced; see {roary_dir / 'results' / 'summary_statistics.txt'}", file=sys.stderr)
     else:
         # If starting from step 4+, require an input fasta or use a default one if it exists
         if args.input_fasta:
