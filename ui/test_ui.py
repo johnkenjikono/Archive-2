@@ -8,6 +8,7 @@ from pathlib import Path
 from unittest import mock
 
 from ui import (
+    DEFAULT_KEEP,
     PipelineRunner,
     FormValues,
     build_command,
@@ -106,6 +107,18 @@ class ValidateFormTests(unittest.TestCase):
             )
             self.assertEqual(default_alignment_path(values), aln)
             self.assertEqual(validate_form(values), [])
+
+    def test_alignment_ok_when_saved_copy_exists(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            aln = Path(tmp) / "Bacillus_subtilis" / "pangenome" / "core_gene_alignment.aln"
+            aln.parent.mkdir(parents=True)
+            aln.write_text(">a\nACGT\n")
+            values = FormValues(mode="species", species="Bacillus subtilis", start_step=4, workdir=tmp)
+            self.assertEqual(validate_form(values), [])
+
+    def test_step_8_needs_no_alignment(self):
+        values = FormValues(mode="species", species="Bacillus subtilis", start_step=8, workdir="/no/such")
+        self.assertEqual(validate_form(values), [])
 
     def test_filled_alignment_must_exist(self):
         errors = validate_form(
@@ -226,6 +239,38 @@ class BuildCommandTests(unittest.TestCase):
         self.assertNotIn("--input-fasta", argv)
         self.assertNotIn("--outgroup-id", argv)
         self.assertNotIn("--db", argv)
+        self.assertNotIn("--keep", argv)
+        self.assertNotIn("--discard", argv)
+        self.assertNotIn("--no-full-core", argv)
+        self.assertNotIn("--each-gene", argv)
+        self.assertNotIn("--replicates", argv)
+
+    def test_keep_and_discard_are_differences_from_defaults(self):
+        keep = (DEFAULT_KEEP - {"pie_charts", "tree_plots"}) | {"core_alignment"}
+        argv = build_command(
+            FormValues(mode="species", species="X", start_step=3, keep=frozenset(keep)),
+            python_exe="python",
+            pipeline_py=Path("pipeline.py"),
+        )
+        self.assertEqual(argv[argv.index("--discard") + 1], "pie_charts,tree_plots")
+        self.assertEqual(argv[argv.index("--keep") + 1], "core_alignment")
+
+    def test_rarefaction_options(self):
+        argv = build_command(
+            FormValues(mode="species", species="X", start_step=3,
+                       full_core=False, each_gene=True, replicates=100),
+            python_exe="python",
+            pipeline_py=Path("pipeline.py"),
+        )
+        self.assertIn("--no-full-core", argv)
+        self.assertIn("--each-gene", argv)
+        self.assertEqual(argv[argv.index("--replicates") + 1], "100")
+
+    def test_clone_threshold_only_when_changed(self):
+        default = build_command(FormValues(mode="species", species="X"), "python", Path("pipeline.py"))
+        self.assertNotIn("--clone-threshold", default)
+        argv = build_command(FormValues(mode="species", species="X", clone_threshold=0.0), "python", Path("pipeline.py"))
+        self.assertEqual(argv[argv.index("--clone-threshold") + 1], "0")
 
 
 class FillOutgroupsCommandTests(unittest.TestCase):

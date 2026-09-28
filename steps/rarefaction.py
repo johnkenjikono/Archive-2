@@ -7,6 +7,9 @@ from Bio.SeqIO.FastaIO import SimpleFastaParser
 # Any feature key: Panaroo writes "feature"; Roary also writes "misc_feature" for group_* genes.
 _FEATURE_RE = re.compile(r"^FT   (\S+)\s+(\d+)\.\.(\d+)")
 _LABEL_RE = re.compile(r"^FT\s+/label=(.+)$")
+# The whole core alignment as one extra replicate, so every gene subset can be
+# compared against the complete core genome.
+FULL_CORE_NAME = "full_core_genome"
 
 
 def load_gene_coordinates(header_embl):
@@ -54,7 +57,9 @@ def create_rarefaction_fastas(input_fasta,
                               trials_per_count=20,
                               random_seed=42,
                               manifest_path=None,
-                              skip_absent_genes=True):
+                              skip_absent_genes=True,
+                              each_gene=False,
+                              include_full=True):
     """
     Build rarefaction replicates by sampling whole core genes, not fixed-width
     windows: each sim_species_g{N}_t{T}.fasta concatenates N distinct genes
@@ -64,6 +69,11 @@ def create_rarefaction_fastas(input_fasta,
     skip_absent_genes, genes that are all gaps in any genome (outgroup included)
     are not sampled, so a small replicate never holds blank genomes that would
     look identical to EcoSim or leave the root without data.
+
+    With each_gene, the 1-gene level uses every core gene once (one replicate per
+    gene) instead of trials_per_count random genes, so genes can be compared.
+    With include_full, the whole alignment is also written as
+    full_core_genome.fasta (every core gene, gaps included).
 
     The genes used by every replicate are written to manifest_path
     (default: <output_folder>/rarefaction_genes.csv).
@@ -115,8 +125,12 @@ def create_rarefaction_fastas(input_fasta,
         if gene_count > len(genes):
             print(f"⚠️  Skipping g={gene_count}: only {len(genes)} core genes available.")
             continue
-        for trial in range(1, trials_per_count + 1):
-            chosen = sorted(rng.sample(range(len(genes)), gene_count))
+        if each_gene and gene_count == 1:
+            draws = [[i] for i in range(len(genes))]
+            print(f"g=1: one replicate per core gene ({len(draws)} replicates).")
+        else:
+            draws = [sorted(rng.sample(range(len(genes)), gene_count)) for _ in range(trials_per_count)]
+        for trial, chosen in enumerate(draws, start=1):
             name = f"sim_species_g{gene_count}_t{trial}"
             output_file = os.path.join(output_folder, f"{name}.fasta")
 
@@ -128,6 +142,14 @@ def create_rarefaction_fastas(input_fasta,
             manifest.append([name, gene_count, trial,
                              sum(genes[i][2] - genes[i][1] for i in chosen),
                              ";".join(genes[i][0] for i in chosen)])
+
+    if include_full:
+        # Same sequences as the input, so step 7b can reuse the step-5 tree for it.
+        with open(os.path.join(output_folder, f"{FULL_CORE_NAME}.fasta"), "w") as f_out:
+            for seq_id, seq in sequences:
+                f_out.write(f">{seq_id}\n{seq}\n")
+        all_genes = load_gene_coordinates(gene_header)
+        manifest.append([FULL_CORE_NAME, len(all_genes), "", seq_len, "all"])
 
     manifest_path = manifest_path or os.path.join(output_folder, "rarefaction_genes.csv")
     os.makedirs(os.path.dirname(os.path.abspath(manifest_path)), exist_ok=True)
@@ -152,6 +174,10 @@ if __name__ == "__main__":
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--keep-absent-genes", action="store_true",
                         help="Also sample genes that are all gaps in some genome")
+    parser.add_argument("--each-gene", action="store_true",
+                        help="At the 1-gene level, use every core gene once instead of random trials")
+    parser.add_argument("--no-full-core", action="store_true",
+                        help="Don't also write the whole alignment as full_core_genome.fasta")
     args = parser.parse_args()
 
     create_rarefaction_fastas(
@@ -162,4 +188,6 @@ if __name__ == "__main__":
         trials_per_count=args.trials,
         random_seed=args.seed,
         skip_absent_genes=not args.keep_absent_genes,
+        each_gene=args.each_gene,
+        include_full=not args.no_full_core,
     )

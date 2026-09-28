@@ -59,7 +59,7 @@ The ecotype counts land in `./Treponema_pallidum/ecosim_output_core_gene_alignme
 
 > Pick a species with several complete genomes and a close outgroup. With very few genomes and a distant auto-detected outgroup, Panaroo can find 0 core genes (see `output_roary/results/summary_statistics.txt`), and the run stops before step 4.
 
-> A full run of 200 genomes takes hours, mostly in Bakta and EcoSim.
+> A full run of 200 genomes (the default `--sample-size`) takes hours, mostly in Bakta and EcoSim. Raising the sample size increases run time and memory at every step: Bakta grows linearly with the number of genomes, and Panaroo, tree building and EcoSim grow faster than that. Try 5–10 genomes first.
 
 ---
 
@@ -154,6 +154,8 @@ That script activates `venv/` if it exists, then starts `ui/ui.py`. With the ven
 | Core-alignment FASTA | `--input-fasta` (needed when starting at step 4+ unless that file already exists in the species folder) |
 | Outgroup ID | `--outgroup-id` (force a tree leaf) |
 | Setup only | `--setup-only` (create folders and stop) |
+| **Analysis** box | Clone threshold (`--clone-threshold`), Full core genome comparison (`--no-full-core` when unchecked), every gene at the 1-gene level (`--each-gene`), replicates per gene count (`--replicates`) |
+| **Outputs to keep** box | One checkbox per `--keep` item (see [Outputs](#outputs)). Unchecking a default adds `--discard`, checking an extra one adds `--keep` |
 
 **Run:** **Run pipeline** starts one job at a time. The log is the same output as the terminal, including the quoted command so you can replay it. **Stop** ends the job and leaves partial output on disk so you can raise **Start step** and continue. Closing the window while a run is going asks before it stops the job.
 
@@ -232,7 +234,7 @@ Input (one required)
   --csv-file PATH          Batch file: column 1 = species, column 4 = outgroup
 
 Download (step 1)
-  --sample-size INT        Assemblies to randomly sample (default: 200)
+  --sample-size INT        Assemblies to randomly sample (default: 200; more = longer runs, more memory)
   --seed INT               Sampling seed, for reproducible genome sets (default: 42)
 
 Annotation / pan-genome (steps 2–3)
@@ -248,9 +250,20 @@ Execution
   -w, --workdir PATH       Where per-species folders are created (default: .)
   -t, --threads INT        Total threads for Bakta, Panaroo, tree building and EcoSim (default: 12)
   --start-step {1..10}     Step to start from (default: 1)
-  --no-dedup               Keep identical core-genome sequences (skip clone collapsing in step 4)
+  --no-dedup               Keep every genome (skip clone collapsing in step 4)
+  --clone-threshold FLOAT  Max per-site divergence for two genomes to count as clones (default: 1e-5; 0 = identical only)
   --input-fasta PATH       Core alignment to use when starting at steps 4-7 (core_alignment_header.embl must be next to it)
   --setup-only             Create the folder structure and exit
+
+Rarefaction (steps 7-9)
+  --gene-counts N [N ...]  Core genes per replicate (default: 1 3 7 20 100)
+  --replicates INT         Random replicates per gene count (default: 20); each one is an EcoSim run
+  --each-gene              At the 1-gene level, run every core gene once instead of random replicates
+  --no-full-core           Skip the EcoSim run on the complete core genome (and the comparison to it)
+
+Outputs (see "Outputs")
+  --keep ITEM[,ITEM]       Also keep these (repeatable; "all" keeps everything)
+  --discard ITEM[,ITEM]    Drop these defaults (repeatable; "all" drops everything). --keep wins
 ```
 
 ---
@@ -264,14 +277,14 @@ Execution
 | 2 | **Bakta** | Annotates every genome (up to 201), several at a time. Non-coding RNA searches and plots are skipped because Panaroo only uses coding genes. |
 | 3 | **Panaroo** | Builds the pan-genome in `strict` clean mode and a core-gene alignment with MAFFT (`core_gene_alignment.aln`). |
 | 4 | **Sort** | Checks that all sequences are the same length and moves the outgroup to the top of the alignment. |
-| 4b | **Collapse clones** | Genomes whose core alignment is identical are collapsed to one representative. The root genome is never collapsed, and genomes identical to it form their own group, because EcoSim never places the outgroup in an ecotype. Identical sequences give EcoSim zero-length branches and extra taxa without adding information. Every genome is listed in `clone_groups.csv`, and collapsed genomes get their representative's ecotype in the parsed results. `--no-dedup` turns this off. |
+| 4b | **Collapse clones** | Genomes whose core alignments differ at no more than 10⁻⁵ of sites (`--clone-threshold`; 0 means identical only) are collapsed to one representative. A gap against a base counts as a difference. Groups are built greedily in alignment order: each genome joins the closest representative within the threshold, so members are within the threshold of their representative (and at most twice it of each other). `clone_groups.csv` records each genome's differences from its representative. The root genome is never collapsed, and genomes identical to it form their own group, because EcoSim never places the outgroup in an ecotype. Identical sequences give EcoSim zero-length branches and extra taxa without adding information. Every genome is listed in `clone_groups.csv`, and collapsed genomes get their representative's ecotype in the parsed results. `--no-dedup` turns this off. |
 | 5 | **Tree** | Builds a maximum-likelihood tree with VeryFastTree (`-nt -gtr -gamma -nosupport`) on all threads. |
 | 6 | **Reroot** | Roots the tree on the outgroup with Biopython. GCA/GCF accession variants are matched automatically. |
-| 7 | **Rarefaction** | Creates 100 sub-alignments by concatenating whole core genes drawn at random without replacement: 1, 3, 7, 20 and 100 genes, 20 replicates each. Gene boundaries come from Panaroo's `core_alignment_header.embl`, which must sit next to the alignment (checked before step 4 starts). Genes that are all gaps in any genome, which is how Panaroo pads a gene a genome lacks, are not sampled. The genes in each replicate are listed in `rarefaction_genes.csv`. This shows how the ecotype estimate changes with the number of genes. |
+| 7 | **Rarefaction** | Creates 100 sub-alignments (change with `--gene-counts` / `--replicates`; `--each-gene` runs every core gene once at the 1-gene level) by concatenating whole core genes drawn at random without replacement: 1, 3, 7, 20 and 100 genes, 20 replicates each. Gene boundaries come from Panaroo's `core_alignment_header.embl`, which must sit next to the alignment (checked before step 4 starts). Genes that are all gaps in any genome, which is how Panaroo pads a gene a genome lacks, are not sampled. The genes in each replicate are listed in `rarefaction_genes.csv`. This shows how the ecotype estimate changes with the number of genes. The whole core alignment is also added as one more replicate, `full_core_genome` (every core gene), so each subset can be compared with it; its tree is the step-5 tree. `--no-full-core` turns this off. |
 | 7b | **Rarefaction trees** | Builds and reroots one tree per sub-alignment. EcoSim's binning is driven by the tree, so reusing the full-alignment tree for every replicate made the rarefaction curve flat by construction. |
 | 8 | **EcoSim** | Runs `ecosim.jar` (demarcation mode, no GUI, 6 GB heap) on each sub-alignment against its own rooted tree, falling back to the full rooted tree for any replicate whose tree could not be built or rerooted. |
-| 9 | **Parse** | Counts the demarcated ecotypes in each EcoSim XML file and writes `ecotype_summary.csv`, plus `ecotype_membership.csv` listing which genome is in which ecotype for every replicate (clones expanded). |
-| 10 | **Plot** | Draws the tree EcoSim used for each 100-gene replicate with every ecotype in its own color (`ecotype_plots/*.png`), plus an iTOL `TREE_COLORS` file per tree for the [iTOL](https://itol.embl.de) viewer. |
+| 9 | **Parse** | Counts the demarcated ecotypes in each EcoSim XML file and writes `ecotype_summary.csv`, plus `ecotype_membership.csv` listing which genome is in which ecotype for every replicate (clones expanded). It then compares every replicate with the full core genome: `rarefaction_comparison.csv` (per replicate), `rarefaction_by_gene_count.csv` (per gene count) and `ecotype_support.csv` (how often each full-core ecotype is recovered exactly at each gene count). |
+| 10 | **Plot** | Draws the tree EcoSim used for the full core genome (or, with `--no-full-core`, each 100-gene replicate) with every ecotype in its own color (`ecotype_plots/*.png`), plus an iTOL `TREE_COLORS` file per tree for the [iTOL](https://itol.embl.de) viewer, and a pie chart of genomes per ecotype (`*_pie.png`) in the same colors. |
 
 **How the root is chosen, in order of priority:** `--outgroup-id` → the downloaded outgroup genome → the species' RefSeq reference genome (a proxy for the type strain) → the sequence whose accession number is largest.
 
@@ -279,19 +292,29 @@ Execution
 
 ## Outputs
 
-Each species gets its own folder, `<workdir>/<Species_name>/`. **Intermediates are deleted once the next step has used them**, to keep disk use down on large batches:
+Each species gets its own folder, `<workdir>/<Species_name>/`. Intermediates are deleted once the next step has used them, to keep disk use down on large batches. **What is kept is set with `--keep` and `--discard`** (or the **Outputs to keep** checkboxes in the window):
 
-| Path | Lifetime |
-|---|---|
-| `input/*.fna` | Deleted after Bakta |
-| `intermediate_bakta/<accession>/` | Deleted after Panaroo |
-| `output_roary/results/core_gene_alignment.aln` | Deleted at the end of a full run. To rerun steps 4-7 later, copy it out together with `core_alignment_header.embl` into the same folder |
-| `output_roary/panaroo_errors_<timestamp>.log` | Deleted with the folder above |
-| `pipeline_temp_<alignment>/` (sorted FASTA, unrooted tree) | Deleted at the end |
-| `rerooted_trees/<Species name>.nwk` | Deleted after EcoSim succeeds |
-| `rarefaction_fastas_<alignment>/` | Deleted after EcoSim succeeds |
-| `rarefaction_trees_<alignment>/` | Deleted after EcoSim succeeds |
-| **`ecosim_output_<alignment>/`** | **Kept: the final results** |
+| Item | Default | What it keeps |
+|---|---|---|
+| `genomes` | deleted after Bakta | `input/*.fna` |
+| `annotations` | deleted after Panaroo | `intermediate_bakta/<accession>/` |
+| `pangenome` | **kept** | `pangenome/gene_presence_absence.csv`, `.Rtab`, `gene_presence_absence_roary.csv`, `summary_statistics.txt` |
+| `core_alignment` | deleted at the end | `pangenome/core_gene_alignment.aln` + `core_alignment_header.embl`. A later `--start-step 4` finds it there |
+| `panaroo` | deleted at the end | the whole `output_roary/` folder |
+| `rerooted_tree` | **kept** | `rerooted_trees/<Species name>.nwk`, the rooted full core-genome tree |
+| `rarefaction` | deleted after EcoSim | `rarefaction_fastas_<alignment>/`, `rarefaction_trees_<alignment>/` |
+| `ecosim_xml` | **kept** | the EcoSim XML per replicate. Needed to rerun steps 9–10 |
+| `ecotypes` | **kept** | `ecotype_membership.csv` and the three full-core comparison tables |
+| `tree_plots` | **kept** | `ecotype_plots/*.png` + iTOL color files |
+| `pie_charts` | **kept** | `ecotype_plots/*_pie.png` |
+
+`ecotype_summary.csv`, `clone_groups.csv` and `rarefaction_genes.csv` are always kept, and `pipeline_temp_<alignment>/` (sorted FASTA, unrooted tree) is always deleted at the end. Every run also writes `run_parameters.json` with its settings and the kept/discarded items.
+
+```bash
+python pipeline.py --species "Bacillus subtilis" --db bakta_db/db --keep core_alignment   # defaults + the alignment
+python pipeline.py --species "Bacillus subtilis" --db bakta_db/db --discard all --keep rerooted_tree,ecotypes
+python pipeline.py --species "Bacillus subtilis" --db bakta_db/db --keep all               # keep every intermediate
+```
 
 `<alignment>` is the alignment file name without its extension, which is `core_gene_alignment` in a normal run.
 
@@ -302,14 +325,18 @@ ecosim_output_core_gene_alignment/
 ├── sim_species_g1_t1_results.xml     # one EcoSim result per rarefaction replicate
 ├── ...
 ├── sim_species_g100_t20_results.xml
+├── full_core_genome_results.xml      # EcoSim on every core gene
 ├── ecotype_summary.csv               # file,ecotype_count
+├── rarefaction_comparison.csv        # per replicate vs. full core: count difference, adjusted Rand index, ecotypes recovered
+├── rarefaction_by_gene_count.csv     # the same, averaged per gene count
+├── ecotype_support.csv               # per full-core ecotype: share of replicates that recover it exactly, per gene count
 ├── ecotype_membership.csv            # file,gene_count,trial,ecotype,ecotype_size,taxon,representative
 ├── clone_groups.csv                  # representative,member,group_size (one row per genome)
 ├── rarefaction_genes.csv             # which core genes went into each replicate
 └── ecotype_plots/
-    ├── sim_species_g100_t1_results.png            # tree colored by ecotype
-    ├── sim_species_g100_t1_results_itol_colors.txt
-    └── ...
+    ├── full_core_genome_results.png               # tree colored by ecotype
+    ├── full_core_genome_results_itol_colors.txt
+    └── full_core_genome_results_pie.png           # genomes per ecotype
 ```
 
 To plot other replicates, or to re-plot after the run:

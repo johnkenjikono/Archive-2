@@ -5,11 +5,16 @@ import queue
 import shutil
 import signal
 import subprocess
+import sys
 import threading
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Literal
+
+REPO_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(REPO_ROOT))  # run as `python ui/ui.py`: make `steps` importable
+from steps.outputs import DEFAULT_KEEP, KEEP_ITEMS  # noqa: E402
 
 FASTA_SUFFIXES = (".fna", ".fasta", ".fa")
 
@@ -33,6 +38,11 @@ class FormValues:
     input_fasta: str = ""
     outgroup_id: str = ""
     setup_only: bool = False
+    keep: frozenset[str] = field(default_factory=lambda: frozenset(DEFAULT_KEEP))
+    full_core: bool = True
+    each_gene: bool = False
+    replicates: int = 20
+    clone_threshold: float = 1e-5
 
 
 def build_command(values: FormValues, python_exe: str, pipeline_py: Path) -> list[str]:
@@ -68,6 +78,20 @@ def build_command(values: FormValues, python_exe: str, pipeline_py: Path) -> lis
         argv.extend(["--outgroup-id", values.outgroup_id.strip()])
     if values.setup_only:
         argv.append("--setup-only")
+    # Only the differences from the pipeline's defaults, so the logged command stays short.
+    keep, discard = sorted(values.keep - DEFAULT_KEEP), sorted(DEFAULT_KEEP - values.keep)
+    if discard:
+        argv.extend(["--discard", ",".join(discard)])
+    if keep:
+        argv.extend(["--keep", ",".join(keep)])
+    if not values.full_core:
+        argv.append("--no-full-core")
+    if values.each_gene:
+        argv.append("--each-gene")
+    if values.replicates != 20:
+        argv.extend(["--replicates", str(values.replicates)])
+    if values.clone_threshold != 1e-5:
+        argv.extend(["--clone-threshold", f"{values.clone_threshold:g}"])
     return argv
 
 
@@ -138,6 +162,11 @@ def default_alignment_path(values: FormValues) -> Path:
     )
 
 
+def saved_alignment_path(values: FormValues) -> Path:
+    # Where --keep core_alignment copies it once output_roary/ is deleted.
+    return Path(values.workdir) / species_folder_name(values.species) / "pangenome" / "core_gene_alignment.aln"
+
+
 def validate_form(values: FormValues) -> list[str]:
     errors: list[str] = []
     if values.mode == "species":
@@ -169,8 +198,8 @@ def validate_form(values: FormValues) -> list[str]:
     if values.input_fasta.strip():
         if not Path(values.input_fasta).is_file():
             errors.append("Core-alignment FASTA does not exist.")
-    elif values.start_step >= 4 and values.mode != "csv":
-        if not default_alignment_path(values).is_file():
+    elif 4 <= values.start_step <= 7 and values.mode != "csv":
+        if not (default_alignment_path(values).is_file() or saved_alignment_path(values).is_file()):
             errors.append("Choose a core-alignment FASTA, or lower the start step.")
     return errors
 
@@ -238,9 +267,7 @@ class PipelineRunner:
 
 
 import shlex
-import sys
 
-REPO_ROOT = Path(__file__).resolve().parent.parent
 PIPELINE_PY = REPO_ROOT / "pipeline.py"
 FILL_OUTGROUPS_PY = REPO_ROOT / "fill_outgroups.py"
 
@@ -304,6 +331,11 @@ def main() -> None:
             self.outgroup_id_var = tk.StringVar()
             self.setup_only_var = tk.BooleanVar(value=False)
             self.use_llm_var = tk.BooleanVar(value=False)
+            self.keep_vars = {name: tk.BooleanVar(value=name in DEFAULT_KEEP) for name in KEEP_ITEMS}
+            self.full_core_var = tk.BooleanVar(value=True)
+            self.each_gene_var = tk.BooleanVar(value=False)
+            self.replicates_var = tk.StringVar(value="20")
+            self.clone_threshold_var = tk.StringVar(value="1e-5")
 
             mode = ttk.LabelFrame(self, text="Start mode")
             mode.pack(fill="x", padx=8, pady=6)
@@ -328,6 +360,11 @@ def main() -> None:
             self._row(self.species_frame, 1, "Outgroup", self.outgroup_var)
             self._row(self.species_frame, 2, "Sample size", self.sample_size_var)
             self._row(self.species_frame, 3, "Random seed", self.seed_var)
+            ttk.Label(
+                self.species_frame,
+                text="Default 200. More genomes means longer runs and more memory at every step.",
+                foreground="gray",
+            ).grid(row=4, column=1, sticky="w", padx=4)
 
             self.csv_frame = ttk.Frame(self)
             self._row(self.csv_frame, 0, "CSV file", self.csv_var, browse="file")
@@ -370,6 +407,26 @@ def main() -> None:
                 ttk.Checkbutton(options, text="Setup only", variable=self.setup_only_var)
             )
             setup.grid(row=7, column=1, sticky="w", padx=4, pady=2)
+
+            analysis = ttk.LabelFrame(self, text="Analysis")
+            analysis.pack(fill="x", padx=8, pady=6)
+            self._track(
+                ttk.Checkbutton(analysis, text="Also run EcoSim on the full core genome and compare",
+                                variable=self.full_core_var)
+            ).grid(row=0, column=0, columnspan=2, sticky="w", padx=4, pady=2)
+            self._track(
+                ttk.Checkbutton(analysis, text="1-gene level: run every core gene (slow)",
+                                variable=self.each_gene_var)
+            ).grid(row=1, column=0, columnspan=2, sticky="w", padx=4, pady=2)
+            self._row(analysis, 2, "Replicates per gene count", self.replicates_var)
+            self._row(analysis, 3, "Clone threshold (divergence)", self.clone_threshold_var)
+
+            outputs = ttk.LabelFrame(self, text="Outputs to keep")
+            outputs.pack(fill="x", padx=8, pady=6)
+            for i, (name, (_, desc)) in enumerate(KEEP_ITEMS.items()):
+                self._track(
+                    ttk.Checkbutton(outputs, text=desc[0].upper() + desc[1:], variable=self.keep_vars[name])
+                ).grid(row=i // 2, column=i % 2, sticky="w", padx=4, pady=1)
 
             run = ttk.LabelFrame(self, text="Run")
             run.pack(fill="both", expand=True, padx=8, pady=6)
@@ -414,6 +471,11 @@ def main() -> None:
                 input_fasta=self.input_fasta_var.get().strip(),
                 outgroup_id=self.outgroup_id_var.get().strip(),
                 setup_only=bool(self.setup_only_var.get()),
+                keep=frozenset(name for name, var in self.keep_vars.items() if var.get()),
+                full_core=bool(self.full_core_var.get()),
+                each_gene=bool(self.each_gene_var.get()),
+                replicates=int(self.replicates_var.get() or "20"),
+                clone_threshold=float(self.clone_threshold_var.get() or "1e-5"),
             )
 
         def _set_form_enabled(self, enabled: bool) -> None:
@@ -446,7 +508,7 @@ def main() -> None:
             try:
                 values = self._collect()
             except ValueError:
-                messagebox.showerror("Cannot run", "Threads, sample size, seed, start step, and Bakta jobs must be integers.")
+                messagebox.showerror("Cannot run", "Threads, sample size, seed, start step, Bakta jobs, and replicates must be integers, and the clone threshold a number.")
                 return
             errors = validate_form(values)
             if errors:

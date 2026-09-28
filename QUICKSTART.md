@@ -38,7 +38,7 @@ python pipeline.py your_sequences.fasta --start-step 3
 python steps/move_largest_numeric.py input.fasta output.fasta
 python steps/run_trees.py                          # Build trees
 python steps/reroot_tree.py sorted.fasta tree.nwk output.nwk
-python steps/dedup_clones.py sorted.fasta sorted.fasta clone_groups.csv   # Collapse identical sequences
+python steps/dedup_clones.py sorted.fasta sorted.fasta clone_groups.csv   # Collapse clones (--threshold, default 1e-5)
 python steps/rarefaction.py core_gene_alignment.aln                        # Needs core_alignment_header.embl alongside
 python steps/parsing.py ecosim_output_X                                    # Ecotype counts + membership CSV
 python steps/visualize_ecotypes.py ecosim_output_X                         # Trees colored by ecotype
@@ -107,7 +107,11 @@ After running pipeline, you'll get:
 - `pipeline_temp_{species}/trees_final/` - Unrooted trees
 - `rerooted_trees/` - Rooted trees
 - `rarefaction_fastas_{species}/` - Subsampled alignments (whole core genes, deleted after EcoSim)
-- `ecosim_output_{species}/` - EcoSim results (XML)
+- `pangenome/` - Panaroo gene presence/absence table and summary statistics
+- `ecosim_output_{species}/` - EcoSim results (XML), ecotype tables, full-core comparison, tree plots and pie charts
+- `run_parameters.json` - settings used and which outputs were kept
+
+Choose what is kept with `--keep ITEM` / `--discard ITEM` (e.g. `--keep core_alignment`, `--discard all --keep rerooted_tree`). `python pipeline.py --help` lists the items.
 
 ---
 
