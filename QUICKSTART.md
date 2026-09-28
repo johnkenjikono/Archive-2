@@ -46,6 +46,10 @@ python pipeline.py your_sequences.fasta --start-step 3
 python steps/move_largest_numeric.py input.fasta output.fasta
 python steps/run_trees.py                          # Build trees
 python steps/reroot_tree.py sorted.fasta tree.nwk output.nwk
+python steps/dedup_clones.py sorted.fasta sorted.fasta clone_groups.csv   # Collapse identical sequences
+python steps/rarefaction.py core_gene_alignment.aln                        # Needs core_alignment_header.embl alongside
+python steps/parsing.py ecosim_output_X                                    # Ecotype counts + membership CSV
+python steps/visualize_ecotypes.py ecosim_output_X                         # Trees colored by ecotype
 ```
 
 ## 📊 What to Expect
@@ -110,7 +114,7 @@ After running pipeline, you'll get:
 - `pipeline_temp_{species}/tree_rdy_fastas/` - Sorted sequences
 - `pipeline_temp_{species}/trees_final/` - Unrooted trees
 - `rerooted_trees/` - Rooted trees
-- `rarefaction_fastas_{species}/` - Subsampled alignments
+- `rarefaction_fastas_{species}/` - Subsampled alignments (whole core genes, deleted after EcoSim)
 - `ecosim_output_{species}/` - EcoSim results (XML)
 
 ---

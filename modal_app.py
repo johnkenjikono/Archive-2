@@ -27,7 +27,7 @@ image = (
         "conda install -y -n base -c conda-forge -c bioconda ncbi-datasets-cli veryfasttree openjdk",
         "conda clean -afy",
     )
-    .pip_install("biopython==1.87", "pandas==2.2.3", "openpyxl==3.1.5")
+    .pip_install("biopython==1.87", "pandas==2.2.3", "openpyxl==3.1.5", "matplotlib==3.11.2")
     # tools/bin is macOS arm64; build the Linux helpers ecosim.jar calls (it looks in <cwd>/bin).
     .add_local_file(HERE / "tools" / "build_ecosim_linux.sh", "/opt/build_ecosim_linux.sh", copy=True)
     .run_commands("bash /opt/build_ecosim_linux.sh /opt/ecosim")

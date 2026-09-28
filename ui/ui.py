@@ -358,7 +358,7 @@ def main() -> None:
                 ttk.Combobox(
                     options,
                     textvariable=self.start_step_var,
-                    values=[str(n) for n in range(1, 10)],
+                    values=[str(n) for n in range(1, 11)],
                     width=8,
                     state="readonly",
                 )

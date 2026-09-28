@@ -2,6 +2,7 @@ import argparse
 import contextlib
 import csv
 import glob
+import inspect
 import io
 import subprocess
 import sys
@@ -15,6 +16,9 @@ from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from datetime import datetime
 
+from Bio import Phylo
+from Bio.SeqIO.FastaIO import SimpleFastaParser
+
 # For outgroup download
 from steps.download_outgroup import download_ncbi_fasta, find_outgroup_species, find_typestrain
 
@@ -22,9 +26,11 @@ from steps.download_outgroup import download_ncbi_fasta, find_outgroup_species, 
 from steps.move_largest_numeric import move_largest_numeric_to_top
 from steps.run_trees import make_trees_batch, write_error_log
 from steps.reroot_tree import reroot_tree_by_first_fasta
-from steps.rarefaction import create_rarefaction_fastas
+from steps.rarefaction import create_rarefaction_fastas, find_gene_header
 from steps.run_ecosim import run_ecosim_batch, _resolve_ecosim_jar
-from steps.parsing import summarize_ecotypes_in_folder
+from steps.parsing import summarize_ecotypes_in_folder, write_membership_csv
+from steps.dedup_clones import collapse_identical_sequences
+from steps.visualize_ecotypes import plot_folder
 
 # Falls back to the bundled tools/ecosim.jar / tools/ dir (where bin/ lives) when env vars are unset.
 ECOSIM_JAR = _resolve_ecosim_jar()
@@ -34,6 +40,8 @@ ECOSIM_DIR = os.environ.get("ECOSIM_DIR") or str(
 )
 
 MAX_GFF_FILES = 201
+# make_trees_batch builds each tree on at most this many leading sequences.
+TREE_SEQ_CAP = inspect.signature(make_trees_batch).parameters["max_sequences_per_run"].default
 
 def _cleanup(path, label=None):
     p = str(path)
@@ -47,6 +55,31 @@ def _cleanup(path, label=None):
             print(f"Removed: {name}")
     except Exception as e:
         print(f"Warning: could not remove {name}: {e}")
+
+def _drop_stale_trees(fasta_path, tree_paths, label):
+    """
+    Delete cached trees whose leaves are not the sequences in fasta_path.
+
+    Step 5 and make_trees_batch reuse any non-empty tree file, so after step 4
+    rewrites the sorted FASTA with a different set of genomes (e.g. --no-dedup
+    toggled, or a new alignment) the old trees would be paired with new FASTAs.
+    """
+    with open(fasta_path) as handle:
+        ids = [title.split(None, 1)[0] for title, _ in SimpleFastaParser(handle)]
+    expected = set(ids[:TREE_SEQ_CAP])
+    stale = 0
+    for path in tree_paths:
+        if not (os.path.exists(path) and os.path.getsize(path) > 0):
+            continue
+        try:
+            leaves = {c.name for c in Phylo.read(path, "newick").get_terminals()}
+        except Exception:
+            leaves = None
+        if leaves != expected:
+            os.remove(path)
+            stale += 1
+    if stale:
+        print(f"Removed {stale} cached {label} built on a different set of sequences.")
 
 def setup_directories(base_dir: Path):
     input_dir = base_dir / "input"
@@ -277,9 +310,17 @@ def run_panaroo(gff_files: list[Path], roary_dir: Path, threads: int, error_log=
         print(f"Error log: {error_log}")
         sys.exit(1)
 
-def run_tree_pipeline(input_fasta, start_step, outgroup_id, base_dir, output_tree_name=None, threads=8):
-    if not os.path.exists(input_fasta):
+def run_tree_pipeline(input_fasta, start_step, outgroup_id, base_dir, output_tree_name=None, threads=8, dedup=True):
+    # Steps 8-10 only read files under base_dir; the alignment path just names them.
+    if start_step <= 7 and not os.path.exists(input_fasta):
         print(f" Error: Input fasta '{input_fasta}' does not exist.")
+        sys.exit(1)
+    # Check before the (slow) tree steps rather than failing at step 7.
+    gene_header = find_gene_header(input_fasta) if start_step <= 7 else None
+    if start_step <= 7 and not gene_header:
+        print(f" Error: no core_alignment_header.embl next to '{input_fasta}'.")
+        print("   Step 7 samples whole core genes and needs the gene coordinates Panaroo writes")
+        print("   alongside core_gene_alignment.aln. Keep both files in the same folder.")
         sys.exit(1)
 
     species_name = os.path.basename(input_fasta).replace(".fasta", "").replace(".aln", "")
@@ -295,8 +336,13 @@ def run_tree_pipeline(input_fasta, start_step, outgroup_id, base_dir, output_tre
     rarefaction_tree_dir = os.path.join(base_dir, f"rarefaction_trees_{species_name}")
     temp_rare_trees = os.path.join(base_dir, f"pipeline_temp_{species_name}", "rarefaction_trees_unrooted")
     ecosim_out_dir = os.path.join(base_dir, f"ecosim_output_{species_name}")
+    # Kept with the EcoSim results: rarefaction/tree intermediates are deleted after step 8.
+    clone_map_path = os.path.join(ecosim_out_dir, "clone_groups.csv")
+    rarefaction_genes_path = os.path.join(ecosim_out_dir, "rarefaction_genes.csv")
+    plots_out_dir = os.path.join(ecosim_out_dir, "ecotype_plots")
 
     os.makedirs(temp_tree_rdy, exist_ok=True)
+    os.makedirs(ecosim_out_dir, exist_ok=True)
     os.makedirs(temp_trees_final, exist_ok=True)
     os.makedirs(final_rerooted_dir, exist_ok=True)
 
@@ -314,11 +360,19 @@ def run_tree_pipeline(input_fasta, start_step, outgroup_id, base_dir, output_tre
             print("Tree pipeline requires a Panaroo core-gene alignment with equal-length sequences.")
             print("Please inspect the Panaroo output in output_roary/results/core_gene_alignment.aln.")
             sys.exit(1)
+        # In place: make_trees_batch builds a tree for every .fasta in temp_tree_rdy.
+        if dedup:
+            print(f"--- 4b. Collapsing identical sequences (clones) ---")
+            if collapse_identical_sequences(sorted_fasta, sorted_fasta, clone_map_path, outgroup_id) is None:
+                sys.exit(1)
+        else:
+            _cleanup(clone_map_path, "stale clone map")
     else:
         print("--- Skipping Step 4: Using existing sorted FASTA ---")
 
     # --- Step 5: Run FastTree ---
     if start_step <= 5:
+        _drop_stale_trees(sorted_fasta, [unrooted_tree], "full-alignment tree")
         if os.path.exists(unrooted_tree) and os.path.getsize(unrooted_tree) > 0:
             print(f"\n--- Skipping Step 5: Existing tree found for {species_name} ---")
         else:
@@ -349,8 +403,18 @@ def run_tree_pipeline(input_fasta, start_step, outgroup_id, base_dir, output_tre
     # --- Step 7: Rarefaction Fasta Creation ---
     if start_step <= 7:
         print(f"\n--- 7. Creating Rarefaction FASTAs ---")
-        create_rarefaction_fastas(input_fasta=sorted_fasta, output_folder=rarefaction_out_dir)
+        create_rarefaction_fastas(
+            input_fasta=sorted_fasta,
+            output_folder=rarefaction_out_dir,
+            gene_header=gene_header,
+            manifest_path=rarefaction_genes_path,
+        )
         print(f"\n--- 7b. Building one tree per rarefaction replicate ---")
+        _drop_stale_trees(
+            sorted_fasta,
+            glob.glob(os.path.join(temp_rare_trees, "*.nwk")) + glob.glob(os.path.join(rarefaction_tree_dir, "*.nwk")),
+            "rarefaction tree(s)",
+        )
         make_trees_batch(
             final_folder=rarefaction_out_dir,
             tree_folder=temp_rare_trees,
@@ -421,13 +485,22 @@ def run_tree_pipeline(input_fasta, start_step, outgroup_id, base_dir, output_tre
                 for filename, count in sorted(summary.items()):
                     writer.writerow([filename, count])
             print(f"Summary saved to {csv_path}")
+            membership_csv = write_membership_csv(ecosim_out_dir, clone_map_path)
+            if membership_csv:
+                print(f"Taxon -> ecotype membership saved to {membership_csv}")
         else:
             print("No ecotypes found or error in parsing.")
+
+    # --- Step 10: Color the phylogeny by ecotype ---
+    if start_step <= 10:
+        print(f"\n--- 10. Plotting trees colored by ecotype ---")
+        n_plots = plot_folder(ecosim_out_dir, plots_out_dir, clone_map_path=clone_map_path)
+        print(f"Saved {n_plots} ecotype tree plot(s) to {plots_out_dir}")
 
     print(f"\nPipeline for {species_name} completed successfully!")
     
     # Cleanup temporary directories
-    if start_step <= 9:
+    if start_step <= 10:
         try:
             shutil.rmtree(os.path.join(base_dir, f"pipeline_temp_{species_name}"))
             print("Cleaned up temporary tree directory.")
@@ -558,11 +631,14 @@ def run_pipeline_for_species(species_name, outgroup_name, args):
             else:
                 core_alignment_path = None
 
-    # --- Steps 4-9: Tree Pipeline ---
-    if args.start_step <= 9:
+    # --- Steps 4-10: Tree Pipeline ---
+    if args.start_step <= 10:
         if not core_alignment_path or not core_alignment_path.exists():
-            print(f"\nError: Could not find core gene alignment file. Please provide --input-fasta or run previous steps.")
-            sys.exit(1)
+            if args.start_step <= 7:
+                print(f"\nError: Could not find core gene alignment file. Please provide --input-fasta or run previous steps.")
+                sys.exit(1)
+            # Steps 8-10 don't read the alignment (deleted after a full run); its name still names the output folders.
+            core_alignment_path = core_alignment_path or roary_dir / "results" / "core_gene_alignment.aln"
         # Outgroup ID priority: explicit flag > outgroup genome > typestrain
         if args.outgroup_id:
             resolved_outgroup_id = args.outgroup_id
@@ -583,7 +659,8 @@ def run_pipeline_for_species(species_name, outgroup_name, args):
             outgroup_id=resolved_outgroup_id,
             base_dir=str(base_dir),
             output_tree_name=species_name,
-            threads=args.threads
+            threads=args.threads,
+            dedup=not args.no_dedup,
         )
         if args.start_step <= 3:
             _cleanup(roary_dir, "Panaroo output")
@@ -640,11 +717,13 @@ def main():
     parser.add_argument("--bakta-jobs", type=int, default=None, help="Genomes to annotate in parallel (default: threads // 4). Lower it if RAM is tight.")
     
     # Control flow arguments
-    parser.add_argument("--start-step", type=int, default=1, choices=range(1, 10), 
-                        help="Step to start at (1=Download, 2=Bakta, 3=Panaroo, 4=Sort, 5=FastTree, 6=Reroot, 7=Rarefaction, 8=EcoSim, 9=Parse)")
+    parser.add_argument("--start-step", type=int, default=1, choices=range(1, 11),
+                        help="Step to start at (1=Download, 2=Bakta, 3=Panaroo, 4=Sort+Dedup, 5=FastTree, 6=Reroot, 7=Rarefaction, 8=EcoSim, 9=Parse, 10=Plot)")
+    parser.add_argument("--no-dedup", action="store_true",
+                        help="Keep identical core-genome sequences instead of collapsing clones in step 4")
     
     # Tree arguments
-    parser.add_argument("--input-fasta", help="Optional: Path to core gene alignment FASTA. Required if starting from Step 4 or later.")
+    parser.add_argument("--input-fasta", help="Optional: Path to core gene alignment FASTA, with Panaroo's core_alignment_header.embl in the same folder. Needed when starting at Steps 4-7 unless the species folder still has it.")
     parser.add_argument("--outgroup-id", default=None, help="Optional outgroup ID to force rooting (supports GCA/GCF and .fna/.fasta suffixes)")
     
     parser.add_argument("--setup-only", action="store_true", help="Only create the directory structure and exit")
