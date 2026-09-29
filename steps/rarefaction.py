@@ -120,6 +120,10 @@ def create_rarefaction_fastas(input_fasta,
                   f"sampling from {len(present)}.")
         genes = present
 
+    # Panaroo concatenates core genes in os.listdir() order, which depends on the
+    # filesystem, so sort by name to make a seed pick the same genes on any machine.
+    genes.sort(key=lambda g: g[0])
+
     manifest = []
     for gene_count in gene_counts:
         if gene_count > len(genes):

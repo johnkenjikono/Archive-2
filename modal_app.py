@@ -19,8 +19,8 @@ TIMEOUT = 24 * 60 * 60  # Modal's maximum
 
 image = (
     # Miniforge gives `conda run -n <env>`, which pipeline.py uses for Bakta and Panaroo.
-    modal.Image.from_registry("condaforge/miniforge3:latest")
-    .apt_install("git", "make", "gcc", "gfortran")
+    modal.Image.from_registry("condaforge/miniforge3:26.7.2-0")
+    .apt_install("git", "make", "gcc", "g++", "gfortran")  # g++: pandas 2.2.3 builds from source on Python 3.14
     .run_commands(
         "conda create -y -n bakta_env -c conda-forge -c bioconda bakta",
         "conda create -y -n panaroo_env -c conda-forge -c bioconda panaroo mafft",
