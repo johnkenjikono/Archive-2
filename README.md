@@ -13,7 +13,8 @@ Run it from the desktop window (`bash run_ui.sh`) or from the terminal, one spec
 
 ## Contents
 
-- [Quick start](#quick-start)
+- [The idea in plain language](#the-idea-in-plain-language)
+- [Getting started, step by step](#getting-started-step-by-step)
 - [Requirements](#requirements)
 - [Installation](#installation)
 - [Usage](#usage)
@@ -31,35 +32,160 @@ Run it from the desktop window (`bash run_ui.sh`) or from the terminal, one spec
 
 ---
 
-## Quick start
+## The idea in plain language
+
+**The question.** A bacterial species like *Streptococcus pyogenes* is not one uniform population. Inside it there are groups of cells that live in slightly different ways (different hosts, tissues, or niches) and that compete mainly with their own group. These groups are called **ecotypes**. This pipeline asks: *how many ecotypes does this species contain, and which genomes belong to which?*
+
+**How we answer it, in everyday terms.**
+
+| Step | What it does | Analogy |
+|---|---|---|
+| Download | Fetches complete genomes of the species from NCBI, plus one close relative (the **outgroup**) | Collecting specimens, plus one cousin to use as a reference point |
+| Annotate (Bakta) | Finds and labels every gene in each genome | Labeling every sentence in every book |
+| Core genes (Panaroo) | Finds the genes that **every** genome has and lines them up | Keeping only the chapters that appear in every book |
+| Tree (VeryFastTree) | Builds a family tree from differences in those shared genes | Drawing who is related to whom |
+| Reroot | Places the root of the tree at the outgroup | Deciding which end of the tree is "oldest" |
+| Rarefaction | Repeats the analysis using only 1, 3, 7, 20 or 100 random genes | Checking whether a small sample gives the same answer as the whole book |
+| EcoSim | Cuts the tree into ecotypes using a model of how populations diversify and are purged by selection | The actual counting step |
+| Summary and plots | Writes tables and colored trees | The figures for your report |
+
+**Why rarefaction matters.** If the ecotype count stays the same whether you use 7 genes or 100, the estimate is stable. If it keeps climbing, you have not sampled enough of the genome to trust it yet.
+
+**Words you will see.**
+
+- **Core genome**: genes present in every genome analysed.
+- **Outgroup**: a related but different species, used only to anchor the root of the tree. It is never counted as part of an ecotype.
+- **Clones**: genomes with (nearly) identical core genes. The pipeline merges them so they do not inflate the tree, then gives each clone its representative's ecotype in the final tables.
+- **Replicate**: one random draw of genes. Each replicate gets its own tree and its own EcoSim run.
+- **Terminal / command line**: the text window where you type commands. Everything below that starts with `bash`, `python`, `conda` or `source` goes there.
+
+---
+
+## Getting started, step by step
+
+This assumes macOS or Linux and no prior setup. Budget about 30 minutes for installing, plus the database download. Setup commands are run once. Only steps 4 and 5 repeat each session.
+
+### 0. Check you have what you need
+
+| Need | Why | How to check |
+|---|---|---|
+| A terminal | Setup and optional command-line use | Open **Terminal** (macOS) or your Linux terminal |
+| **Conda or Miniforge** | Installs Bakta and Panaroo | `conda --version`. If not found, install [Miniforge](https://github.com/conda-forge/miniforge) first, then open a new terminal |
+| Python 3.10 or newer | Runs the pipeline | `python3 --version` |
+| Git | Gets the code | `git --version` |
+| Internet | Downloads genomes from NCBI | n/a |
+| Disk space | Full Bakta database is about 70 GB; `light` is much smaller (less precise). Each run needs more for genomes and intermediates | `df -h .` |
+| RAM and cores | 8 cores and 16 GB is enough for a small test run | `nproc` (Linux) or `sysctl -n hw.ncpu` (macOS) |
+
+### 1. Get the code
 
 ```bash
-bash setup.sh                                   # conda envs + Python venv + tool checks
-source venv/bin/activate                        # fish: source venv/bin/activate.fish
-
-conda run -n bakta_env bakta_db download --output ~/bakta_db   # one-time database download
-
-bash run_ui.sh                                  # desktop window; no CLI flags
+git clone https://github.com/johnkenjikono/Archive-2.git
+cd Archive-2
 ```
 
-In the window, choose **Species name**, enter the species, Browse to the Bakta `db` folder, set a small **Sample size** (try 5 first), and press **Run pipeline**.
+All commands below are run from inside the new `Archive-2` folder.
 
-The same run from the terminal:
+### 2. Install everything (one time)
+
+```bash
+bash setup.sh
+```
+
+This takes several minutes. It creates three conda environments (`bakta_env`, `panaroo_env`, `ecotools`) and a Python environment (`venv/`), and on Linux it also builds EcoSim's helper programs. On Arch Linux it asks for your password to install Java and a compiler. Lines starting with `✓` are good. A `⚠` line tells you what is missing and usually how to fix it. It is safe to rerun `setup.sh`: it skips anything that already exists.
+
+Check it worked:
+
+```bash
+source venv/bin/activate        # fish shell: source venv/bin/activate.fish
+datasets --version              # NCBI download tool
+java -version                   # needed by EcoSim
+conda run -n bakta_env bakta --version
+```
+
+All three should print a version number, not an error.
+
+### 3. Download the Bakta database (one time)
+
+Bakta needs a reference database to name genes. This is the largest download.
+
+```bash
+conda run -n bakta_env bakta_db download --output ~/bakta_db               # full, ~70 GB, recommended
+# conda run -n bakta_env bakta_db download --output ~/bakta_db --type light  # smaller, good for a first test
+```
+
+When it finishes, the database is in `~/bakta_db/db` (or `~/bakta_db/db-light`). **Remember this path.** You give the `db` or `db-light` folder to the pipeline, not `bakta_db` itself.
+
+### 4. Activate the environment (every new terminal)
+
+```bash
+cd Archive-2
+source venv/bin/activate        # fish shell: source venv/bin/activate.fish
+```
+
+Your prompt now starts with `(venv)`. If you skip this, you will see `NCBI 'datasets' CLI tool not found`. `bash run_ui.sh` does this for you.
+
+### 5. Run a small test first
+
+Do not start with the default of 200 genomes: that takes hours. Use **10 genomes** on a species with a close, well-known relative. This one takes about 25 minutes on an 8-core laptop with `db-light`.
+
+**Option A: the window (no commands to remember)**
+
+```bash
+bash run_ui.sh
+```
+
+1. Set **Start mode** to **Species name**.
+2. Species: `Treponema pallidum`. Outgroup: `Treponema paraluiscuniculi`.
+3. **Bakta database folder**: click Browse and choose `~/bakta_db/db` (or `db-light`).
+4. **Sample size**: `10`.
+5. Click **Run pipeline**. The log scrolls as each step runs. **Stop** ends the run and keeps what was written.
+
+**Option B: the terminal**
 
 ```bash
 python pipeline.py \
   --species "Treponema pallidum" \
-  --sample-size 10 \
   --outgroup "Treponema paraluiscuniculi" \
+  --sample-size 10 \
   --db ~/bakta_db/db \
   --threads 8
 ```
 
-The ecotype counts land in `./Treponema_pallidum/ecosim_output_core_gene_alignment/ecotype_summary.csv`. This exact run (with `db-light`) takes about 25 minutes on an 8-core laptop.
+Set `--threads` to the number of cores you can spare. If your machine slows to a crawl or a step is "Killed", add `--bakta-jobs 1`.
 
-> Pick a species with several complete genomes and a close outgroup. With very few genomes and a distant auto-detected outgroup, Panaroo can find 0 core genes (see `output_roary/results/summary_statistics.txt`), and the run stops before step 4.
+**What you should see:** the log announces each step in order (download, Bakta, Panaroo, tree, rarefaction, EcoSim, parsing, plotting). Bakta and EcoSim take the longest. If the run is interrupted, rerun the same command: finished genomes and trees are skipped.
 
-> A full run of 200 genomes (the default `--sample-size`) takes hours, mostly in Bakta and EcoSim. Raising the sample size increases run time and memory at every step: Bakta grows linearly with the number of genomes, and Panaroo, tree building and EcoSim grow faster than that. Try 5–10 genomes first.
+### 6. Read the results
+
+Everything is in a folder named after the species, inside the folder you ran from:
+
+```
+Treponema_pallidum/ecosim_output_core_gene_alignment/
+```
+
+Start with these:
+
+| File | What it tells you |
+|---|---|
+| `ecotype_plots/full_core_genome_results.png` | The tree with each ecotype in its own color. This is the main figure |
+| `ecotype_plots/full_core_genome_results_pie.png` | How many genomes fall in each ecotype |
+| `ecotype_summary.csv` | Ecotype count for every replicate, including the full core genome |
+| `rarefaction_by_gene_count.csv` | How the count changes with 1, 3, 7, 20, 100 genes. Stable numbers mean a trustworthy estimate |
+| `ecotype_membership.csv` | Which genome belongs to which ecotype |
+
+Open the CSVs in Excel, Numbers or LibreOffice. The full list of files is under [Outputs](#outputs).
+
+### 7. Run your own species
+
+1. Pick a species with **several complete genomes** on NCBI and a close relative to use as the outgroup. With very few genomes and a distant outgroup, Panaroo can find 0 core genes and the run stops before the tree is built.
+2. Run the same command or window settings with your species. Raise `--sample-size` gradually (10, then 50, then more). Time and memory grow with every extra genome.
+3. For many species at once, use a CSV: see [Many species from a CSV](#many-species-from-a-csv).
+4. To resume a run that stopped partway through, raise **Start step** or add `--start-step N`: see [Resuming](#resuming).
+
+### If something goes wrong
+
+Read the last red or error line of the log, then look it up in [Troubleshooting](#troubleshooting). The most common causes are: environment not activated (step 4), `--db` pointing at `bakta_db` instead of `bakta_db/db`, and a species with too few genomes.
 
 ---
 
