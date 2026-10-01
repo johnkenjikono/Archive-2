@@ -129,6 +129,7 @@ def get_random_accessions(species_name, sample_size=200, random_seed=42):
     cmd = [
         "datasets", "summary", "genome", "taxon", species_name,
         "--assembly-level", "chromosome,complete",
+        "--assembly-source", "genbank",
         "--as-json-lines"
     ]
 
