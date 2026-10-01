@@ -396,7 +396,7 @@ Outputs (see "Outputs")
 
 | # | Step | What happens |
 |---|---|---|
-| 1 | **Download** | Lists every *chromosome* or *complete* assembly for the species and draws a random sample of `--sample-size` with a fixed seed, so the same seed always gives the same genomes. Then downloads the `.fna` files. |
+| 1 | **Download** | Lists every *chromosome* or *complete* GenBank (`GCA_`) assembly for the species and draws a random sample of `--sample-size` with a fixed seed, so the same seed always gives the same genomes. Then downloads the `.fna` files. |
 | – | **Outgroup** | Uses `--outgroup` if given. Otherwise picks a RefSeq reference genome from another species in the same genus, falling back to any complete genome in the genus. The outgroup is annotated alongside the other genomes and appears in the alignment as `outgroup`. |
 | 2 | **Bakta** | Annotates every genome (up to 201), several at a time. Non-coding RNA searches and plots are skipped because Panaroo only uses coding genes. |
 | 3 | **Panaroo** | Builds the pan-genome in `strict` clean mode and a core-gene alignment with MAFFT (`core_gene_alignment.aln`). |
