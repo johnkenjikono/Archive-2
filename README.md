@@ -63,19 +63,19 @@ Run it from the desktop window (`bash run_ui.sh`) or from the terminal, one spec
 
 ## Getting started, step by step
 
-This assumes macOS or Linux and no prior setup. Budget about 30 minutes for installing, plus the database download. Setup commands are run once. Only steps 4 and 5 repeat each session.
+This branch targets macOS (Apple Silicon) and assumes no prior setup. Budget about 30 minutes for installing, plus the database download. Setup commands are run once. Only steps 4 and 5 repeat each session.
 
 ### 0. Check you have what you need
 
 | Need | Why | How to check |
 |---|---|---|
-| A terminal | Setup and optional command-line use | Open **Terminal** (macOS) or your Linux terminal |
+| A terminal | Setup and optional command-line use | Open **Terminal** (Applications > Utilities) |
 | **Conda or Miniforge** | Installs Bakta and Panaroo | `conda --version`. If not found, install [Miniforge](https://github.com/conda-forge/miniforge) first, then open a new terminal |
 | Python 3.10 or newer | Runs the pipeline | `python3 --version` |
 | Git | Gets the code | `git --version` |
 | Internet | Downloads genomes from NCBI | n/a |
 | Disk space | Full Bakta database is about 70 GB; `light` is much smaller (less precise). Each run needs more for genomes and intermediates | `df -h .` |
-| RAM and cores | 8 cores and 16 GB is enough for a small test run | `nproc` (Linux) or `sysctl -n hw.ncpu` (macOS) |
+| RAM and cores | 8 cores and 16 GB is enough for a small test run | `sysctl -n hw.ncpu` |
 
 ### 1. Get the code
 
@@ -92,7 +92,7 @@ All commands below are run from inside the new `Archive-2` folder.
 bash setup.sh
 ```
 
-This takes several minutes. It creates three conda environments (`bakta_env`, `panaroo_env`, `ecotools`) and a Python environment (`venv/`), and on Linux it also builds EcoSim's helper programs. On Arch Linux it asks for your password to install Java and a compiler. Lines starting with `✓` are good. A `⚠` line tells you what is missing and usually how to fix it. It is safe to rerun `setup.sh`: it skips anything that already exists.
+This takes several minutes. It creates three conda environments (`bakta_env`, `panaroo_env`, `ecotools`) and a Python environment (`venv/`). Lines starting with `✓` are good. A `⚠` line tells you what is missing and usually how to fix it. It is safe to rerun `setup.sh`: it skips anything that already exists.
 
 Check it worked:
 
@@ -198,10 +198,10 @@ Read the last red or error line of the log, then look it up in [Troubleshooting]
 | [NCBI Datasets CLI](https://www.ncbi.nlm.nih.gov/datasets/docs/v2/download-and-install/) (`datasets`) | Step 1, outgroup/type-strain lookup | Yes: `ecotools` conda env, linked into `venv/bin` |
 | [Bakta](https://github.com/oschwengers/bakta) + its database | Step 2 | Creates `bakta_env`. You download the database |
 | [Panaroo](https://github.com/gtonkinhill/panaroo) + MAFFT | Step 3 | Creates `panaroo_env` |
-| [VeryFastTree](https://github.com/citiususc/veryfasttree) (or FastTree) | Step 5 | Linux: `ecotools` conda env, linked into `venv/bin`. macOS: `brew` |
-| Java 8+ | Step 8 (EcoSim) | Arch: `pacman` (with `gcc-fortran` for the EcoSim helpers). Elsewhere only checked |
+| [VeryFastTree](https://github.com/citiususc/veryfasttree) (or FastTree) | Step 5 | `ecotools` conda env, linked into `venv/bin` |
+| Java 8+ | Step 8 (EcoSim) | Only checked. Install with `brew install openjdk` |
 
-**EcoSim is bundled.** `tools/ecosim.jar` and its helper binaries in `tools/bin/` ship with the repo. The binaries in `tools/bin/` are **macOS arm64 (Apple Silicon)** builds. On Linux, `setup.sh` builds them into `tools/linux/bin`, which the pipeline picks up automatically. On any other platform, supply EcoSim binaries built for that platform (see [Configuration](#configuration)).
+**EcoSim is bundled.** `tools/ecosim.jar` and its helper binaries in `tools/bin/` ship with the repo. The binaries in `tools/bin/` are **macOS arm64 (Apple Silicon)** builds. On Intel Macs or any other platform, supply EcoSim binaries built for that platform (see [Configuration](#configuration)).
 
 ---
 
@@ -214,10 +214,8 @@ bash setup.sh
 ```
 
 This script:
-- on Arch Linux, installs `gcc-fortran`, `jre-openjdk`, `git` and `base-devel` with `pacman` if any are missing (asks for sudo)
 - creates the `bakta_env`, `panaroo_env` and `ecotools` (`datasets`, VeryFastTree) conda environments from conda-forge + bioconda only (skips any that already exist)
 - creates `venv/`, installs `requirements.txt`, and links `datasets` and `veryfasttree` into `venv/bin`
-- on Linux, builds EcoSim's helpers into `tools/linux/bin`
 
 ### 2. Bakta database (one-time)
 
@@ -546,7 +544,7 @@ ui/                Desktop window
 
 tools/             Bundled EcoSim
   ecosim.jar, bin/          EcoSim and its native helpers (macOS arm64)
-  build_ecosim_linux.sh     Builds the Linux helpers (used by setup.sh and modal_app.py)
+  build_ecosim_linux.sh     Builds the Linux helpers (used by modal_app.py)
 ```
 
 ---
@@ -566,7 +564,7 @@ tools/             Bundled EcoSim
 | `Outgroup ... could not be matched to any tree leaf` | Pass the exact leaf name with `--outgroup-id` (leaf names are the genome file names, e.g. `GCF_000217655.1` or `outgroup`) |
 | `gene_length (1000) exceeds alignment length` | The core alignment is too short for rarefaction, usually because too few genes are shared. Check the genome set and outgroup |
 | `EcoSim jar not found` / `Java not found` | Install Java 8+. Set `ECOSIM_JAR` if you moved the jar |
-| EcoSim fails on Linux or Intel Macs | The bundled `tools/bin/` helpers are Apple Silicon only. On Linux, `bash setup.sh` builds them into `tools/linux/bin` (via `tools/build_ecosim_linux.sh`). Elsewhere, point `ECOSIM_DIR` at a directory with binaries for your platform |
+| EcoSim fails on Intel Macs | The bundled `tools/bin/` helpers are Apple Silicon only. Point `ECOSIM_DIR` at a directory with binaries for your platform |
 | A batch row failed | Look for `Row N failed` in the output, fix the problem, then rerun that species with `--species` |
 
 ---

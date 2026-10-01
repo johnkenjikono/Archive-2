@@ -18,9 +18,9 @@ bash run_ui.sh
 1. **Ensure sequences are aligned** (all same length)
    - If not aligned, use: `mafft input.fasta > aligned.fasta`
 
-2. **VeryFastTree**: on Linux `setup.sh` installs it (conda `ecotools` env, linked into `venv/bin`); on macOS `brew install veryfasttree`
+2. **VeryFastTree**: `setup.sh` installs it (conda `ecotools` env, linked into `venv/bin`); or `brew install veryfasttree`
 
-3. **EcoSim** needs no configuration: the pipeline uses `tools/ecosim.jar`, with helpers from `tools/bin` (macOS) or `tools/linux/bin` (Linux, built by `setup.sh`). Override with `ECOSIM_JAR` / `ECOSIM_DIR` if needed.
+3. **EcoSim** needs no configuration: the pipeline uses `tools/ecosim.jar`, with the macOS helpers from `tools/bin`. Override with `ECOSIM_JAR` / `ECOSIM_DIR` if needed.
 
 ## 🏃 Running the Pipeline
 
@@ -91,10 +91,10 @@ make_trees_batch(fasttree_exe="fasttree")
 
 | Issue | Solution |
 |-------|----------|
-| `VeryFastTree/FastTree not found` | `brew install veryfasttree` (macOS) or `bash setup.sh` + `source venv/bin/activate` (Linux) |
+| `VeryFastTree/FastTree not found` | `bash setup.sh` + `source venv/bin/activate`, or `brew install veryfasttree` |
 | `Sequences not aligned` | Use `mafft your.fasta > aligned.fasta` |
 | `FastTree crashes` | Ensure sequences have same length |
-| EcoSim fails on Linux / Arch | `bash setup.sh` — installs deps via pacman and builds Linux EcoSim tools into `tools/linux/bin` (the bundled `tools/bin` is macOS-only) |
+| EcoSim fails on Intel Mac | The bundled `tools/bin` helpers are Apple Silicon only |
 | `EcoSim jar not found` | Set `export ECOSIM_JAR=/path/to/ecosim.jar` and ensure Java is installed |
 | `Tree rooting failed` | Check sequence IDs match exactly in FASTA and tree file |
 
