@@ -70,10 +70,15 @@ This branch targets macOS (Apple Silicon) and Windows via WSL2, and assumes no p
 Bakta, Panaroo and MAFFT have no native Windows builds, so on Windows the pipeline runs inside **WSL2** (Ubuntu), exactly as on Linux:
 
 1. In PowerShell (admin): `wsl --install -d Ubuntu`, reboot, open Ubuntu.
-2. In Ubuntu: `sudo apt update && sudo apt install -y build-essential gfortran git`, then install Miniforge.
-3. Clone this repo into your Linux home (`~/`), **not** `/mnt/c` (much faster), and follow the steps below as on Linux. Skip the macOS-only commands (`sysctl`).
-4. Build the EcoSim helpers once: `bash tools/build_ecosim_linux.sh`. `pipeline.py` finds `tools/linux` automatically.
-5. `python ui/ui.py` opens the window through WSLg (Windows 11, or Windows 10 with a recent WSL). The terminal commands work too.
+2. In Ubuntu, clone into your Linux home (**not** `/mnt/c`, which is much slower) and run the setup script:
+   ```bash
+   cd ~ && git clone -b windows-build https://github.com/johnkenjikono/Archive-2.git && cd Archive-2
+   bash setup_wsl.sh
+   ```
+   It installs the build tools and Miniforge (if missing), creates the `ecotype` environment, builds the EcoSim helpers, and downloads the light Bakta database to `~/bakta_db`. Pass `full` (`bash setup_wsl.sh full`) for the 70 GB database. It asks for your Ubuntu password once (for `apt`).
+3. Open a new terminal, then `cd ~/Archive-2 && conda activate ecotype && python ui/ui.py`. The window opens through WSLg (Windows 11, or Windows 10 with a recent WSL). The terminal commands in step 5 below work too.
+
+That replaces steps 0 to 3 below; continue at step 4.
 
 Your Windows files are visible in WSL under `/mnt/c/Users/<you>/`; copy genomes into `~/` before running.
 
