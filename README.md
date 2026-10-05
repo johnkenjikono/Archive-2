@@ -63,7 +63,19 @@ Run it from the desktop window (`python ui/ui.py`) or from the terminal, one spe
 
 ## Getting started, step by step
 
-This branch targets macOS (Apple Silicon) and assumes no prior setup. Budget about 30 minutes for installing, plus the database download. Setup commands are run once. Only steps 4 and 5 repeat each session.
+This branch targets macOS (Apple Silicon) and Windows via WSL2, and assumes no prior setup. Budget about 30 minutes for installing, plus the database download. Setup commands are run once. Only steps 4 and 5 repeat each session.
+
+### Windows (via WSL2)
+
+Bakta, Panaroo and MAFFT have no native Windows builds, so on Windows the pipeline runs inside **WSL2** (Ubuntu), exactly as on Linux:
+
+1. In PowerShell (admin): `wsl --install -d Ubuntu`, reboot, open Ubuntu.
+2. In Ubuntu: `sudo apt update && sudo apt install -y build-essential gfortran git`, then install Miniforge.
+3. Clone this repo into your Linux home (`~/`), **not** `/mnt/c` (much faster), and follow the steps below as on Linux. Skip the macOS-only commands (`sysctl`).
+4. Build the EcoSim helpers once: `bash tools/build_ecosim_linux.sh`. `pipeline.py` finds `tools/linux` automatically.
+5. `python ui/ui.py` opens the window through WSLg (Windows 11, or Windows 10 with a recent WSL). The terminal commands work too.
+
+Your Windows files are visible in WSL under `/mnt/c/Users/<you>/`; copy genomes into `~/` before running.
 
 ### 0. Check you have what you need
 
