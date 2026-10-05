@@ -3,14 +3,14 @@
 ## 🚀 First Time Setup
 
 ```bash
-# Run setup script
-bash setup.sh
+# One time (Apple Silicon needs the CONDA_SUBDIR prefix; see README)
+CONDA_SUBDIR=osx-64 conda env create -f environment.yml
 
-# Activate virtual environment
-source venv/bin/activate.fish
+# Every new terminal
+conda activate ecotype
 
 # Optional: open the desktop UI instead of typing flags
-bash run_ui.sh
+python ui/ui.py
 ```
 
 ## ✅ Before Running
@@ -18,7 +18,7 @@ bash run_ui.sh
 1. **Ensure sequences are aligned** (all same length)
    - If not aligned, use: `mafft input.fasta > aligned.fasta`
 
-2. **VeryFastTree**: `setup.sh` installs it (conda `ecotools` env, linked into `venv/bin`); or `brew install veryfasttree`
+2. **VeryFastTree, Java, MAFFT**: all installed in the `ecotype` environment
 
 3. **EcoSim** needs no configuration: the pipeline uses `tools/ecosim.jar`, with the macOS helpers from `tools/bin`. Override with `ECOSIM_JAR` / `ECOSIM_DIR` if needed.
 
@@ -26,7 +26,7 @@ bash run_ui.sh
 
 ```bash
 # Desktop UI (no CLI flags)
-bash run_ui.sh
+python ui/ui.py
 
 # Full pipeline (all steps)
 python pipeline.py your_sequences.fasta
@@ -91,7 +91,7 @@ make_trees_batch(fasttree_exe="fasttree")
 
 | Issue | Solution |
 |-------|----------|
-| `VeryFastTree/FastTree not found` | `bash setup.sh` + `source venv/bin/activate`, or `brew install veryfasttree` |
+| `VeryFastTree/FastTree not found` | `conda activate ecotype` |
 | `Sequences not aligned` | Use `mafft your.fasta > aligned.fasta` |
 | `FastTree crashes` | Ensure sequences have same length |
 | EcoSim fails on Intel Mac | The bundled `tools/bin` helpers are Apple Silicon only |

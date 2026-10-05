@@ -3,7 +3,7 @@
 merge_node_cluster de-duplicates the 'centroid' and 'protein' lists independently, but
 downstream code zips them. When two centroids share an identical protein the lists
 misalign, zip() drops a centroid, and centroid_to_index[...] raises KeyError.
-Usage: python panaroo_patched.py <panaroo args>   (run inside the panaroo conda env)
+Usage: python panaroo_patched.py <panaroo args>   (run inside the ecotype conda env)
 """
 import sys
 import panaroo.merge_nodes, panaroo.merge_graphs, panaroo.clean_network, panaroo.__main__

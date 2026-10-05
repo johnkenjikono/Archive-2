@@ -1,7 +1,7 @@
 #!/bin/bash
 # Build EcoSim's native helpers for Linux into <outdir>/bin (default: tools/linux).
 # tools/bin ships macOS arm64 builds; this uses the EcoSim 2.1.7 source that matches tools/ecosim.jar.
-# Needs git, make, gcc, gfortran. Used by setup.sh and the Modal image (modal_app.py).
+# Needs git, make, gcc, gfortran. Used by the Modal image (modal_app.py).
 set -e
 out="${1:-$(dirname "$0")/linux}/bin"
 src=$(mktemp -d)
