@@ -80,11 +80,11 @@ This assumes macOS or Linux and no prior setup. Budget about 30 minutes for inst
 ### 1. Get the code
 
 ```bash
-git clone -b linux-stuff https://github.com/johnkenjikono/Archive-2.git
+git clone https://github.com/johnkenjikono/Archive-2.git
 cd Archive-2
 ```
 
-The `-b linux-stuff` is required. The repository's default branch, `main`, is an older layout of the project: no `steps/` folder, no desktop window, an outdated `setup.sh`, and Roary instead of Panaroo. A clone without `-b` gets that version and fails later with no explanation of why. All commands below are run from inside the new `Archive-2` folder.
+All commands below are run from inside the new `Archive-2` folder.
 
 ### 2. Install everything (one time)
 
