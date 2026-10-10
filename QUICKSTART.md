@@ -3,13 +3,14 @@
 ## 🚀 First Time Setup
 
 ```bash
-cd /Users/carlofedolfi/Downloads/move_largest_numeric
-
-# Run setup script (optional - you already have VeryFastTree installed)
+# Run setup script
 bash setup.sh
 
 # Activate virtual environment
 source venv/bin/activate.fish
+
+# Optional: open the desktop UI instead of typing flags
+bash run_ui.sh
 ```
 
 ## ✅ Before Running
@@ -17,21 +18,16 @@ source venv/bin/activate.fish
 1. **Ensure sequences are aligned** (all same length)
    - If not aligned, use: `mafft input.fasta > aligned.fasta`
 
-2. **VeryFastTree is already installed** ✓
-   - If you need to reinstall: `brew install veryfasttree`
+2. **VeryFastTree**: on Linux `setup.sh` installs it (conda `ecotools` env, linked into `venv/bin`); on macOS `brew install veryfasttree`
 
-3. **Set EcoSim jar path** (only if using EcoSim step)
-   ```bash
-   export ECOSIM_JAR=/path/to/ecosim.jar
-   ```
-   If needed, also set the working directory:
-   ```bash
-   export ECOSIM_DIR=/path/to/ecosim
-   ```
+3. **EcoSim** needs no configuration: the pipeline uses `tools/ecosim.jar`, with helpers from `tools/bin` (macOS) or `tools/linux/bin` (Linux, built by `setup.sh`). Override with `ECOSIM_JAR` / `ECOSIM_DIR` if needed.
 
 ## 🏃 Running the Pipeline
 
 ```bash
+# Desktop UI (no CLI flags)
+bash run_ui.sh
+
 # Full pipeline (all steps)
 python pipeline.py your_sequences.fasta
 
@@ -39,9 +35,13 @@ python pipeline.py your_sequences.fasta
 python pipeline.py your_sequences.fasta --start-step 3
 
 # Run individual tools
-python move_largest_numeric.py input.fasta output.fasta
-python run_trees.py                          # Build trees
-python reroot_tree.py sorted.fasta tree.nwk output.nwk
+python steps/move_largest_numeric.py input.fasta output.fasta
+python steps/run_trees.py                          # Build trees
+python steps/reroot_tree.py sorted.fasta tree.nwk output.nwk
+python steps/dedup_clones.py sorted.fasta sorted.fasta clone_groups.csv   # Collapse clones (--threshold, default 1e-5)
+python steps/rarefaction.py core_gene_alignment.aln                        # Needs core_alignment_header.embl alongside
+python steps/parsing.py ecosim_output_X                                    # Ecotype counts + membership CSV
+python steps/visualize_ecotypes.py ecosim_output_X                         # Trees colored by ecotype
 ```
 
 ## 📊 What to Expect
@@ -53,7 +53,7 @@ python reroot_tree.py sorted.fasta tree.nwk output.nwk
 - EcoSim: varies (hours for large datasets)
 
 **If FastTree crashes:**
-1. Check sequence alignment: `python move_largest_numeric.py input.fasta sorted.fasta`
+1. Check sequence alignment: `python steps/move_largest_numeric.py input.fasta sorted.fasta`
 2. Look for unaligned sequences error message
 3. Align sequences first or reduce dataset size
 
@@ -71,7 +71,7 @@ make_trees_batch(stable_mode=True)  # Using -gtr -gamma flags
 **FAST MODE (less stable):**
 ```python
 make_trees_batch(stable_mode=False)  # Using -speediest flag
-python run_trees.py --fast
+python steps/run_trees.py --fast
 ```
 
 ### Memory Settings
@@ -91,9 +91,10 @@ make_trees_batch(fasttree_exe="fasttree")
 
 | Issue | Solution |
 |-------|----------|
-| `VeryFastTree/FastTree not found` | `brew install veryfasttree` (macOS) or `apt install veryfasttree` (Linux) |
+| `VeryFastTree/FastTree not found` | `brew install veryfasttree` (macOS) or `bash setup.sh` + `source venv/bin/activate` (Linux) |
 | `Sequences not aligned` | Use `mafft your.fasta > aligned.fasta` |
 | `FastTree crashes` | Ensure sequences have same length |
+| EcoSim fails on Linux / Arch | `bash setup.sh` — installs deps via pacman and builds Linux EcoSim tools into `tools/linux/bin` (the bundled `tools/bin` is macOS-only) |
 | `EcoSim jar not found` | Set `export ECOSIM_JAR=/path/to/ecosim.jar` and ensure Java is installed |
 | `Tree rooting failed` | Check sequence IDs match exactly in FASTA and tree file |
 
@@ -105,8 +106,12 @@ After running pipeline, you'll get:
 - `pipeline_temp_{species}/tree_rdy_fastas/` - Sorted sequences
 - `pipeline_temp_{species}/trees_final/` - Unrooted trees
 - `rerooted_trees/` - Rooted trees
-- `rarefaction_fastas_{species}/` - Subsampled alignments
-- `ecosim_output_{species}/` - EcoSim results (XML)
+- `rarefaction_fastas_{species}/` - Subsampled alignments (whole core genes, deleted after EcoSim)
+- `pangenome/` - Panaroo gene presence/absence table and summary statistics
+- `ecosim_output_{species}/` - EcoSim results (XML), ecotype tables, full-core comparison, tree plots and pie charts
+- `run_parameters.json` - settings used and which outputs were kept
+
+Choose what is kept with `--keep ITEM` / `--discard ITEM` (e.g. `--keep core_alignment`, `--discard all --keep rerooted_tree`). `python pipeline.py --help` lists the items.
 
 ---
 

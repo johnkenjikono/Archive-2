@@ -1,2 +1,5 @@
 biopython==1.87
-numpy==2.4.4
+pandas==2.2.3
+openpyxl==3.1.5
+modal==1.5.5
+matplotlib==3.11.2

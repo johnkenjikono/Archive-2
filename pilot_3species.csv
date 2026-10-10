@@ -1,0 +1,4 @@
+Species Name,Genomes,Notes,Outgroup
+Streptococcus pyogenes,1421,outgroup: S. dysgalactiae reference,GCF_016128095.1
+Listeria monocytogenes,1754,outgroup: L. innocua reference,GCF_028596125.1
+Treponema pallidum,759,outgroup: T. paraluiscuniculi Cuniculi A,GCF_000217655.1
