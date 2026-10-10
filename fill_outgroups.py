@@ -17,7 +17,7 @@ from pathlib import Path
 from steps.download_outgroup import _datasets_summary, find_outgroup_species
 
 SPECIES_COL, OUTGROUP_COL, SOURCE_COL = 0, 3, 4
-LLM_MODEL = "claude-opus-5"
+LLM_MODEL = "claude-opus-5-5"
 
 
 def outgroup_candidates(species_name):
