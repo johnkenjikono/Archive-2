@@ -34,6 +34,7 @@ from steps.parsing import summarize_ecotypes_in_folder, write_membership_csv, co
 from steps.dedup_clones import collapse_identical_sequences, DEFAULT_CLONE_THRESHOLD
 from steps.visualize_ecotypes import plot_folder
 from steps.outputs import KEEP_ITEMS, DEFAULT_KEEP, resolve_keep
+from steps.niche_metadata import run_niche_analysis
 
 # Falls back to the bundled tools/ecosim.jar / tools/ dir (where bin/ lives) when env vars are unset.
 ECOSIM_JAR = _resolve_ecosim_jar()
@@ -871,6 +872,14 @@ def run_pipeline_for_species(species_name, outgroup_name, args):
         if args.start_step <= 3 and "panaroo" not in args.keep:
             _cleanup(roary_dir, "Panaroo output")
 
+        if args.niche:
+            print("\n--- Ecotype x niche association (Claude-labelled BioSample metadata) ---")
+            alignment_name = core_alignment_path.name.replace(".fasta", "").replace(".aln", "")  # as run_tree_pipeline names it
+            try:
+                run_niche_analysis(base_dir / f"ecosim_output_{alignment_name}", species_name)
+            except Exception as exc:  # optional add-on: the ecotype results are already saved
+                print(f"Warning: niche analysis failed: {exc}", file=sys.stderr)
+
 def run_csv_batch(csv_path, args):
     """Run the pipeline for every species/outgroup row in the CSV file."""
     rows = load_species_outgroups_from_csv(csv_path)
@@ -960,7 +969,10 @@ def main():
     # Outgroup genome argument
     parser.add_argument("--outgroup", help="NCBI accession or species name for outgroup genome to download. Auto-detected from genus if omitted.")
     parser.add_argument("--no-auto-outgroup", action="store_true", help="Disable automatic outgroup detection; run without an outgroup unless --outgroup is set.")
-    
+    parser.add_argument("--niche", action="store_true",
+                        help="After the run, fetch NCBI BioSample metadata, have Claude label host/niche, and test "
+                             "ecotype x niche association. Needs ANTHROPIC_API_KEY and `pip install anthropic`.")
+
     args = parser.parse_args()
     try:
         args.keep = resolve_keep(args.keep, args.discard)
