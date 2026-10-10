@@ -517,6 +517,10 @@ python steps/run_ecosim.py rarefaction_fastas/ --full-tree-path rooted.nwk \
 # Summaries
 python steps/parsing.py                        # counts ecotypes in ./ecosim_results
 python steps/post_processing.py ecosim_results # per-ecotype membership spreadsheets
+
+# Do ecotypes match host / isolation source / country? (Claude labels the BioSample metadata;
+# needs ANTHROPIC_API_KEY and `pip install anthropic`. Same as `pipeline.py --niche`.)
+python steps/niche_metadata.py Species_name/ecosim_output_core_gene_alignment "Species name"
 ```
 
 ---
@@ -538,6 +542,7 @@ steps/             One module per pipeline step, each also runnable on its own
   rarefaction.py            Step 7: gene-window sub-alignments
   run_ecosim.py             Step 8: EcoSim batch runner
   parsing.py                Step 9: ecotype counts
+  niche_metadata.py         Optional (--niche): ecotype x host/niche/country association
   post_processing.py        Optional: XML → Excel membership tables
 
 ui/                Desktop window
