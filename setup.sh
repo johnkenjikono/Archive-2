@@ -9,11 +9,29 @@ echo "Ecotype Pipeline Setup Tool"
 echo "================================================================"
 echo ""
 
-# 0. Arch Linux system packages (compilers for EcoSim's tools, Java). Only prompts for sudo when something is missing.
-if command -v pacman &> /dev/null; then
-    if ! command -v gfortran &> /dev/null || ! command -v java &> /dev/null || ! command -v git &> /dev/null; then
-        echo "--- Installing Arch Linux packages ---"
-        sudo pacman -S --needed --noconfirm base-devel gcc-fortran git jre-openjdk
+# 0. Linux system packages: compilers for EcoSim's tools, Java, and Python's venv/Tk support.
+# Only prompts for sudo when something is missing.
+if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+    missing=0
+    for cmd in gfortran gcc make git java; do
+        command -v "$cmd" &> /dev/null || missing=1
+    done
+    python3 -c "import ensurepip, venv, tkinter" &> /dev/null || missing=1
+    if [ "$missing" = 1 ]; then
+        if command -v pacman &> /dev/null; then
+            echo "--- Installing Arch Linux packages ---"
+            sudo pacman -S --needed --noconfirm base-devel gcc-fortran git jre-openjdk tk
+        elif command -v apt-get &> /dev/null; then
+            echo "--- Installing Debian/Ubuntu packages ---"
+            sudo apt-get update
+            sudo apt-get install -y build-essential gfortran git default-jre python3-venv python3-tk
+        elif command -v dnf &> /dev/null; then
+            echo "--- Installing Fedora packages ---"
+            sudo dnf install -y gcc gcc-gfortran make git java-21-openjdk python3-tkinter
+        else
+            echo "⚠ Missing some of: gfortran gcc make git java python3-venv."
+            echo "  Install them with your package manager, then rerun setup.sh."
+        fi
     fi
 fi
 
@@ -57,6 +75,13 @@ fi
 echo ""
 echo "--- Setting up Python Virtual Environment ---"
 python_version=$(python3 --version 2>&1 | awk '{print $2}')
+# requirements.txt pins matplotlib 3.11, which needs Python 3.11+.
+if ! python3 -c 'import sys; sys.exit(sys.version_info < (3, 11))'; then
+    echo "❌ Python $python_version found; the pipeline needs Python 3.11 or newer."
+    echo "   Install a newer python3, or run setup.sh from an activated conda env with Python 3.11+"
+    echo "   (e.g. conda create -n py312 -c conda-forge python=3.12 && conda activate py312)."
+    exit 1
+fi
 echo "✓ Python version: $python_version"
 
 # Activate virtual environment
@@ -116,8 +141,11 @@ if [[ "$OSTYPE" == "linux-gnu"* ]]; then
     echo "--- Building EcoSim native tools for Linux (tools/linux/bin) ---"
     if [ -x tools/linux/bin/hillclimb ] && [ -x tools/linux/bin/fasttree ]; then
         echo "✓ Already built"
-    else
+    elif command -v gfortran &> /dev/null && command -v gcc &> /dev/null && command -v make &> /dev/null && command -v git &> /dev/null; then
         bash tools/build_ecosim_linux.sh tools/linux
+    else
+        echo "⚠ Skipped: needs gfortran, gcc, make and git. Install them and rerun setup.sh,"
+        echo "  or EcoSim (Step 8) will fail."
     fi
 fi
 
@@ -142,15 +170,8 @@ else
             echo "   Then run: brew install veryfasttree"
         fi
     elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
-        echo ""
-        echo "Installing VeryFastTree via apt..."
-        if command -v apt-get &> /dev/null; then
-            sudo apt-get update && sudo apt-get install -y veryfasttree
-            echo "✓ VeryFastTree installed!"
-        else
-            echo "ℹ No veryfasttree package here; the pipeline falls back to tools/linux/bin/fasttree."
-            echo "  For faster trees: conda install -c conda-forge -c bioconda veryfasttree"
-        fi
+        echo "ℹ The pipeline falls back to tools/linux/bin/fasttree."
+        echo "  For faster trees, recreate the ecotools env: conda env remove -n ecotools && bash setup.sh"
     fi
 fi
 
@@ -179,8 +200,8 @@ echo "Next steps:"
 echo "1. Activate your python virtual environment:"
 echo "   source venv/bin/activate"
 echo "2. Download the Bakta database if you haven't already:"
-echo "   conda run -n bakta_env bakta_db download --output bakta_db --type light   (or --type full, ~70 GB)"
+echo "   conda run -n bakta_env bakta_db download --output ~/bakta_db --type light   (or drop --type light for the full ~70 GB database)"
 echo "3. EcoSim needs no config: it uses tools/ecosim.jar and the Linux helpers in tools/linux/bin."
 echo "4. Run the full pipeline (including genome download):"
-echo "   python pipeline.py --species 'Treponema pallidum' --sample-size 10 --outgroup 'Treponema paraluiscuniculi' --db bakta_db/db-light"
+echo "   python pipeline.py --species 'Treponema pallidum' --sample-size 10 --outgroup 'Treponema paraluiscuniculi' --db ~/bakta_db/db-light"
 echo ""

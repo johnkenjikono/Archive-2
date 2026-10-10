@@ -1,120 +1,82 @@
 # Quick Start Guide
 
+The short version of [README.md](README.md). Works on Linux (Arch, Debian/Ubuntu, Fedora) and macOS.
+
 ## 🚀 First Time Setup
 
+You need [Miniforge](https://github.com/conda-forge/miniforge) (or any conda), Python 3.11+, and git.
+
 ```bash
-# Run setup script
+git clone https://github.com/johnkenjikono/Archive-2.git
+cd Archive-2
+
+# Conda envs, venv/, NCBI datasets, VeryFastTree, EcoSim helpers (Linux).
+# On Linux it asks for sudo if Java or the compilers are missing.
 bash setup.sh
 
-# Activate virtual environment
-source venv/bin/activate.fish
-
-# Optional: open the desktop UI instead of typing flags
-bash run_ui.sh
+# Bakta database: light (~4 GB unpacked) for a first test, or drop --type light for the full ~70 GB one
+conda run -n bakta_env bakta_db download --output ~/bakta_db --type light
 ```
 
-## ✅ Before Running
-
-1. **Ensure sequences are aligned** (all same length)
-   - If not aligned, use: `mafft input.fasta > aligned.fasta`
-
-2. **VeryFastTree**: on Linux `setup.sh` installs it (conda `ecotools` env, linked into `venv/bin`); on macOS `brew install veryfasttree`
-
-3. **EcoSim** needs no configuration: the pipeline uses `tools/ecosim.jar`, with helpers from `tools/bin` (macOS) or `tools/linux/bin` (Linux, built by `setup.sh`). Override with `ECOSIM_JAR` / `ECOSIM_DIR` if needed.
-
 ## 🏃 Running the Pipeline
+
+Activate the venv in every new terminal (`run_ui.sh` does it for you):
+
+```bash
+source venv/bin/activate          # fish: source venv/bin/activate.fish
+```
 
 ```bash
 # Desktop UI (no CLI flags)
 bash run_ui.sh
 
-# Full pipeline (all steps)
-python pipeline.py your_sequences.fasta
+# Small test run: 10 genomes, about 25 minutes on an 8-core laptop
+python pipeline.py --species "Treponema pallidum" --outgroup "Treponema paraluiscuniculi" \
+    --sample-size 10 --db ~/bakta_db/db-light --threads 8
 
-# Resume from step 3 (if previous steps completed)
-python pipeline.py your_sequences.fasta --start-step 3
+# Many species from a CSV (column 1 = species, column 4 = optional outgroup)
+python pipeline.py --csv-file species.csv --db ~/bakta_db/db-light
 
-# Run individual tools
+# Resume a stopped run from a later step
+python pipeline.py --species "Treponema pallidum" --db ~/bakta_db/db-light --start-step 5
+
+# All options
+python pipeline.py --help
+```
+
+`--db` takes the `db` or `db-light` subfolder, not `bakta_db` itself.
+
+## 🔧 Running steps on their own
+
+```bash
 python steps/move_largest_numeric.py input.fasta output.fasta
-python steps/run_trees.py                          # Build trees
+python steps/run_trees.py [--fast] [--max-sequences N]
 python steps/reroot_tree.py sorted.fasta tree.nwk output.nwk
-python steps/dedup_clones.py sorted.fasta sorted.fasta clone_groups.csv   # Collapse clones (--threshold, default 1e-5)
-python steps/rarefaction.py core_gene_alignment.aln                        # Needs core_alignment_header.embl alongside
-python steps/parsing.py ecosim_output_X                                    # Ecotype counts + membership CSV
-python steps/visualize_ecotypes.py ecosim_output_X                         # Trees colored by ecotype
+python steps/dedup_clones.py sorted.fasta sorted.fasta clone_groups.csv   # --threshold, default 1e-5
+python steps/rarefaction.py core_gene_alignment.aln                        # needs core_alignment_header.embl alongside
+python steps/parsing.py ecosim_output_X                                    # ecotype counts + membership CSV
+python steps/visualize_ecotypes.py ecosim_output_X                         # trees colored by ecotype
 ```
 
-## 📊 What to Expect
+## 📁 Output Files
 
-**For 100-1000 sequences:**
-- Sorting & validation: seconds
-- Tree building: minutes (depends on sequence length & alignment)
-- Rooting: seconds
-- EcoSim: varies (hours for large datasets)
+Everything lands in `<Species_name>/`:
 
-**If FastTree crashes:**
-1. Check sequence alignment: `python steps/move_largest_numeric.py input.fasta sorted.fasta`
-2. Look for unaligned sequences error message
-3. Align sequences first or reduce dataset size
+- `ecosim_output_core_gene_alignment/` - EcoSim results, `ecotype_summary.csv`, `rarefaction_by_gene_count.csv`, `ecotype_membership.csv`, and `ecotype_plots/`
+- `pangenome/` - Panaroo gene presence/absence table and summary statistics
+- `run_parameters.json` - settings, tool and database versions, and which outputs were kept
 
----
-
-## 🔧 Configuration
-
-### FastTree Stability vs Speed
-
-**STABLE MODE (default, recommended):**
-```python
-make_trees_batch(stable_mode=True)  # Using -gtr -gamma flags
-```
-
-**FAST MODE (less stable):**
-```python
-make_trees_batch(stable_mode=False)  # Using -speediest flag
-python steps/run_trees.py --fast
-```
-
-### Memory Settings
-
-Edit in `pipeline.py`:
-```python
-# For EcoSim (default 12GB)
-run_ecosim_batch(..., memory_gb=24)
-
-# For large datasets set timeout
-make_trees_batch(fasttree_exe="fasttree")
-```
-
----
+Choose what is kept with `--keep ITEM` / `--discard ITEM` (e.g. `--keep core_alignment`, `--discard all --keep rerooted_tree`).
 
 ## ❌ Troubleshooting
 
 | Issue | Solution |
 |-------|----------|
-| `VeryFastTree/FastTree not found` | `brew install veryfasttree` (macOS) or `bash setup.sh` + `source venv/bin/activate` (Linux) |
-| `Sequences not aligned` | Use `mafft your.fasta > aligned.fasta` |
-| `FastTree crashes` | Ensure sequences have same length |
-| EcoSim fails on Linux / Arch | `bash setup.sh` — installs deps via pacman and builds Linux EcoSim tools into `tools/linux/bin` (the bundled `tools/bin` is macOS-only) |
-| `EcoSim jar not found` | Set `export ECOSIM_JAR=/path/to/ecosim.jar` and ensure Java is installed |
-| `Tree rooting failed` | Check sequence IDs match exactly in FASTA and tree file |
+| `NCBI 'datasets' CLI tool not found` | `source venv/bin/activate` first |
+| `setup.sh`: Python too old | Install Python 3.11+, or run `setup.sh` inside a conda env with Python 3.11+ |
+| EcoSim fails on Linux | `bash setup.sh` builds the Linux helpers into `tools/linux/bin` (the bundled `tools/bin` is macOS arm64 only) |
+| `No module named '_tkinter'` | Install Tk (`tk` on Arch, `python3-tk` on Debian/Ubuntu, `python3-tkinter` on Fedora, `brew install python-tk` on macOS), delete `venv/`, rerun `bash setup.sh` |
+| Panaroo finds 0 core genes | Use a closer outgroup or more genomes (`--sample-size`) |
+| A step is "Killed" | Out of memory: add `--bakta-jobs 1` or lower `--threads` |
 
----
-
-## 📁 Output Files
-
-After running pipeline, you'll get:
-- `pipeline_temp_{species}/tree_rdy_fastas/` - Sorted sequences
-- `pipeline_temp_{species}/trees_final/` - Unrooted trees
-- `rerooted_trees/` - Rooted trees
-- `rarefaction_fastas_{species}/` - Subsampled alignments (whole core genes, deleted after EcoSim)
-- `pangenome/` - Panaroo gene presence/absence table and summary statistics
-- `ecosim_output_{species}/` - EcoSim results (XML), ecotype tables, full-core comparison, tree plots and pie charts
-- `run_parameters.json` - settings used and which outputs were kept
-
-Choose what is kept with `--keep ITEM` / `--discard ITEM` (e.g. `--keep core_alignment`, `--discard all --keep rerooted_tree`). `python pipeline.py --help` lists the items.
-
----
-
-## 📖 More Details
-
-See [IMPROVEMENTS.md](IMPROVEMENTS.md) for detailed explanation of improvements and advanced usage.
+More in the [README's Troubleshooting section](README.md#troubleshooting).

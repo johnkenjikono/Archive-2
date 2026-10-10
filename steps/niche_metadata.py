@@ -10,7 +10,7 @@ Writes into the EcoSim output folder:
   ecotype_x_<variable>.csv      ecotype x category counts (host, niche, country)
   ecotype_niche_association.csv chi-squared, Cramer's V and permutation p-value per variable
 
-Needs ANTHROPIC_API_KEY and `pip install anthropic`.
+Needs ANTHROPIC_API_KEY.
 
   python steps/niche_metadata.py ecosim_output_dir "Streptococcus pyogenes"
 """
@@ -30,7 +30,7 @@ try:
 except ImportError:  # run as a script: python steps/niche_metadata.py
     from parsing import FULL_CORE_XML
 
-LLM_MODEL = "claude-sonnet-5-5"
+LLM_MODEL = "claude-opus-5"
 # Fields Claude sees; country and year are parsed without it.
 LLM_FIELDS = ("host", "host_disease", "isolation_source", "sample_type", "source_type",
               "env_broad_scale", "env_local_scale", "env_medium", "host_tissue_sampled", "host_body_site")

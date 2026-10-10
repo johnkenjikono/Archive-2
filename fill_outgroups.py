@@ -17,7 +17,7 @@ from pathlib import Path
 from steps.download_outgroup import _datasets_summary, find_outgroup_species
 
 SPECIES_COL, OUTGROUP_COL, SOURCE_COL = 0, 3, 4
-LLM_MODEL = "claude-sonnet-5-5"
+LLM_MODEL = "claude-opus-5"
 
 
 def outgroup_candidates(species_name):
@@ -139,8 +139,8 @@ def main():
     parser.add_argument("csv_file", nargs="?", help="Batch CSV (column 1 = species, column 4 = outgroup)")
     parser.add_argument("-o", "--output", help="Output CSV (default: <input>_outgroups.csv)")
     parser.add_argument("--llm", action="store_true",
-                        help=f"Let Claude ({LLM_MODEL}) choose from NCBI candidates. Needs ANTHROPIC_API_KEY "
-                             "and `pip install anthropic`. Off by default: the NCBI heuristic is used.")
+                        help=f"Let Claude ({LLM_MODEL}) choose from NCBI candidates. Needs ANTHROPIC_API_KEY. "
+                             "Off by default: the NCBI heuristic is used.")
     parser.add_argument("--self-test", action="store_true", help="Run the offline self-test and exit")
     args = parser.parse_args()
 

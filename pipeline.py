@@ -971,7 +971,7 @@ def main():
     parser.add_argument("--no-auto-outgroup", action="store_true", help="Disable automatic outgroup detection; run without an outgroup unless --outgroup is set.")
     parser.add_argument("--niche", action="store_true",
                         help="After the run, fetch NCBI BioSample metadata, have Claude label host/niche, and test "
-                             "ecotype x niche association. Needs ANTHROPIC_API_KEY and `pip install anthropic`.")
+                             "ecotype x niche association. Needs ANTHROPIC_API_KEY.")
 
     args = parser.parse_args()
     try:

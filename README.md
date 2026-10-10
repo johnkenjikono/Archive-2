@@ -71,7 +71,7 @@ This assumes macOS or Linux and no prior setup. Budget about 30 minutes for inst
 |---|---|---|
 | A terminal | Setup and optional command-line use | Open **Terminal** (macOS) or your Linux terminal |
 | **Conda or Miniforge** | Installs Bakta and Panaroo | `conda --version`. If not found, install [Miniforge](https://github.com/conda-forge/miniforge) first, then open a new terminal |
-| Python 3.10 or newer | Runs the pipeline | `python3 --version` |
+| Python 3.11 or newer | Runs the pipeline | `python3 --version`. Ubuntu 22.04 ships 3.10: install a newer Python or run `setup.sh` from a conda env with Python 3.11+ |
 | Git | Gets the code | `git --version` |
 | Internet | Downloads genomes from NCBI | n/a |
 | Disk space | Full Bakta database is about 70 GB; `light` is much smaller (less precise). Each run needs more for genomes and intermediates | `df -h .` |
@@ -92,7 +92,7 @@ All commands below are run from inside the new `Archive-2` folder.
 bash setup.sh
 ```
 
-This takes several minutes. It creates three conda environments (`bakta_env`, `panaroo_env`, `ecotools`) and a Python environment (`venv/`), and on Linux it also builds EcoSim's helper programs. On Arch Linux it asks for your password to install Java and a compiler. Lines starting with `✓` are good. A `⚠` line tells you what is missing and usually how to fix it. It is safe to rerun `setup.sh`: it skips anything that already exists.
+This takes several minutes. It creates three conda environments (`bakta_env`, `panaroo_env`, `ecotools`) and a Python environment (`venv/`), and on Linux it also builds EcoSim's helper programs. On Linux (Arch, Debian/Ubuntu or Fedora) it asks for your password if Java, the compilers or Python's `venv`/Tk support are missing, and installs them. Lines starting with `✓` are good. A `⚠` line tells you what is missing and usually how to fix it. It is safe to rerun `setup.sh`: it skips anything that already exists.
 
 Check it worked:
 
@@ -194,12 +194,12 @@ Read the last red or error line of the log, then look it up in [Troubleshooting]
 | Tool | Used in | Installed by `setup.sh`? |
 |---|---|---|
 | [Conda / Miniforge](https://github.com/conda-forge/miniforge) | Bakta and Panaroo environments | No, install it first |
-| Python ≥ 3.10 | The pipeline and the desktop window (stdlib `tkinter`) | Creates `venv/` from `requirements.txt` |
+| Python ≥ 3.11 | The pipeline and the desktop window (stdlib `tkinter`) | Creates `venv/` from `requirements.txt`. Linux: installs `venv`/Tk support if missing |
 | [NCBI Datasets CLI](https://www.ncbi.nlm.nih.gov/datasets/docs/v2/download-and-install/) (`datasets`) | Step 1, outgroup/type-strain lookup | Yes: `ecotools` conda env, linked into `venv/bin` |
 | [Bakta](https://github.com/oschwengers/bakta) + its database | Step 2 | Creates `bakta_env`. You download the database |
 | [Panaroo](https://github.com/gtonkinhill/panaroo) + MAFFT | Step 3 | Creates `panaroo_env` |
 | [VeryFastTree](https://github.com/citiususc/veryfasttree) (or FastTree) | Step 5 | Linux: `ecotools` conda env, linked into `venv/bin`. macOS: `brew` |
-| Java 8+ | Step 8 (EcoSim) | Arch: `pacman` (with `gcc-fortran` for the EcoSim helpers). Elsewhere only checked |
+| Java 8+, gcc, gfortran, make, git | Step 8 (EcoSim) and building its Linux helpers | Linux: `pacman`, `apt-get` or `dnf` when missing. macOS: only checked |
 
 **EcoSim is bundled.** `tools/ecosim.jar` and its helper binaries in `tools/bin/` ship with the repo. The binaries in `tools/bin/` are **macOS arm64 (Apple Silicon)** builds. On Linux, `setup.sh` builds them into `tools/linux/bin`, which the pipeline picks up automatically. On any other platform, supply EcoSim binaries built for that platform (see [Configuration](#configuration)).
 
@@ -214,7 +214,7 @@ bash setup.sh
 ```
 
 This script:
-- on Arch Linux, installs `gcc-fortran`, `jre-openjdk`, `git` and `base-devel` with `pacman` if any are missing (asks for sudo)
+- on Linux, installs Java, `gcc`/`gfortran`/`make`, `git` and Python's `venv`/Tk support if any are missing (asks for sudo): `pacman` on Arch, `apt-get` on Debian/Ubuntu, `dnf` on Fedora. Other distros get a message listing what to install
 - creates the `bakta_env`, `panaroo_env` and `ecotools` (`datasets`, VeryFastTree) conda environments from conda-forge + bioconda only (skips any that already exist)
 - creates `venv/`, installs `requirements.txt`, and links `datasets` and `veryfasttree` into `venv/bin`
 - on Linux, builds EcoSim's helpers into `tools/linux/bin`
@@ -318,7 +318,7 @@ python fill_outgroups.py species.csv          # NCBI heuristic (deterministic)
 python fill_outgroups.py species.csv --llm    # Claude picks from NCBI genomes in the genus
 ```
 
-This writes `species_outgroups.csv`. Rows that already have an outgroup are left alone. A new **Outgroup Source** column records how each outgroup was chosen (heuristic, or the model name and its reason), and the pipeline ignores that column. `--llm` needs `pip install anthropic` and `ANTHROPIC_API_KEY`, and costs about $0.01–0.06 per species. If the Claude call fails, the script uses the heuristic for that row and records that in the source column.
+This writes `species_outgroups.csv`. Rows that already have an outgroup are left alone. A new **Outgroup Source** column records how each outgroup was chosen (heuristic, or the model name and its reason), and the pipeline ignores that column. `--llm` needs `ANTHROPIC_API_KEY` (the `anthropic` package comes with `setup.sh`), and costs about $0.01–0.06 per species. If the Claude call fails, the script uses the heuristic for that row and records that in the source column.
 
 ### On Modal (cloud Linux)
 
@@ -519,7 +519,7 @@ python steps/parsing.py                        # counts ecotypes in ./ecosim_res
 python steps/post_processing.py ecosim_results # per-ecotype membership spreadsheets
 
 # Do ecotypes match host / isolation source / country? (Claude labels the BioSample metadata;
-# needs ANTHROPIC_API_KEY and `pip install anthropic`. Same as `pipeline.py --niche`.)
+# needs ANTHROPIC_API_KEY. Same as `pipeline.py --niche`.)
 python steps/niche_metadata.py Species_name/ecosim_output_core_gene_alignment "Species name"
 ```
 
@@ -560,7 +560,7 @@ tools/             Bundled EcoSim
 
 | Symptom | Fix |
 |---|---|
-| `bash run_ui.sh` / `python ui/ui.py` fails with `No module named '_tkinter'` | The venv's Python was built without Tk. On macOS with Homebrew: `brew install python-tk`, then recreate `venv/` with `bash setup.sh` |
+| `bash run_ui.sh` / `python ui/ui.py` fails with `No module named '_tkinter'` | The venv's Python was built without Tk. Install Tk (macOS/Homebrew: `brew install python-tk`; Arch: `sudo pacman -S tk`; Debian/Ubuntu: `sudo apt install python3-tk`; Fedora: `sudo dnf install python3-tkinter`), then delete `venv/` and rerun `bash setup.sh` |
 | `python: command not found` from `run_ui.sh` | Run `bash setup.sh` first, or activate `venv/` and use `python ui/ui.py` |
 | Local genomes copied but Bakta says no FASTA files | Check **Working directory** — genomes are copied into `<workdir>/<Species_name>/input/` |
 | `NCBI 'datasets' CLI tool not found` | Activate the venv (`source venv/bin/activate`); `setup.sh` links `datasets` there. Or rerun `bash setup.sh` |
