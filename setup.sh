@@ -127,7 +127,8 @@ export PATH="$PWD/venv/bin:$PATH"  # so the checks below see the linked tools
 # 5b. Check Java (required for EcoSim)
 echo ""
 echo "--- Checking Java (required for EcoSim, Step 8) ---"
-if command -v java &> /dev/null; then
+# Run it: macOS ships a /usr/bin/java stub that exists even when no JDK is installed.
+if java -version &> /dev/null; then
     echo "✓ Java found: $(java -version 2>&1 | head -1)"
 else
     echo "⚠ Java not found. EcoSim (Step 8) will not run without it."
@@ -146,6 +147,19 @@ if [[ "$OSTYPE" == "linux-gnu"* ]]; then
     else
         echo "⚠ Skipped: needs gfortran, gcc, make and git. Install them and rerun setup.sh,"
         echo "  or EcoSim (Step 8) will fail."
+    fi
+elif [[ "$OSTYPE" == "darwin"* ]]; then
+    echo ""
+    echo "--- Checking EcoSim native tools for macOS (tools/bin) ---"
+    if [ "$(uname -m)" != "arm64" ]; then
+        echo "⚠ tools/bin only has Apple Silicon (arm64) builds; EcoSim (Step 8) will not run on this Intel Mac."
+    elif [ -e /opt/homebrew/opt/gcc/lib/gcc/current/libgfortran.5.dylib ] && [ -e /opt/homebrew/opt/libomp/lib/libomp.dylib ]; then
+        echo "✓ Homebrew gcc and libomp found"
+    elif command -v brew &> /dev/null; then
+        # tools/bin links against Homebrew's libgfortran and libomp.
+        brew install gcc libomp
+    else
+        echo "⚠ EcoSim's tools need Homebrew's gcc and libomp. Install Homebrew (https://brew.sh), then: brew install gcc libomp"
     fi
 fi
 
