@@ -1,6 +1,7 @@
 import os
 import shutil
 import subprocess
+import xml.etree.ElementTree as ET
 from pathlib import Path
 
 
@@ -17,6 +18,22 @@ def _resolve_ecosim_jar(ecosim_jar=None):
         return str(default_jar.resolve())
 
     return None
+
+
+def _finished_result(xml_path, *inputs):
+    """True if xml_path is a complete EcoSim result at least as new as every input it was built from.
+
+    Lets a rerun of Step 8 (for example after a Modal preemption) skip jobs that already finished.
+    Parsing rejects a file cut off mid-write; the age check stops a result being reused after the
+    alignment or tree behind it was regenerated (Step 7 rewrites the rarefaction FASTAs on each run).
+    """
+    try:
+        if xml_path.stat().st_size == 0:
+            return False
+        ET.parse(xml_path)
+        return all(xml_path.stat().st_mtime >= Path(p).stat().st_mtime for p in inputs)
+    except (OSError, ET.ParseError):
+        return False
 
 
 def _iter_fasta_files(fasta_dir):
@@ -119,6 +136,7 @@ def run_ecosim_batch(
 
     succeeded = 0
     failed = 0
+    skipped = 0
 
     print(f"📁 Found {len(fasta_files)} FASTA file(s) in {Path(fasta_dir)}")
     print(f"☕ Using EcoSim jar: {ecosim_jar}")
@@ -139,6 +157,14 @@ def run_ecosim_batch(
             continue
 
         xml_output = output_path / f"{fasta_path.stem}_results.xml"
+
+        if _finished_result(xml_output, fasta_path, tree_path):
+            print(f"⏭️  Skipping {fasta_path.name}: finished result already at {xml_output.name}")
+            succeeded += 1
+            skipped += 1
+            continue
+        if xml_output.exists():
+            xml_output.unlink()  # incomplete or stale: never leave it behind for Step 9 to parse
 
         print(f"🌱 Running EcoSim for {fasta_path.name}...")
         cmd = [
@@ -182,7 +208,7 @@ def run_ecosim_batch(
 
     print("\n" + "=" * 50)
     print("EcoSim analysis complete!")
-    print(f"  ✅ Succeeded: {succeeded}")
+    print(f"  ✅ Succeeded: {succeeded} ({skipped} reused from an earlier run)")
     print(f"  ❌ Failed: {failed}")
     print(f"  📊 Output directory: {output_path}")
     print("=" * 50)
