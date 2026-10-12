@@ -139,8 +139,8 @@ def main():
     parser.add_argument("csv_file", nargs="?", help="Batch CSV (column 1 = species, column 4 = outgroup)")
     parser.add_argument("-o", "--output", help="Output CSV (default: <input>_outgroups.csv)")
     parser.add_argument("--llm", action="store_true",
-                        help=f"Let Claude ({LLM_MODEL}) choose from NCBI candidates. Needs ANTHROPIC_API_KEY "
-                             "and `pip install anthropic`. Off by default: the NCBI heuristic is used.")
+                        help=f"Let Claude ({LLM_MODEL}) choose from NCBI candidates. Needs ANTHROPIC_API_KEY. "
+                             "Off by default: the NCBI heuristic is used.")
     parser.add_argument("--self-test", action="store_true", help="Run the offline self-test and exit")
     args = parser.parse_args()
 

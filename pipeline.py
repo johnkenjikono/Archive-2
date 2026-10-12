@@ -2,8 +2,10 @@ import argparse
 import contextlib
 import csv
 import glob
+import hashlib
 import inspect
 import io
+import platform
 import subprocess
 import sys
 import shutil
@@ -24,7 +26,7 @@ from steps.download_outgroup import download_ncbi_fasta, find_outgroup_species, 
 
 # Imports for the tree and ecosim steps
 from steps.move_largest_numeric import move_largest_numeric_to_top
-from steps.run_trees import make_trees_batch, write_error_log
+from steps.run_trees import make_trees_batch, write_error_log, find_fasttree_executable
 from steps.reroot_tree import reroot_tree_by_first_fasta
 from steps.rarefaction import create_rarefaction_fastas, find_gene_header, FULL_CORE_NAME
 from steps.run_ecosim import run_ecosim_batch, _resolve_ecosim_jar
@@ -32,6 +34,7 @@ from steps.parsing import summarize_ecotypes_in_folder, write_membership_csv, co
 from steps.dedup_clones import collapse_identical_sequences, DEFAULT_CLONE_THRESHOLD
 from steps.visualize_ecotypes import plot_folder
 from steps.outputs import KEEP_ITEMS, DEFAULT_KEEP, resolve_keep
+from steps.niche_metadata import run_niche_analysis
 
 # Falls back to the bundled tools/ecosim.jar / tools/ dir (where bin/ lives) when env vars are unset.
 ECOSIM_JAR = _resolve_ecosim_jar()
@@ -590,6 +593,105 @@ def _outgroup_first(paths):
     (plain sorting puts lowercase 'outgroup' after every GCA_/GCF_ accession)."""
     return sorted(paths, key=lambda p: (Path(p).stem != "outgroup", str(p)))
 
+def _probe_version(cmd, conda_env=None, timeout=90):
+    """First line of a tool's version output, or None if it cannot be run.
+
+    `conda run -n <env>` is tried first and the bare command only as a fallback, matching how
+    run_bakta/run_panaroo invoke these tools: the named env must win, because an older copy of
+    the same tool may sit earlier on PATH (conda's base env is a common source of one) and
+    probing that would record a version the run never used. Where the named env does not exist
+    -- a single-environment install, where the tools are on PATH by design -- the fallback is
+    what answers. Version text goes to stderr for several of these tools (mafft, FastTree), so
+    both streams are read. Anything that exits non-zero yields None: recording nothing is safer
+    than recording an error message as if it were a version.
+    """
+    attempts = ([["conda", "run", "-n", conda_env, *cmd]] if conda_env else []) + [list(cmd)]
+    for attempt in attempts:
+        try:
+            p = subprocess.run(attempt, capture_output=True, text=True,
+                               timeout=timeout, stdin=subprocess.DEVNULL)
+        except (OSError, subprocess.SubprocessError):
+            continue
+        if p.returncode != 0:
+            continue
+        for line in ((p.stdout or "") + "\n" + (p.stderr or "")).splitlines():
+            if line.strip():
+                return line.strip()
+    return None
+
+def _fasttree_version():
+    """VeryFastTree/FastTree builds disagree on how to report a version; try the usual spellings."""
+    try:
+        exe = find_fasttree_executable()
+    except Exception:
+        return None
+    for flag in ("--version", "-h"):
+        found = _probe_version([exe, flag])
+        if found:
+            return found
+    return None
+
+def _bakta_db_version(db_path):
+    """Bakta ships a version.json in its database directory recording the database release, its
+    Zenodo DOI, and the release of every source it was built from (RefSeq, Pfam, UniProt, ...).
+
+    Copy it verbatim. `bakta_db download` always fetches the current database, so two installs
+    months apart annotate the same genomes differently -- which changes which genes Panaroo
+    calls core, and so the alignment, the tree and every ecotype count downstream. Without this
+    the results folder cannot say which reference data produced it.
+    """
+    if not db_path:
+        return None
+    try:
+        with open(Path(db_path).expanduser() / "version.json") as f:
+            return json.load(f)
+    except (OSError, ValueError):
+        return None
+
+def _ecosim_jar_info():
+    """ecosim.jar is a committed binary with no --version, so identify it by content hash."""
+    if not ECOSIM_JAR or not Path(ECOSIM_JAR).exists():
+        return None
+    try:
+        return {"path": ECOSIM_JAR,
+                "sha256": hashlib.sha256(Path(ECOSIM_JAR).read_bytes()).hexdigest()}
+    except OSError:
+        return None
+
+def _pipeline_commit():
+    """The pipeline's own commit. `dirty` matters: with uncommitted edits the hash alone
+    does not identify the code that ran."""
+    repo = str(Path(__file__).resolve().parent)
+    try:
+        rev = subprocess.run(["git", "-C", repo, "rev-parse", "HEAD"],
+                             capture_output=True, text=True, timeout=15)
+        if rev.returncode != 0:
+            return None
+        status = subprocess.run(["git", "-C", repo, "status", "--porcelain"],
+                                capture_output=True, text=True, timeout=15)
+        return {"commit": rev.stdout.strip(),
+                "dirty": bool(status.stdout.strip()) if status.returncode == 0 else None}
+    except (OSError, subprocess.SubprocessError):
+        return None
+
+def collect_provenance(db_path):
+    """Versions of everything that shapes the numbers in this results folder.
+
+    Takes a few seconds of subprocess calls, once per run. None for any entry means the probe
+    failed, not that the tool was unused -- an honest gap rather than a guess.
+    """
+    return {
+        "pipeline": _pipeline_commit(),
+        "python": sys.version.split()[0],
+        "platform": platform.platform(),
+        "bakta": _probe_version(["bakta", "--version"], conda_env="bakta_env"),
+        "panaroo": _probe_version(["panaroo", "--version"], conda_env="panaroo_env"),
+        "mafft": _probe_version(["mafft", "--version"], conda_env="panaroo_env"),
+        "veryfasttree": _fasttree_version(),
+        "datasets": _probe_version(["datasets", "--version"]),
+        "ecosim_jar": _ecosim_jar_info(),
+    }
+
 def write_run_parameters(base_dir, species_name, outgroup_name, args):
     """Record the settings and what was kept, so a results folder explains itself."""
     params = {
@@ -601,6 +703,10 @@ def write_run_parameters(base_dir, species_name, outgroup_name, args):
         **{k: v for k, v in vars(args).items()
            if k in ("sample_size", "seed", "start_step", "threads", "no_dedup", "clone_threshold", "no_full_core",
                     "gene_counts", "replicates", "each_gene", "outgroup_id", "db")},
+        # The settings above do not pin the software, and the tools and the Bakta database are
+        # both unpinned, so without these a result cannot be reproduced or even diagnosed later.
+        "software": collect_provenance(getattr(args, "db", None)),
+        "bakta_db": _bakta_db_version(getattr(args, "db", None)),
     }
     with open(Path(base_dir) / "run_parameters.json", "w") as f:
         json.dump(params, f, indent=2)
@@ -755,6 +861,14 @@ def run_pipeline_for_species(species_name, outgroup_name, args):
         if args.start_step <= 3 and "panaroo" not in args.keep:
             _cleanup(roary_dir, "Panaroo output")
 
+        if args.niche:
+            print("\n--- Ecotype x niche association (Claude-labelled BioSample metadata) ---")
+            alignment_name = core_alignment_path.name.replace(".fasta", "").replace(".aln", "")  # as run_tree_pipeline names it
+            try:
+                run_niche_analysis(base_dir / f"ecosim_output_{alignment_name}", species_name)
+            except Exception as exc:  # optional add-on: the ecotype results are already saved
+                print(f"Warning: niche analysis failed: {exc}", file=sys.stderr)
+
 def run_csv_batch(csv_path, args):
     """Run the pipeline for every species/outgroup row in the CSV file."""
     rows = load_species_outgroups_from_csv(csv_path)
@@ -844,7 +958,10 @@ def main():
     # Outgroup genome argument
     parser.add_argument("--outgroup", help="NCBI accession or species name for outgroup genome to download. Auto-detected from genus if omitted.")
     parser.add_argument("--no-auto-outgroup", action="store_true", help="Disable automatic outgroup detection; run without an outgroup unless --outgroup is set.")
-    
+    parser.add_argument("--niche", action="store_true",
+                        help="After the run, fetch NCBI BioSample metadata, have Claude label host/niche, and test "
+                             "ecotype x niche association. Needs ANTHROPIC_API_KEY.")
+
     args = parser.parse_args()
     try:
         args.keep = resolve_keep(args.keep, args.discard)
