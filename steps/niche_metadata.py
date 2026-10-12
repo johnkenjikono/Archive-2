@@ -29,8 +29,11 @@ try:
     from steps.parsing import FULL_CORE_XML
 except ImportError:  # run as a script: python steps/niche_metadata.py
     from parsing import FULL_CORE_XML
+    from env import load_env
 
-LLM_MODEL = "claude-opus-5"
+    load_env()
+
+LLM_MODEL = "claude-sonnet-5-5"
 # Fields Claude sees; country and year are parsed without it.
 LLM_FIELDS = ("host", "host_disease", "isolation_source", "sample_type", "source_type",
               "env_broad_scale", "env_local_scale", "env_medium", "host_tissue_sampled", "host_body_site")

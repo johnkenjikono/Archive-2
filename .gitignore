@@ -57,3 +57,6 @@ ncbi_dataset/
 
 # Linux builds of EcoSim tools (made by setup.sh)
 tools/linux/
+
+# Secrets
+.env

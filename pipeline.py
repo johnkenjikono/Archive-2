@@ -35,6 +35,9 @@ from steps.dedup_clones import collapse_identical_sequences, DEFAULT_CLONE_THRES
 from steps.visualize_ecotypes import plot_folder
 from steps.outputs import KEEP_ITEMS, DEFAULT_KEEP, resolve_keep
 from steps.niche_metadata import run_niche_analysis
+from steps.env import load_env
+
+load_env()
 
 # Falls back to the bundled tools/ecosim.jar / tools/ dir (where bin/ lives) when env vars are unset.
 ECOSIM_JAR = _resolve_ecosim_jar()
