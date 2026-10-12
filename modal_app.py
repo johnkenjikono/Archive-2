@@ -1,7 +1,8 @@
 """Run the ecotype pipeline on Modal.
 
 One-time:  modal run modal_app.py::download_bakta_db            (add --light for the small db)
-One run:   modal run modal_app.py --species "Treponema pallidum" --outgroup "Treponema paraluiscuniculi" --extra "--sample-size 10"
+One run:   modal run --detach modal_app.py --species "Treponema pallidum" --outgroup "Treponema paraluiscuniculi" --extra "--sample-size 10"
+           (--detach is required: the command returns at once and the run continues on Modal)
 Batch:     modal run modal_app.py --csv-file species.csv         (one container per species, in parallel)
 Results:   modal volume get ecotype-results Treponema_pallidum/ecosim_output_core_gene_alignment .
 """
@@ -84,6 +85,10 @@ def main(species: str = "", csv_file: str = "", outgroup: str = "", db: str = "d
         for (row, sp, _), outcome in zip(rows, outcomes):
             print(f"Row {row} {sp}: {'failed: ' + str(outcome) if isinstance(outcome, Exception) else 'ok'}")
     elif species:
-        run_species.remote(species, outgroup, db, extra)
+        # spawn, not remote: hand the run to Modal and return, so it can't be cancelled by this terminal
+        # disconnecting (e.g. a laptop sleeping). Needs `modal run --detach`, or the app stops on return.
+        call = run_species.spawn(species, outgroup, db, extra)
+        print(f"Started {species} as {call.object_id}. With --detach it keeps running after this exits; "
+              "without it, the run stops now. Follow it with `modal app logs <app id>`.")
     else:
         sys.exit("Pass --species or --csv-file")

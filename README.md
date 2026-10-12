@@ -328,7 +328,7 @@ This writes `species_outgroups.csv`. Rows that already have an outgroup are left
 pip install -r requirements.txt && modal setup                 # one-time: installs the client, logs in
 modal run modal_app.py::download_bakta_db                      # one-time; add --light for db-light (then pass --db db-light)
 
-modal run modal_app.py --species "Treponema pallidum" --outgroup "Treponema paraluiscuniculi" --extra "--sample-size 10"
+modal run --detach modal_app.py --species "Treponema pallidum" --outgroup "Treponema paraluiscuniculi" --extra "--sample-size 10"   # --detach required; returns at once
 modal run modal_app.py --csv-file species.csv                  # one container per row, all in parallel
 
 modal volume get ecotype-results Treponema_pallidum/ecosim_output_core_gene_alignment .
