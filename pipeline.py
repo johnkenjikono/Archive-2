@@ -38,7 +38,7 @@ from steps.niche_metadata import run_niche_analysis
 
 # Falls back to the bundled tools/ecosim.jar / tools/ dir (where bin/ lives) when env vars are unset.
 ECOSIM_JAR = _resolve_ecosim_jar()
-# tools/bin holds macOS arm64 binaries; setup.sh builds Linux ones into tools/linux/bin.
+# tools/bin holds macOS arm64 binaries; Linux ones come from tools/build_ecosim_linux.sh.
 ECOSIM_DIR = os.environ.get("ECOSIM_DIR") or str(
     Path(__file__).resolve().parent / "tools" / ("linux" if sys.platform.startswith("linux") else "")
 )
@@ -82,16 +82,6 @@ def _cleanup(path, label=None):
             print(f"Removed: {name}")
     except Exception as e:
         print(f"Warning: could not remove {name}: {e}")
-
-def conda_run_env():
-    """Environment for `conda run`: an activated venv would otherwise stay first on PATH,
-    so `conda run -n panaroo_env python` would start the venv's python (no panaroo module)."""
-    env = dict(os.environ)
-    venv = env.pop("VIRTUAL_ENV", None)
-    if venv:
-        venv_bin = os.path.join(venv, "bin")
-        env["PATH"] = os.pathsep.join(p for p in env.get("PATH", "").split(os.pathsep) if p != venv_bin)
-    return env
 
 def _drop_stale_trees(fasta_path, tree_paths, label):
     """
@@ -260,8 +250,7 @@ def run_bakta(fasta_file: Path, bakta_dir: Path, db_path: str, threads: int):
     output_dir.mkdir(parents=True, exist_ok=True)
 
     cmd = [
-        # --no-capture-output streams Bakta's log live instead of dumping it when the genome finishes.
-        "conda", "run", "--no-capture-output", "-n", "bakta_env", "bakta",
+        "bakta",
         "--db", str(db_path),
         "--output", str(output_dir),
         "--prefix", sample_name,
@@ -278,7 +267,7 @@ def run_bakta(fasta_file: Path, bakta_dir: Path, db_path: str, threads: int):
     print(f"============================================================")
     
     try:
-        subprocess.run(cmd, check=True, env=conda_run_env())
+        subprocess.run(cmd, check=True)
         print(f"Successfully processed {fasta_file.name}\n")
         return expected_gff
     except subprocess.CalledProcessError as e:
@@ -315,7 +304,7 @@ def run_panaroo(gff_files: list[Path], roary_dir: Path, threads: int, error_log=
 
     cmd = [
         # Wrapper works around a panaroo <=1.8.0 crash; see steps/panaroo_patched.py.
-        "conda", "run", "-n", "panaroo_env", "python",
+        sys.executable,
         str(Path(__file__).parent / "steps" / "panaroo_patched.py"),
         "-i", *[str(f) for f in gff_files],
         "-o", str(run_output_dir),
@@ -330,7 +319,7 @@ def run_panaroo(gff_files: list[Path], roary_dir: Path, threads: int, error_log=
     print(f"============================================================")
 
     try:
-        result = subprocess.run(cmd, check=True, capture_output=True, text=True, env=conda_run_env())
+        result = subprocess.run(cmd, check=True, capture_output=True, text=True)
         success_msg = f"Successfully ran Panaroo! Results available in: {run_output_dir}"
         print(f"\n✅ {success_msg}")
         write_error_log(error_log, success_msg)
@@ -744,7 +733,7 @@ def run_pipeline_for_species(species_name, outgroup_name, args):
     # --- Step 1: Download ---
     if args.start_step <= 1:
         if not shutil.which("datasets"):
-            print("Error: NCBI 'datasets' CLI tool not found. Please install it (e.g. via conda) and ensure it's in your PATH.", file=sys.stderr)
+            print("Error: NCBI 'datasets' CLI tool not found. Run `conda activate ecotype` first (see README).", file=sys.stderr)
             sys.exit(1)
         process_species_genome(species_name, args.sample_size, str(input_dir), args.seed)
 

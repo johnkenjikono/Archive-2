@@ -1,34 +1,33 @@
 # Quick Start Guide
 
-The short version of [README.md](README.md). Works on Linux (Arch, Debian/Ubuntu, Fedora) and macOS.
+The short version of [README.md](README.md). This branch targets macOS.
 
 ## 🚀 First Time Setup
 
-You need [Miniforge](https://github.com/conda-forge/miniforge) (or any conda), Python 3.11+, and git.
+You need [Miniforge](https://github.com/conda-forge/miniforge) (or any conda) and git. The conda environment provides Python and everything else.
 
 ```bash
 git clone https://github.com/johnkenjikono/Archive-2.git
 cd Archive-2
 
-# Conda envs, venv/, NCBI datasets, VeryFastTree, EcoSim helpers (Linux).
-# On Linux it asks for sudo if Java or the compilers are missing.
-bash setup.sh
+# One time (Apple Silicon needs the CONDA_SUBDIR prefix; see README)
+CONDA_SUBDIR=osx-64 conda env create -f environment.yml
 
 # Bakta database: light (~4 GB unpacked) for a first test, or drop --type light for the full ~70 GB one
-conda run -n bakta_env bakta_db download --output ~/bakta_db --type light
+conda run -n ecotype bakta_db download --output ~/bakta_db --type light
 ```
 
 ## 🏃 Running the Pipeline
 
-Activate the venv in every new terminal (`run_ui.sh` does it for you):
+Activate the environment in every new terminal:
 
 ```bash
-source venv/bin/activate          # fish: source venv/bin/activate.fish
+conda activate ecotype
 ```
 
 ```bash
 # Desktop UI (no CLI flags)
-bash run_ui.sh
+python ui/ui.py
 
 # Small test run: 10 genomes, about 25 minutes on an 8-core laptop
 python pipeline.py --species "Treponema pallidum" --outgroup "Treponema paraluiscuniculi" \
@@ -72,10 +71,9 @@ Choose what is kept with `--keep ITEM` / `--discard ITEM` (e.g. `--keep core_ali
 
 | Issue | Solution |
 |-------|----------|
-| `NCBI 'datasets' CLI tool not found` | `source venv/bin/activate` first |
-| `setup.sh`: Python too old | Install Python 3.11+, or run `setup.sh` inside a conda env with Python 3.11+ |
-| EcoSim fails on Linux | `bash setup.sh` builds the Linux helpers into `tools/linux/bin` (the bundled `tools/bin` is macOS arm64 only) |
-| `No module named '_tkinter'` | Install Tk (`tk` on Arch, `python3-tk` on Debian/Ubuntu, `python3-tkinter` on Fedora, `brew install python-tk` on macOS), delete `venv/`, rerun `bash setup.sh` |
+| `VeryFastTree/FastTree not found` or `datasets` not found | `conda activate ecotype` |
+| EcoSim fails on Intel Mac | The bundled `tools/bin` helpers are Apple Silicon only |
+| `No module named '_tkinter'` | The `ecotype` environment is not active. Run `conda activate ecotype` |
 | Panaroo finds 0 core genes | Use a closer outgroup or more genomes (`--sample-size`) |
 | A step is "Killed" | Out of memory: add `--bakta-jobs 1` or lower `--threads` |
 

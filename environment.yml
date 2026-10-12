@@ -1,0 +1,20 @@
+name: ecotype
+channels:
+  - conda-forge
+  - bioconda
+  - nodefaults
+dependencies:
+  - bakta
+  - panaroo
+  - mafft
+  - ncbi-datasets-cli
+  - veryfasttree
+  - openjdk
+  - biopython
+  - matplotlib
+  - tk
+  - pip
+  - pip:
+      # pip, not conda: pandas conflicts with panaroo's pins in a single conda solve
+      - pandas==2.2.3
+      - openpyxl==3.1.5
