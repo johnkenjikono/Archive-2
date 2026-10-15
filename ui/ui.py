@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import json
 import queue
 import re
 import shutil
@@ -72,6 +73,55 @@ def line_kind(line: str) -> str | None:
 def format_elapsed(seconds: float) -> str:
     s = int(seconds)
     return f"{s // 3600}:{s % 3600 // 60:02d}:{s % 60:02d}"
+
+
+# Only Bakta (genomes) and EcoSim (replicates) announce a total and print one line per item;
+# other steps get an indeterminate bar. Matches print()s in pipeline.py and steps/run_ecosim.py.
+_PROGRESS_TOTAL = re.compile(r"Found (\d+) FASTA file(?:s to process|\(s\) in)")
+_PROGRESS_TICKS = (
+    "Successfully processed",
+    "Bakta output already exists",
+    "Error running Bakta on",
+    "EcoSim output saved",
+    "EcoSim error for",
+)
+
+
+def progress_total(line: str) -> int | None:
+    m = _PROGRESS_TOTAL.search(line)
+    return int(m.group(1)) if m else None
+
+
+def is_progress_tick(line: str) -> bool:
+    return any(marker in line for marker in _PROGRESS_TICKS)
+
+
+def parse_number(raw: str, label: str, default: str, cast=int):
+    """cast(raw or default), or a ValueError that names the field."""
+    raw = raw.strip() or default
+    try:
+        return cast(raw)
+    except ValueError:
+        kind = "a whole number" if cast is int else "a number"
+        raise ValueError(f'{label} must be {kind} (got "{raw}").') from None
+
+
+SETTINGS_PATH = Path.home() / ".ecotype_ui.json"
+
+
+def load_settings(path: Path) -> dict[str, str]:
+    try:
+        data = json.loads(path.read_text())
+    except (OSError, ValueError):
+        return {}
+    return {k: v for k, v in data.items() if isinstance(v, str)} if isinstance(data, dict) else {}
+
+
+def save_settings(path: Path, settings: dict[str, str]) -> None:
+    try:
+        path.write_text(json.dumps(settings, indent=2))
+    except OSError:
+        pass  # remembering paths is a convenience; never block a run over it
 
 Mode = Literal["species", "csv", "local"]
 
@@ -348,6 +398,8 @@ def main() -> None:
             self._pending_fill_csv: Path | None = None
             self._started_at = 0.0
             self._step_text = ""
+            self._step = 0
+            self._total = self._done = 0  # items in the current step, when it reports a count
             self._build()
             self.protocol("WM_DELETE_WINDOW", self._on_close)
             self.after(100, self._drain_events)
@@ -380,8 +432,9 @@ def main() -> None:
             self.seed_var = tk.StringVar(value="42")
             self.csv_var = tk.StringVar()
             self.local_folder_var = tk.StringVar()
-            self.workdir_var = tk.StringVar(value=".")
-            self.db_var = tk.StringVar()
+            saved = load_settings(SETTINGS_PATH)
+            self.workdir_var = tk.StringVar(value=saved.get("workdir", "."))
+            self.db_var = tk.StringVar(value=saved.get("db", ""))
             self.threads_var = tk.StringVar(value="12")
             self.bakta_jobs_var = tk.StringVar()
             self.start_step_var = tk.StringVar(value=step_label(1))
@@ -514,9 +567,13 @@ def main() -> None:
             self.open_btn = ttk.Button(btns, text="Open results folder", command=self._open_results, state="disabled")
             self.open_btn.pack(side="left", padx=4, pady=4)
             ttk.Label(btns, textvariable=self.status_var).pack(side="left", padx=12)
+            self.progress = ttk.Progressbar(run, mode="determinate")
+            self.progress.pack(fill="x", padx=4)
             log_box = ttk.Frame(run)
             log_box.pack(fill="both", expand=True, padx=4, pady=4)
-            self.log = tk.Text(log_box, height=16, wrap="word", state="disabled")
+            # Shorter on small screens so the window fits; the log grows if the window is enlarged.
+            log_lines = 16 if self.winfo_screenheight() >= 900 else 8
+            self.log = tk.Text(log_box, height=log_lines, wrap="word", state="disabled")
             scroll = ttk.Scrollbar(log_box, command=self.log.yview)
             self.log.configure(yscrollcommand=scroll.set)
             scroll.pack(side="right", fill="y")
@@ -548,18 +605,18 @@ def main() -> None:
 
         def _collect(self) -> FormValues:
             jobs_raw = self.bakta_jobs_var.get().strip()
-            bakta_jobs = int(jobs_raw) if jobs_raw else None
+            bakta_jobs = parse_number(jobs_raw, "Bakta parallel jobs", "") if jobs_raw else None
             return FormValues(
                 mode=self.mode_var.get(),  # type: ignore[arg-type]
                 species=self.species_var.get().strip(),
                 outgroup=self.outgroup_var.get().strip(),
-                sample_size=int(self.sample_size_var.get() or "200"),
-                seed=int(self.seed_var.get() or "42"),
+                sample_size=parse_number(self.sample_size_var.get(), "Sample size", "200"),
+                seed=parse_number(self.seed_var.get(), "Random seed", "42"),
                 csv_path=self.csv_var.get().strip(),
                 local_folder=self.local_folder_var.get().strip(),
                 workdir=resolve_workdir(self.workdir_var.get().strip() or "."),
                 db=self.db_var.get().strip(),
-                threads=int(self.threads_var.get() or "12"),
+                threads=parse_number(self.threads_var.get(), "Threads", "12"),
                 bakta_jobs=bakta_jobs,
                 start_step=parse_step_label(self.start_step_var.get()),
                 input_fasta=self.input_fasta_var.get().strip(),
@@ -568,8 +625,8 @@ def main() -> None:
                 keep=frozenset(name for name, var in self.keep_vars.items() if var.get()),
                 full_core=bool(self.full_core_var.get()),
                 each_gene=bool(self.each_gene_var.get()),
-                replicates=int(self.replicates_var.get() or "20"),
-                clone_threshold=float(self.clone_threshold_var.get() or "1e-5"),
+                replicates=parse_number(self.replicates_var.get(), "Replicates per gene count", "20"),
+                clone_threshold=parse_number(self.clone_threshold_var.get(), "Clone threshold", "1e-5", float),
             )
 
         def _set_form_enabled(self, enabled: bool) -> None:
@@ -588,10 +645,39 @@ def main() -> None:
         def _begin(self, status: str) -> None:
             self._started_at = time.time()
             self._step_text = status
+            self._step = 0
+            self._total = self._done = 0
             self.open_btn.configure(state="disabled")
             self._set_form_enabled(False)
 
-        def _finish(self, status: str) -> None:
+        def _track_progress(self, line: str) -> None:
+            step = step_from_line(line)
+            if step and step != self._step:
+                self._step, self._total = step, 0
+                self._step_text = f"Step {step} of {LAST_STEP} · {STEP_NAMES[step]}"
+            total = progress_total(line)
+            if total:
+                self._total, self._done = total, 0
+            elif self._total and is_progress_tick(line):
+                self._done = min(self._done + 1, self._total)
+
+        def _show_progress(self) -> None:
+            elapsed = format_elapsed(time.time() - self._started_at)
+            if self._total:
+                if str(self.progress.cget("mode")) != "determinate":
+                    self.progress.stop()
+                    self.progress.configure(mode="determinate")
+                self.progress.configure(maximum=self._total, value=self._done)
+                self.status_var.set(f"{self._step_text} · {self._done}/{self._total}  ·  {elapsed} elapsed")
+            else:
+                if str(self.progress.cget("mode")) != "indeterminate":
+                    self.progress.configure(mode="indeterminate")
+                    self.progress.start(15)
+                self.status_var.set(f"{self._step_text}  ·  {elapsed} elapsed")
+
+        def _finish(self, status: str, success: bool = False) -> None:
+            self.progress.stop()
+            self.progress.configure(mode="determinate", maximum=1, value=1 if success else 0)
             self.status_var.set(f"{status} ({format_elapsed(time.time() - self._started_at)})")
 
         def _open_results(self) -> None:
@@ -615,8 +701,8 @@ def main() -> None:
                 return
             try:
                 values = self._collect()
-            except ValueError:
-                messagebox.showerror("Cannot run", "Threads, sample size, seed, start step, Bakta jobs, and replicates must be integers, and the clone threshold a number.")
+            except ValueError as exc:
+                messagebox.showerror("Cannot run", str(exc))
                 return
             errors = validate_form(values)
             if errors:
@@ -624,6 +710,7 @@ def main() -> None:
                     self._log(error)
                 messagebox.showerror("Cannot run", "\n".join(errors))
                 return
+            save_settings(SETTINGS_PATH, {"workdir": values.workdir, "db": values.db})
             if values.mode == "local" and values.start_step <= 2:
                 try:
                     copied = copy_local_fastas(
@@ -684,9 +771,7 @@ def main() -> None:
                 while True:
                     kind, payload = self.events.get_nowait()
                     if kind == "line":
-                        step = step_from_line(str(payload))
-                        if step:
-                            self._step_text = f"Step {step} of {LAST_STEP} · {STEP_NAMES[step]}"
+                        self._track_progress(str(payload))
                         self._log(str(payload))
                     elif kind == "done":
                         self._on_done(int(payload))
@@ -695,7 +780,7 @@ def main() -> None:
             except tk.TclError:
                 pass
             if self.runner.running:
-                self.status_var.set(f"{self._step_text}  ·  {format_elapsed(time.time() - self._started_at)} elapsed")
+                self._show_progress()
             self.after(100, self._drain_events)
 
         def _on_done(self, code: int) -> None:
@@ -705,7 +790,7 @@ def main() -> None:
                 if code == 0 and not self.runner.was_stopped:
                     self.csv_var.set(str(fill_csv))
                     self._log(f"CSV file set to {fill_csv}. Review the Outgroup Source column, then Run pipeline.")
-                    self._finish("Outgroups filled")
+                    self._finish("Outgroups filled", success=True)
                 else:
                     self._log("Filling outgroups did not finish — the CSV file was not changed.")
                     self._finish("Filling outgroups did not finish")
@@ -719,7 +804,7 @@ def main() -> None:
                 self._log(f"Pipeline finished. Results: {out}")
                 for summary in find_ecotype_summaries(out):
                     self._log(f"Ecotype summary: {summary}")
-                self._finish("✅ Finished")
+                self._finish("✅ Finished", success=True)
                 self.open_btn.configure(state="normal")
                 return
             self._log("Pipeline failed — see the messages above.")
