@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import queue
+import re
 import shutil
 import signal
 import subprocess
@@ -17,6 +18,60 @@ sys.path.insert(0, str(REPO_ROOT))  # run as `python ui/ui.py`: make `steps` imp
 from steps.outputs import DEFAULT_KEEP, KEEP_ITEMS  # noqa: E402
 
 FASTA_SUFFIXES = (".fna", ".fasta", ".fa")
+
+# Index = pipeline step number (pipeline.py --start-step).
+STEP_NAMES = (
+    None,
+    "Download genomes",
+    "Annotate (Bakta)",
+    "Core genes (Panaroo)",
+    "Place outgroup + collapse clones",
+    "Build tree",
+    "Reroot tree",
+    "Rarefaction trees",
+    "EcoSim",
+    "Count ecotypes",
+    "Plot ecotypes",
+)
+LAST_STEP = len(STEP_NAMES) - 1
+
+
+def step_label(n: int) -> str:
+    return f"{n} · {STEP_NAMES[n]}"
+
+
+def parse_step_label(label: str) -> int:
+    return int(label.split()[0])
+
+
+def step_from_line(line: str) -> int | None:
+    """Which step a pipeline.py log line announces, if any."""
+    # ponytail: matches pipeline.py's print() headers; update both together.
+    if "--- Downloading genomes for" in line:
+        return 1
+    if "Running Bakta on" in line or "FASTA files to process" in line:
+        return 2
+    if "Running Panaroo on" in line:
+        return 3
+    m = re.match(r"--- (\d+)b?\. ", line.strip())
+    return int(m.group(1)) if m else None
+
+
+def line_kind(line: str) -> str | None:
+    """Log highlight tag for a line: 'step', 'error', 'warn' or None."""
+    if step_from_line(line):
+        return "step"
+    lower = line.lower()
+    if "error" in lower or "failed" in lower or "❌" in line or "traceback" in lower:
+        return "error"
+    if "warning" in lower:
+        return "warn"
+    return None
+
+
+def format_elapsed(seconds: float) -> str:
+    s = int(seconds)
+    return f"{s // 3600}:{s % 3600 // 60:02d}:{s % 60:02d}"
 
 Mode = Literal["species", "csv", "local"]
 
@@ -279,6 +334,7 @@ def quote_command(argv: list[str]) -> str:
 def main() -> None:
     import tkinter as tk
     from tkinter import filedialog, messagebox, ttk
+    from tkinter import font as tkfont
 
     class App(tk.Tk):
         def __init__(self) -> None:
@@ -290,6 +346,8 @@ def main() -> None:
             self._form_widgets: list[tk.Widget] = []
             self._pending_values = FormValues(mode="species")
             self._pending_fill_csv: Path | None = None
+            self._started_at = 0.0
+            self._step_text = ""
             self._build()
             self.protocol("WM_DELETE_WINDOW", self._on_close)
             self.after(100, self._drain_events)
@@ -326,7 +384,8 @@ def main() -> None:
             self.db_var = tk.StringVar()
             self.threads_var = tk.StringVar(value="12")
             self.bakta_jobs_var = tk.StringVar()
-            self.start_step_var = tk.StringVar(value="1")
+            self.start_step_var = tk.StringVar(value=step_label(1))
+            self.status_var = tk.StringVar(value="Ready.")
             self.input_fasta_var = tk.StringVar()
             self.outgroup_id_var = tk.StringVar()
             self.setup_only_var = tk.BooleanVar(value=False)
@@ -357,7 +416,7 @@ def main() -> None:
 
             self.species_frame = ttk.Frame(self)
             self._row(self.species_frame, 0, "Species", self.species_var)
-            self._row(self.species_frame, 1, "Outgroup", self.outgroup_var)
+            self._row(self.species_frame, 1, "Outgroup (optional, auto-detected)", self.outgroup_var)
             self._row(self.species_frame, 2, "Sample size", self.sample_size_var)
             self._row(self.species_frame, 3, "Random seed", self.seed_var)
             ttk.Label(
@@ -388,28 +447,43 @@ def main() -> None:
             options.pack(fill="x", padx=8, pady=6)
             self._row(options, 0, "Working directory", self.workdir_var, browse="dir")
             self._row(options, 1, "Bakta database folder", self.db_var, browse="dir")
-            self._row(options, 2, "Threads", self.threads_var)
-            self._row(options, 3, "Bakta parallel jobs", self.bakta_jobs_var)
-            ttk.Label(options, text="Start step").grid(row=4, column=0, sticky="w", padx=4, pady=2)
+            ttk.Label(options, text="Start at step").grid(row=2, column=0, sticky="w", padx=4, pady=2)
             step = self._track(
                 ttk.Combobox(
                     options,
                     textvariable=self.start_step_var,
-                    values=[str(n) for n in range(1, 11)],
-                    width=8,
+                    values=[step_label(n) for n in range(1, LAST_STEP + 1)],
+                    width=32,
                     state="readonly",
                 )
             )
-            step.grid(row=4, column=1, sticky="w", padx=4, pady=2)
-            self._row(options, 5, "Core-alignment FASTA", self.input_fasta_var, browse="file")
-            self._row(options, 6, "Outgroup ID", self.outgroup_id_var)
-            setup = self._track(
-                ttk.Checkbutton(options, text="Setup only", variable=self.setup_only_var)
+            step.grid(row=2, column=1, sticky="w", padx=4, pady=2)
+            self._row(options, 3, "Core-alignment FASTA (steps 4–7)", self.input_fasta_var, browse="file")
+            ttk.Button(options, text="Advanced settings…", command=self._show_advanced).grid(
+                row=4, column=1, sticky="w", padx=4, pady=2
             )
-            setup.grid(row=7, column=1, sticky="w", padx=4, pady=2)
 
-            analysis = ttk.LabelFrame(self, text="Analysis")
-            analysis.pack(fill="x", padx=8, pady=6)
+            # Its own window so the main one never outgrows the screen; the defaults suit most runs.
+            self.advanced_window = tk.Toplevel(self)
+            self.advanced_window.title("Advanced settings")
+            self.advanced_window.transient(self)
+            self.advanced_window.resizable(False, False)
+            self.advanced_window.withdraw()
+            self.advanced_window.protocol("WM_DELETE_WINDOW", self.advanced_window.withdraw)
+            self.advanced_frame = ttk.Frame(self.advanced_window, padding=8)
+            self.advanced_frame.pack(fill="both", expand=True)
+            advanced = ttk.LabelFrame(self.advanced_frame, text="Advanced")
+            advanced.pack(fill="x", pady=6)
+            self._row(advanced, 0, "Threads", self.threads_var)
+            self._row(advanced, 1, "Bakta parallel jobs (blank = auto)", self.bakta_jobs_var)
+            self._row(advanced, 2, "Outgroup ID (blank = auto)", self.outgroup_id_var)
+            setup = self._track(
+                ttk.Checkbutton(advanced, text="Setup only (create folders, don't run)", variable=self.setup_only_var)
+            )
+            setup.grid(row=3, column=1, sticky="w", padx=4, pady=2)
+
+            analysis = ttk.LabelFrame(self.advanced_frame, text="Analysis")
+            analysis.pack(fill="x", pady=6)
             self._track(
                 ttk.Checkbutton(analysis, text="Also run EcoSim on the full core genome and compare",
                                 variable=self.full_core_var)
@@ -421,22 +495,42 @@ def main() -> None:
             self._row(analysis, 2, "Replicates per gene count", self.replicates_var)
             self._row(analysis, 3, "Clone threshold (divergence)", self.clone_threshold_var)
 
-            outputs = ttk.LabelFrame(self, text="Outputs to keep")
-            outputs.pack(fill="x", padx=8, pady=6)
+            outputs = ttk.LabelFrame(self.advanced_frame, text="Outputs to keep")
+            outputs.pack(fill="x", pady=6)
             for i, (name, (_, desc)) in enumerate(KEEP_ITEMS.items()):
                 self._track(
                     ttk.Checkbutton(outputs, text=desc[0].upper() + desc[1:], variable=self.keep_vars[name])
                 ).grid(row=i // 2, column=i % 2, sticky="w", padx=4, pady=1)
+            ttk.Button(self.advanced_frame, text="Done", command=self.advanced_window.withdraw).pack(anchor="e")
 
             run = ttk.LabelFrame(self, text="Run")
+            self.run_frame = run
             run.pack(fill="both", expand=True, padx=8, pady=6)
             btns = ttk.Frame(run)
             btns.pack(fill="x")
             self._track(ttk.Button(btns, text="Run pipeline", command=self._on_run)).pack(side="left", padx=4, pady=4)
-            ttk.Button(btns, text="Stop", command=self._on_stop).pack(side="left", padx=4, pady=4)
-            self.log = tk.Text(run, height=16, wrap="word", state="disabled")
-            self.log.pack(fill="both", expand=True, padx=4, pady=4)
+            self.stop_btn = ttk.Button(btns, text="Stop", command=self._on_stop, state="disabled")
+            self.stop_btn.pack(side="left", padx=4, pady=4)
+            self.open_btn = ttk.Button(btns, text="Open results folder", command=self._open_results, state="disabled")
+            self.open_btn.pack(side="left", padx=4, pady=4)
+            ttk.Label(btns, textvariable=self.status_var).pack(side="left", padx=12)
+            log_box = ttk.Frame(run)
+            log_box.pack(fill="both", expand=True, padx=4, pady=4)
+            self.log = tk.Text(log_box, height=16, wrap="word", state="disabled")
+            scroll = ttk.Scrollbar(log_box, command=self.log.yview)
+            self.log.configure(yscrollcommand=scroll.set)
+            scroll.pack(side="right", fill="y")
+            self.log.pack(side="left", fill="both", expand=True)
+            bold = tkfont.nametofont("TkFixedFont").copy()
+            bold.configure(weight="bold")
+            self.log.tag_configure("step", font=bold)
+            self.log.tag_configure("error", foreground="#c62828")
+            self.log.tag_configure("warn", foreground="#b26a00")
             self._show_mode()
+
+        def _show_advanced(self) -> None:
+            self.advanced_window.deiconify()
+            self.advanced_window.lift()
 
         def _show_mode(self) -> None:
             self.species_frame.pack_forget()
@@ -449,8 +543,8 @@ def main() -> None:
                 self.csv_frame.pack(fill="x", padx=8, before=self.options_frame)
             else:
                 self.local_frame.pack(fill="x", padx=8, before=self.options_frame)
-                if int(self.start_step_var.get() or "1") < 2:
-                    self.start_step_var.set("2")
+                if parse_step_label(self.start_step_var.get()) < 2:
+                    self.start_step_var.set(step_label(2))
 
         def _collect(self) -> FormValues:
             jobs_raw = self.bakta_jobs_var.get().strip()
@@ -467,7 +561,7 @@ def main() -> None:
                 db=self.db_var.get().strip(),
                 threads=int(self.threads_var.get() or "12"),
                 bakta_jobs=bakta_jobs,
-                start_step=int(self.start_step_var.get() or "1"),
+                start_step=parse_step_label(self.start_step_var.get()),
                 input_fasta=self.input_fasta_var.get().strip(),
                 outgroup_id=self.outgroup_id_var.get().strip(),
                 setup_only=bool(self.setup_only_var.get()),
@@ -489,11 +583,25 @@ def main() -> None:
                         widget.configure(state=state)
                 except tk.TclError:
                     pass
+            self.stop_btn.configure(state="disabled" if enabled else "normal")
+
+        def _begin(self, status: str) -> None:
+            self._started_at = time.time()
+            self._step_text = status
+            self.open_btn.configure(state="disabled")
+            self._set_form_enabled(False)
+
+        def _finish(self, status: str) -> None:
+            self.status_var.set(f"{status} ({format_elapsed(time.time() - self._started_at)})")
+
+        def _open_results(self) -> None:
+            opener = "open" if sys.platform == "darwin" else "xdg-open"
+            subprocess.Popen([opener, str(results_dir(self._pending_values))])
 
         def _log(self, line: str) -> None:
             try:
                 self.log.configure(state="normal")
-                self.log.insert("end", line + "\n")
+                self.log.insert("end", line + "\n", line_kind(line) or ())
                 self.log.see("end")
                 self.log.configure(state="disabled")
             except tk.TclError:
@@ -534,11 +642,12 @@ def main() -> None:
             argv = build_command(values, sys.executable, PIPELINE_PY)
             self._pending_values = values
             self._log(quote_command(argv))
-            self._set_form_enabled(False)
+            self._begin("Starting…")
             try:
                 self.runner.start(argv, REPO_ROOT, self.events)
             except OSError as exc:
                 self._set_form_enabled(True)
+                self.status_var.set("Could not start.")
                 self._log(str(exc))
                 messagebox.showerror("Cannot start pipeline", str(exc))
 
@@ -555,7 +664,7 @@ def main() -> None:
             )
             self._pending_fill_csv = filled_csv_path(csv_path)
             self._log(quote_command(argv))
-            self._set_form_enabled(False)
+            self._begin("Filling blank outgroups…")
             try:
                 self.runner.start(argv, REPO_ROOT, self.events)
             except OSError as exc:
@@ -575,6 +684,9 @@ def main() -> None:
                 while True:
                     kind, payload = self.events.get_nowait()
                     if kind == "line":
+                        step = step_from_line(str(payload))
+                        if step:
+                            self._step_text = f"Step {step} of {LAST_STEP} · {STEP_NAMES[step]}"
                         self._log(str(payload))
                     elif kind == "done":
                         self._on_done(int(payload))
@@ -582,6 +694,8 @@ def main() -> None:
                 pass
             except tk.TclError:
                 pass
+            if self.runner.running:
+                self.status_var.set(f"{self._step_text}  ·  {format_elapsed(time.time() - self._started_at)} elapsed")
             self.after(100, self._drain_events)
 
         def _on_done(self, code: int) -> None:
@@ -591,19 +705,25 @@ def main() -> None:
                 if code == 0 and not self.runner.was_stopped:
                     self.csv_var.set(str(fill_csv))
                     self._log(f"CSV file set to {fill_csv}. Review the Outgroup Source column, then Run pipeline.")
+                    self._finish("Outgroups filled")
                 else:
                     self._log("Filling outgroups did not finish — the CSV file was not changed.")
+                    self._finish("Filling outgroups did not finish")
                 return
             if self.runner.was_stopped:
                 self._log("Run stopped. Partial output was left on disk.")
+                self._finish(f"Stopped at {self._step_text}")
                 return
             if code == 0:
                 out = results_dir(self._pending_values)
                 self._log(f"Pipeline finished. Results: {out}")
                 for summary in find_ecotype_summaries(out):
                     self._log(f"Ecotype summary: {summary}")
+                self._finish("✅ Finished")
+                self.open_btn.configure(state="normal")
                 return
             self._log("Pipeline failed — see the messages above.")
+            self._finish(f"❌ Failed at {self._step_text}")
 
         def _on_close(self) -> None:
             if self.runner.running:

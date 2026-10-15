@@ -22,7 +22,36 @@ from ui import (
     results_dir,
     species_folder_name,
     validate_form,
+    format_elapsed,
+    line_kind,
+    parse_step_label,
+    step_from_line,
+    step_label,
 )
+
+
+class StepStatusTests(unittest.TestCase):
+    def test_step_from_pipeline_headers(self):
+        self.assertEqual(step_from_line("--- Downloading genomes for Bacillus subtilis ---"), 1)
+        self.assertEqual(step_from_line("Running Bakta on GCF_1.fna..."), 2)
+        self.assertEqual(step_from_line("Running Panaroo on 12 files..."), 3)
+        self.assertEqual(step_from_line("--- 4b. Collapsing clones (per-site divergence <= 1e-05) ---"), 4)
+        self.assertEqual(step_from_line("--- 10. Plotting ecotypes (trees: yes, pie charts: yes) ---"), 10)
+        self.assertIsNone(step_from_line("--- Skipping Step 5: Using existing unrooted tree ---"))
+        self.assertIsNone(step_from_line("Removed: EcoSim XML files"))
+
+    def test_line_kind(self):
+        self.assertEqual(line_kind("--- 8. Running EcoSim ---"), "step")
+        self.assertEqual(line_kind("Error: Could not download outgroup genome"), "error")
+        self.assertEqual(line_kind("Warning: Bakta failed on 1/10 genome(s)."), "error")
+        self.assertEqual(line_kind("Warning: could not remove x"), "warn")
+        self.assertIsNone(line_kind("Saved ecotype_summary.csv"))
+
+    def test_step_label_round_trip(self):
+        self.assertEqual(parse_step_label(step_label(7)), 7)
+
+    def test_format_elapsed(self):
+        self.assertEqual(format_elapsed(3725.9), "1:02:05")
 
 
 class SpeciesFolderTests(unittest.TestCase):
