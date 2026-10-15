@@ -260,7 +260,7 @@ Run it with the `ecotype` environment active (`conda activate ecotype`).
 | **Batch CSV** | A CSV file (column 1 = species, column 4 = optional outgroup) | One row after another, same as `--csv-file`. **Fill blank outgroups** runs `fill_outgroups.py` first (add `--llm` with **Use Claude (LLM)**) and switches the CSV field to the filled file for review |
 | **Local genome folder** | Species (names the results folder) and a folder of `.fna` / `.fasta` / `.fa` files | Copies those genomes into `input/` and starts at step 2 (Bakta). Sample size and seed are hidden. Start step cannot be 1 |
 
-**Options** (always on the screen; Browse buttons pick files and folders):
+**Options** (Browse buttons pick files and folders). Working directory, Bakta database, Start step and Core-alignment FASTA are always on the screen; the rest, plus the **Analysis** and **Outputs to keep** boxes, are in the window that **Advanced settings…** opens:
 
 | Window field | Same as |
 |---|---|
@@ -268,14 +268,14 @@ Run it with the `ecotype` environment active (`conda activate ecotype`).
 | Bakta database folder | `--db` (required for steps 1–2; point at the `db` or `db-light` subfolder) |
 | Threads | `--threads` (default 12) |
 | Bakta parallel jobs | `--bakta-jobs` (leave blank to use `threads // 4`) |
-| Start step | `--start-step` (1–10) |
+| Start at step | `--start-step` (1–10, listed by name, e.g. "5 · Build tree") |
 | Core-alignment FASTA | `--input-fasta` (needed when starting at step 4+ unless that file already exists in the species folder) |
 | Outgroup ID | `--outgroup-id` (force a tree leaf) |
 | Setup only | `--setup-only` (create folders and stop) |
 | **Analysis** box | Clone threshold (`--clone-threshold`), Full core genome comparison (`--no-full-core` when unchecked), every gene at the 1-gene level (`--each-gene`), replicates per gene count (`--replicates`) |
 | **Outputs to keep** box | One checkbox per `--keep` item (see [Outputs](#outputs)). Unchecking a default adds `--discard`, checking an extra one adds `--keep` |
 
-**Run:** **Run pipeline** starts one job at a time. The log is the same output as the terminal, including the quoted command so you can replay it. **Stop** ends the job and leaves partial output on disk so you can raise **Start step** and continue. Closing the window while a run is going asks before it stops the job.
+**Run:** **Run pipeline** starts one job at a time. The status line next to the buttons shows the current step and elapsed time, and the progress bar below counts genomes during Bakta and replicates during EcoSim (it pulses during steps that don't report a count). The working directory and Bakta database folder are remembered between launches (in `~/.ecotype_ui.json`). The log is the same output as the terminal, including the quoted command so you can replay it, with step headers in bold and errors and warnings in color. **Open results folder** opens the results once a run finishes. **Stop** ends the job and leaves partial output on disk so you can raise **Start step** and continue. Closing the window while a run is going asks before it stops the job.
 
 Results land under `<workdir>/<Species_name>/` (or `<workdir>/` for a CSV batch). If `ecotype_summary.csv` was written, the log prints its path.
 

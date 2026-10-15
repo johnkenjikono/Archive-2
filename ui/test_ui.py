@@ -22,7 +22,83 @@ from ui import (
     results_dir,
     species_folder_name,
     validate_form,
+    format_elapsed,
+    is_progress_tick,
+    load_settings,
+    parse_number,
+    progress_total,
+    save_settings,
+    line_kind,
+    parse_step_label,
+    step_from_line,
+    step_label,
 )
+
+
+class StepStatusTests(unittest.TestCase):
+    def test_step_from_pipeline_headers(self):
+        self.assertEqual(step_from_line("--- Downloading genomes for Bacillus subtilis ---"), 1)
+        self.assertEqual(step_from_line("Running Bakta on GCF_1.fna..."), 2)
+        self.assertEqual(step_from_line("Running Panaroo on 12 files..."), 3)
+        self.assertEqual(step_from_line("--- 4b. Collapsing clones (per-site divergence <= 1e-05) ---"), 4)
+        self.assertEqual(step_from_line("--- 10. Plotting ecotypes (trees: yes, pie charts: yes) ---"), 10)
+        self.assertIsNone(step_from_line("--- Skipping Step 5: Using existing unrooted tree ---"))
+        self.assertIsNone(step_from_line("Removed: EcoSim XML files"))
+
+    def test_line_kind(self):
+        self.assertEqual(line_kind("--- 8. Running EcoSim ---"), "step")
+        self.assertEqual(line_kind("Error: Could not download outgroup genome"), "error")
+        self.assertEqual(line_kind("Warning: Bakta failed on 1/10 genome(s)."), "error")
+        self.assertEqual(line_kind("Warning: could not remove x"), "warn")
+        self.assertIsNone(line_kind("Saved ecotype_summary.csv"))
+
+    def test_step_label_round_trip(self):
+        self.assertEqual(parse_step_label(step_label(7)), 7)
+
+    def test_format_elapsed(self):
+        self.assertEqual(format_elapsed(3725.9), "1:02:05")
+
+
+class ProgressTests(unittest.TestCase):
+    def test_totals_from_bakta_and_ecosim(self):
+        self.assertEqual(progress_total("Found 12 FASTA files to process (3 parallel Bakta job(s), 4 thread(s) each)."), 12)
+        self.assertEqual(progress_total("📁 Found 101 FASTA file(s) in /x/rarefaction"), 101)
+        self.assertIsNone(progress_total("Found 300 FASTA files; limiting to first 201 for Bakta processing."))
+
+    def test_ticks(self):
+        self.assertTrue(is_progress_tick("Successfully processed GCF_1.fna"))
+        self.assertTrue(is_progress_tick("Skipping GCF_1.fna: Bakta output already exists at x"))
+        self.assertTrue(is_progress_tick("✅ EcoSim output saved: x.xml"))
+        self.assertTrue(is_progress_tick("❌ EcoSim error for a.fasta: boom"))
+        self.assertFalse(is_progress_tick("Running Bakta on GCF_1.fna..."))
+
+
+class ParseNumberTests(unittest.TestCase):
+    def test_blank_uses_default(self):
+        self.assertEqual(parse_number("  ", "Threads", "12"), 12)
+        self.assertEqual(parse_number("", "Clone threshold", "1e-5", float), 1e-5)
+
+    def test_error_names_field_and_value(self):
+        with self.assertRaises(ValueError) as ctx:
+            parse_number("1o", "Threads", "12")
+        self.assertEqual(str(ctx.exception), 'Threads must be a whole number (got "1o").')
+        with self.assertRaises(ValueError) as ctx:
+            parse_number("abc", "Clone threshold", "1e-5", float)
+        self.assertEqual(str(ctx.exception), 'Clone threshold must be a number (got "abc").')
+
+
+class SettingsTests(unittest.TestCase):
+    def test_round_trip_and_bad_files(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "s.json"
+            self.assertEqual(load_settings(path), {})
+            save_settings(path, {"workdir": "/w", "db": "/db"})
+            self.assertEqual(load_settings(path), {"workdir": "/w", "db": "/db"})
+            path.write_text("not json")
+            self.assertEqual(load_settings(path), {})
+            path.write_text('["a list"]')
+            self.assertEqual(load_settings(path), {})
+            save_settings(Path(tmp) / "missing" / "s.json", {"db": "x"})  # must not raise
 
 
 class SpeciesFolderTests(unittest.TestCase):
