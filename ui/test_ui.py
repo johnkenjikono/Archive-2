@@ -16,6 +16,7 @@ from ui import (
     filled_csv_path,
     copy_local_fastas,
     default_alignment_path,
+    find_bakta_dbs,
     find_ecotype_summaries,
     local_input_dir,
     resolve_workdir,
@@ -467,6 +468,21 @@ class PipelineRunnerTests(unittest.TestCase):
                 continue
             if kind == "done":
                 break
+
+
+class FindBaktaDbsTests(unittest.TestCase):
+    def test_finds_db_and_db_light_only_with_version_json(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp) / "bakta_db"
+            for name in ("db", "db-light", "empty"):
+                (root / name).mkdir(parents=True)
+            (root / "db" / "version.json").write_text("{}")
+            (root / "db-light" / "version.json").write_text("{}")
+            found = find_bakta_dbs([root, root])
+            self.assertEqual(found, [str((root / "db").resolve()), str((root / "db-light").resolve())])
+
+    def test_missing_root_finds_nothing(self):
+        self.assertEqual(find_bakta_dbs([Path("/no/such/bakta_db")]), [])
 
 
 if __name__ == "__main__":
