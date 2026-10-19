@@ -9,6 +9,7 @@ dependencies:
   - mafft
   - ncbi-datasets-cli
   - veryfasttree
+  - fastani          # --ani
   - openjdk
   - biopython
   - matplotlib
@@ -18,3 +19,4 @@ dependencies:
       # pip, not conda: pandas conflicts with panaroo's pins in a single conda solve
       - pandas==2.2.3
       - openpyxl==3.1.5
+      - anthropic        # --niche and --papers

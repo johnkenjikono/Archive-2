@@ -63,6 +63,10 @@ def parse_ecosim_xml(file_path):
     outgroup = root.find("./phylogeny/outgroup")
     tree = root.find("./phylogeny/tree")
     hillclimb = root.find("./hillclimb/result")
+
+    def ci(name):
+        lower, upper = root.find(f"./{name}CI/lower"), root.find(f"./{name}CI/upper")
+        return (lower.get("value"), upper.get("value")) if lower is not None and upper is not None else (None, None)
     ecotypes = [
         {"number": int(eco.get("number", i + 1)),
          "members": [m.get("name") for m in eco.findall("member")]}
@@ -75,6 +79,10 @@ def parse_ecosim_xml(file_path):
         "npop": hillclimb.get("npop") if hillclimb is not None else None,
         "omega": hillclimb.get("omega") if hillclimb is not None else None,
         "sigma": hillclimb.get("sigma") if hillclimb is not None else None,
+        # EcoSim's own confidence intervals ((lower, upper), or (None, None) when it skipped one)
+        "npop_ci": ci("npop"),
+        "omega_ci": ci("omega"),
+        "sigma_ci": ci("sigma"),
         "ecotypes": ecotypes,
     }
 
@@ -219,6 +227,39 @@ def compare_to_full_core(folder_path):
                             + [";".join(eco["members"])])
 
     return [per_replicate, per_count, support]
+
+def write_tree_support(xml_path, support_tree_path, csv_path):
+    """
+    FastTree SH-like support for each ecotype in one EcoSim XML, written to csv_path.
+
+    Read off the unrooted tree by bipartition (members vs. every other leaf), so the
+    rooting cannot move a value onto the wrong branch. An ecotype without such a
+    branch is not a clade (support blank); single-member ecotypes have no internal branch.
+    Returns csv_path, or None if the XML or the tree is unreadable.
+    """
+    from Bio import Phylo
+
+    result = parse_ecosim_xml(xml_path)
+    if result is None or not Path(support_tree_path).exists():
+        return None
+    tree = Phylo.read(support_tree_path, "newick")
+    leaves = frozenset(t.name for t in tree.get_terminals())
+    support = {}
+    for clade in tree.find_clades():
+        if clade is not tree.root and clade.confidence is not None:
+            side = frozenset(t.name for t in clade.get_terminals())
+            support[side] = support[leaves - side] = clade.confidence
+
+    with open(csv_path, "w", newline="") as f:
+        writer = csv.writer(f)
+        writer.writerow(["ecotype", "size", "is_clade", "sh_support"])
+        for eco in result["ecotypes"]:
+            members = frozenset(eco["members"])
+            value = support.get(members) if len(members) > 1 else None
+            writer.writerow([eco["number"], len(members),
+                             "" if len(members) == 1 else value is not None,
+                             "" if value is None else f"{value:.3f}"])
+    return csv_path
 
 if __name__ == "__main__":
     import argparse

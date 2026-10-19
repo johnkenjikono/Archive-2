@@ -101,6 +101,11 @@ def reroot_tree_by_first_fasta(fasta_file, tree_file, output_rooted_tree, outgro
         print(f"❌ Unexpected error while rooting tree: {e}")
         return False
 
+    # root_with_outgroup does not move support values along the rerooted path, so they would
+    # sit on the wrong branches; drop them (ecotype support reads the unrooted FastTree tree).
+    for clade in tree.find_clades():
+        clade.confidence = None
+
     # 4. Save the new rooted tree
     print(f"Saving rerooted tree to {output_rooted_tree}")
     try:
