@@ -244,6 +244,21 @@ def find_ecotype_summaries(root: Path) -> list[Path]:
     return out
 
 
+def find_bakta_dbs(roots: list[Path] | None = None) -> list[str]:
+    """Installed Bakta DB folders (`db` / `db-light` holding version.json) in the usual download spots."""
+    if roots is None:
+        env = os.environ.get("BAKTA_DB")
+        roots = [Path(env)] if env else []
+        roots += [Path.home() / "bakta_db", REPO_ROOT / "bakta_db", Path.cwd() / "bakta_db"]
+    found: list[str] = []
+    for root in roots:
+        for cand in (root, root / "db", root / "db-light"):
+            path = str(cand.resolve())
+            if (cand / "version.json").is_file() and path not in found:
+                found.append(path)
+    return found
+
+
 def copy_local_fastas(src_folder: Path, dest_input: Path) -> list[Path]:
     if not src_folder.is_dir():
         raise FileNotFoundError(f"Genome folder does not exist: {src_folder}")
@@ -408,9 +423,12 @@ def main() -> None:
             self._form_widgets.append(widget)
             return widget
 
-        def _row(self, parent, row: int, label: str, var: tk.Variable, browse: str | None = None):
+        def _row(self, parent, row: int, label: str, var: tk.Variable, browse: str | None = None, values: list[str] | None = None):
             ttk.Label(parent, text=label).grid(row=row, column=0, sticky="w", padx=4, pady=2)
-            entry = self._track(ttk.Entry(parent, textvariable=var, width=48))
+            if values:
+                entry = self._track(ttk.Combobox(parent, textvariable=var, values=values, width=46, state="readonly"))
+            else:
+                entry = self._track(ttk.Entry(parent, textvariable=var, width=48))
             entry.grid(row=row, column=1, sticky="ew", padx=4, pady=2)
             if browse == "file":
                 btn = self._track(
