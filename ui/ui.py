@@ -140,6 +140,7 @@ class FormValues:
     threads: int = 12
     bakta_jobs: int | None = None
     start_step: int = 1
+    stop_step: int = LAST_STEP
     input_fasta: str = ""
     outgroup_id: str = ""
     setup_only: bool = False
@@ -148,6 +149,9 @@ class FormValues:
     each_gene: bool = False
     replicates: int = 20
     clone_threshold: float = 1e-5
+    ani: bool = False
+    papers: bool = False
+    niche: bool = False
 
 
 def build_command(values: FormValues, python_exe: str, pipeline_py: Path) -> list[str]:
@@ -173,6 +177,8 @@ def build_command(values: FormValues, python_exe: str, pipeline_py: Path) -> lis
             str(values.start_step),
         ]
     )
+    if values.stop_step != LAST_STEP:
+        argv.extend(["--stop-step", str(values.stop_step)])
     if values.db.strip():
         argv.extend(["--db", values.db.strip()])
     if values.bakta_jobs is not None:
@@ -197,6 +203,9 @@ def build_command(values: FormValues, python_exe: str, pipeline_py: Path) -> lis
         argv.extend(["--replicates", str(values.replicates)])
     if values.clone_threshold != 1e-5:
         argv.extend(["--clone-threshold", f"{values.clone_threshold:g}"])
+    for flag in ("ani", "papers", "niche"):
+        if getattr(values, flag):
+            argv.append(f"--{flag}")
     return argv
 
 
@@ -308,6 +317,15 @@ def validate_form(values: FormValues) -> list[str]:
             errors.append(
                 "Local genome folder runs start at step 2 (Bakta). Choose 2 or later."
             )
+
+    if values.stop_step < values.start_step:
+        errors.append("The stop step must not come before the start step.")
+    # ponytail: CSV batches check this per species folder at run time instead.
+    if values.ani and values.start_step > 2 and values.mode != "csv" \
+            and not (results_dir(values) / "fastani.tsv").is_file():
+        errors.append("ANI needs FastANI to run in step 2: start at step 1 or 2, or untick ANI.")
+    if (values.ani or values.papers or values.niche) and values.stop_step < LAST_STEP:
+        errors.append(f"ANI, paper and niche analyses run after step {LAST_STEP}: set the stop step to {LAST_STEP}.")
 
     if values.start_step <= 2:
         if not values.db.strip():
@@ -426,7 +444,8 @@ def main() -> None:
         def _row(self, parent, row: int, label: str, var: tk.Variable, browse: str | None = None, values: list[str] | None = None):
             ttk.Label(parent, text=label).grid(row=row, column=0, sticky="w", padx=4, pady=2)
             if values:
-                entry = self._track(ttk.Combobox(parent, textvariable=var, values=values, width=46, state="readonly"))
+                state = "normal" if browse else "readonly"  # a browsable combobox still takes typed/picked paths
+                entry = self._track(ttk.Combobox(parent, textvariable=var, values=values, width=46, state=state))
             else:
                 entry = self._track(ttk.Entry(parent, textvariable=var, width=48))
             entry.grid(row=row, column=1, sticky="ew", padx=4, pady=2)
@@ -441,6 +460,7 @@ def main() -> None:
                 )
                 btn.grid(row=row, column=2, padx=4)
             parent.columnconfigure(1, weight=1)
+            return entry
 
         def _build(self) -> None:
             self.mode_var = tk.StringVar(value="species")
@@ -452,10 +472,14 @@ def main() -> None:
             self.local_folder_var = tk.StringVar()
             saved = load_settings(SETTINGS_PATH)
             self.workdir_var = tk.StringVar(value=saved.get("workdir", "."))
-            self.db_var = tk.StringVar(value=saved.get("db", ""))
+            self.db_var = tk.StringVar(value=saved.get("db") or next(iter(find_bakta_dbs()), ""))
             self.threads_var = tk.StringVar(value="12")
             self.bakta_jobs_var = tk.StringVar()
             self.start_step_var = tk.StringVar(value=step_label(1))
+            self.stop_step_var = tk.StringVar(value=step_label(LAST_STEP))
+            self.ani_var = tk.BooleanVar(value=False)
+            self.papers_var = tk.BooleanVar(value=False)
+            self.niche_var = tk.BooleanVar(value=False)
             self.status_var = tk.StringVar(value="Ready.")
             self.input_fasta_var = tk.StringVar()
             self.outgroup_id_var = tk.StringVar()
@@ -517,7 +541,8 @@ def main() -> None:
             self.options_frame = options
             options.pack(fill="x", padx=8, pady=6)
             self._row(options, 0, "Working directory", self.workdir_var, browse="dir")
-            self._row(options, 1, "Bakta database folder", self.db_var, browse="dir")
+            db_box = self._row(options, 1, "Bakta database folder", self.db_var, browse="dir", values=find_bakta_dbs() or [""])
+            db_box.configure(postcommand=lambda: db_box.configure(values=find_bakta_dbs()))  # rescan on open
             ttk.Label(options, text="Start at step").grid(row=2, column=0, sticky="w", padx=4, pady=2)
             step = self._track(
                 ttk.Combobox(
@@ -529,9 +554,19 @@ def main() -> None:
                 )
             )
             step.grid(row=2, column=1, sticky="w", padx=4, pady=2)
-            self._row(options, 3, "Core-alignment FASTA (steps 4–7)", self.input_fasta_var, browse="file")
+            ttk.Label(options, text="Stop after step").grid(row=3, column=0, sticky="w", padx=4, pady=2)
+            self._track(
+                ttk.Combobox(
+                    options,
+                    textvariable=self.stop_step_var,
+                    values=[step_label(n) for n in range(1, LAST_STEP + 1)],
+                    width=32,
+                    state="readonly",
+                )
+            ).grid(row=3, column=1, sticky="w", padx=4, pady=2)
+            self._row(options, 4, "Core-alignment FASTA (steps 4–7)", self.input_fasta_var, browse="file")
             ttk.Button(options, text="Advanced settings…", command=self._show_advanced).grid(
-                row=4, column=1, sticky="w", padx=4, pady=2
+                row=5, column=1, sticky="w", padx=4, pady=2
             )
 
             # Its own window so the main one never outgrows the screen; the defaults suit most runs.
@@ -565,6 +600,16 @@ def main() -> None:
             ).grid(row=1, column=0, columnspan=2, sticky="w", padx=4, pady=2)
             self._row(analysis, 2, "Replicates per gene count", self.replicates_var)
             self._row(analysis, 3, "Clone threshold (divergence)", self.clone_threshold_var)
+
+            extras = ttk.LabelFrame(self.advanced_frame, text="Extra analyses (after step 10)")
+            extras.pack(fill="x", pady=6)
+            for i, (var, text) in enumerate((
+                (self.ani_var, "ANI within vs. between ecotypes (FastANI runs in step 2)"),
+                (self.papers_var, "Source papers per genome, summarised by Claude (needs ANTHROPIC_API_KEY)"),
+                (self.niche_var, "Ecotype x host/niche association (needs ANTHROPIC_API_KEY)"),
+            )):
+                self._track(ttk.Checkbutton(extras, text=text, variable=var)).grid(
+                    row=i, column=0, sticky="w", padx=4, pady=1)
 
             outputs = ttk.LabelFrame(self.advanced_frame, text="Outputs to keep")
             outputs.pack(fill="x", pady=6)
@@ -637,6 +682,7 @@ def main() -> None:
                 threads=parse_number(self.threads_var.get(), "Threads", "12"),
                 bakta_jobs=bakta_jobs,
                 start_step=parse_step_label(self.start_step_var.get()),
+                stop_step=parse_step_label(self.stop_step_var.get()),
                 input_fasta=self.input_fasta_var.get().strip(),
                 outgroup_id=self.outgroup_id_var.get().strip(),
                 setup_only=bool(self.setup_only_var.get()),
@@ -645,6 +691,9 @@ def main() -> None:
                 each_gene=bool(self.each_gene_var.get()),
                 replicates=parse_number(self.replicates_var.get(), "Replicates per gene count", "20"),
                 clone_threshold=parse_number(self.clone_threshold_var.get(), "Clone threshold", "1e-5", float),
+                ani=bool(self.ani_var.get()),
+                papers=bool(self.papers_var.get()),
+                niche=bool(self.niche_var.get()),
             )
 
         def _set_form_enabled(self, enabled: bool) -> None:
@@ -836,6 +885,7 @@ def main() -> None:
                 ):
                     return
                 self.runner.stop()
+            save_settings(SETTINGS_PATH, {"workdir": self.workdir_var.get().strip() or ".", "db": self.db_var.get().strip()})
             self.destroy()
 
     App().mainloop()

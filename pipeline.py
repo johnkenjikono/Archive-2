@@ -143,6 +143,13 @@ def _drop_stale_trees(fasta_path, tree_paths, label, cap=TREE_SEQ_CAP):
     if stale:
         print(f"Removed {stale} cached {label} built on a different set of sequences.")
 
+def _stopped_after(step, stop_step):
+    """True (and says how to resume) when --stop-step is this step."""
+    if step != stop_step:
+        return False
+    print(f"\n--stop-step {step}: stopping here. Resume with --start-step {step + 1}.")
+    return True
+
 def setup_directories(base_dir: Path):
     input_dir = base_dir / "input"
     bakta_dir = base_dir / "intermediate_bakta"
@@ -375,7 +382,7 @@ def run_panaroo(gff_files: list[Path], roary_dir: Path, threads: int, error_log=
 def run_tree_pipeline(input_fasta, start_step, outgroup_id, base_dir, output_tree_name=None, threads=8, dedup=True,
                       clone_threshold=DEFAULT_CLONE_THRESHOLD,
                       keep=None, full_core=True, gene_counts=None, replicates=20, each_gene=False,
-                      tree_only=False):
+                      stop_step=10):
     keep = DEFAULT_KEEP if keep is None else keep
     # Steps 8-10 only read files under base_dir; the alignment path just names them.
     if start_step <= 7 and not os.path.exists(input_fasta):
@@ -408,8 +415,8 @@ def run_tree_pipeline(input_fasta, start_step, outgroup_id, base_dir, output_tre
     plots_out_dir = os.path.join(ecosim_out_dir, "ecotype_plots")
     # Step 5's tree with FastTree support values, for ecotype support in step 9.
     support_tree = os.path.join(ecosim_out_dir, "full_core_tree_support.nwk")
-    # A tree-only run is not fed to EcoSim, so it is built on every genome rather than the first TREE_SEQ_CAP.
-    tree_cap = None if tree_only else TREE_SEQ_CAP
+    # A run stopping at the tree is not fed to EcoSim, so it is built on every genome rather than the first TREE_SEQ_CAP.
+    tree_cap = None if stop_step <= 6 else TREE_SEQ_CAP
 
     os.makedirs(temp_tree_rdy, exist_ok=True)
     os.makedirs(ecosim_out_dir, exist_ok=True)
@@ -440,6 +447,9 @@ def run_tree_pipeline(input_fasta, start_step, outgroup_id, base_dir, output_tre
             _cleanup(clone_map_path, "stale clone map")
     else:
         print("--- Skipping Step 4: Using existing sorted FASTA ---")
+    # Early stops keep pipeline_temp_*/ (sorted FASTA, unrooted tree) so the run can resume.
+    if _stopped_after(4, stop_step):
+        return
 
     # --- Step 5: Run FastTree ---
     if start_step <= 5:
@@ -457,6 +467,8 @@ def run_tree_pipeline(input_fasta, start_step, outgroup_id, base_dir, output_tre
         shutil.copy2(unrooted_tree, support_tree)
     else:
         print("\n--- Skipping Step 5: Using existing unrooted tree ---")
+    if _stopped_after(5, stop_step):
+        return
 
     # --- Step 6: Reroot Tree ---
     if start_step <= 6:
@@ -473,10 +485,8 @@ def run_tree_pipeline(input_fasta, start_step, outgroup_id, base_dir, output_tre
     else:
         print("\n--- Skipping Step 6: Using existing rerooted tree ---")
 
-    if tree_only:
-        print(f"\n--tree-only: stopping after the tree. Rooted tree: {rerooted_tree}")
-        print(f"Unrooted tree with support values: {support_tree}")
-        shutil.rmtree(os.path.join(base_dir, f"pipeline_temp_{species_name}"), ignore_errors=True)
+    if _stopped_after(6, stop_step):
+        print(f"Rooted tree: {rerooted_tree}\nUnrooted tree with support values: {support_tree}")
         return
 
     # --- Step 7: Rarefaction Fasta Creation ---
@@ -535,6 +545,8 @@ def run_tree_pipeline(input_fasta, start_step, outgroup_id, base_dir, output_tre
         print(f"Rerooted {rerooted} sub-alignment trees in {rarefaction_tree_dir}")
     else:
         print("\n--- Skipping Step 7: Using existing rarefaction FASTAs and trees ---")
+    if _stopped_after(7, stop_step):
+        return
 
     # --- Step 8: Run EcoSim ---
     if start_step <= 8:
@@ -562,6 +574,8 @@ def run_tree_pipeline(input_fasta, start_step, outgroup_id, base_dir, output_tre
             _cleanup(rerooted_tree, "rerooted tree")
     else:
         print("\n--- Skipping Step 8 ---")
+    if _stopped_after(8, stop_step):
+        return
 
     # --- Step 9: Parse Results ---
     if start_step <= 9:
@@ -600,6 +614,8 @@ def run_tree_pipeline(input_fasta, start_step, outgroup_id, base_dir, output_tre
                     print("No full core genome result; skipped the rarefaction vs. full-core comparison.")
         else:
             print("No ecotypes found or error in parsing.")
+    if _stopped_after(9, stop_step):
+        return
 
     # --- Step 10: Color the phylogeny by ecotype ---
     trees, pies = "tree_plots" in keep, "pie_charts" in keep
@@ -757,7 +773,7 @@ def write_run_parameters(base_dir, species_name, outgroup_name, args):
         **{k: v for k, v in vars(args).items()
            if k in ("sample_size", "seed", "start_step", "threads", "no_dedup", "clone_threshold", "no_full_core",
                     "gene_counts", "replicates", "each_gene", "outgroup_id", "db",
-                    "tree_only", "ani", "papers", "niche")},
+                    "stop_step", "ani", "papers", "niche")},
         # The settings above do not pin the software, and the tools and the Bakta database are
         # both unpinned, so without these a result cannot be reproduced or even diagnosed later.
         "software": collect_provenance(getattr(args, "db", None)),
@@ -791,6 +807,8 @@ def run_pipeline_for_species(species_name, outgroup_name, args):
             print("Error: NCBI 'datasets' CLI tool not found. Run `conda activate ecotype` first (see README).", file=sys.stderr)
             sys.exit(1)
         process_species_genome(species_name, args.sample_size, str(input_dir), args.seed)
+    if _stopped_after(1, args.stop_step):
+        return
 
     # --- Outgroup: explicit arg, or auto-detect ---
     if not outgroup_name and not args.no_auto_outgroup:
@@ -844,6 +862,8 @@ def run_pipeline_for_species(species_name, outgroup_name, args):
                 print(f"Saved {base_dir / 'fastani.tsv'}")
         if "genomes" not in args.keep:
             _cleanup(input_dir, "input genomes")
+    if _stopped_after(2, args.stop_step):
+        return
 
     # --- Step 3: Panaroo ---
     if args.start_step <= 3:
@@ -880,6 +900,8 @@ def run_pipeline_for_species(species_name, outgroup_name, args):
             # output_roary/ is deleted after a full run; --keep core_alignment saves a copy in pangenome/.
             candidates = [roary_dir / "results" / "core_gene_alignment.aln", pangenome_dir / "core_gene_alignment.aln"]
             core_alignment_path = next((p for p in candidates if p.exists()), None)
+    if _stopped_after(3, args.stop_step):
+        return
 
     # --- Steps 4-10: Tree Pipeline ---
     if args.start_step <= 10:
@@ -917,11 +939,12 @@ def run_pipeline_for_species(species_name, outgroup_name, args):
             gene_counts=args.gene_counts,
             replicates=args.replicates,
             each_gene=args.each_gene,
-            tree_only=args.tree_only,
+            stop_step=args.stop_step,
         )
-        if args.start_step <= 3 and "panaroo" not in args.keep:
+        # Steps 4-7 read the alignment, so keep it for a run that stopped before step 8.
+        if args.start_step <= 3 and "panaroo" not in args.keep and args.stop_step >= 8:
             _cleanup(roary_dir, "Panaroo output")
-        if args.tree_only:
+        if args.stop_step < 10:  # the add-ons below need the finished ecotype results
             return
 
         alignment_name = core_alignment_path.name.replace(".fasta", "").replace(".aln", "")  # as run_tree_pipeline names it
@@ -1021,9 +1044,9 @@ def main():
     # Control flow arguments
     parser.add_argument("--start-step", type=int, default=1, choices=range(1, 11),
                         help="Step to start at (1=Download, 2=Bakta, 3=Panaroo, 4=Sort+Dedup, 5=FastTree, 6=Reroot, 7=Rarefaction, 8=EcoSim, 9=Parse, 10=Plot)")
-    parser.add_argument("--tree-only", action="store_true",
-                        help="Stop after the rooted tree (step 6): no rarefaction or EcoSim. The tree is built on "
-                             "every genome, not just the first 300 EcoSim gets (e.g. --sample-size 890 --tree-only)")
+    parser.add_argument("--stop-step", type=int, default=10, choices=range(1, 11),
+                        help="Last step to run (default: 10). Stopping at 6 or earlier builds the tree on every "
+                             "genome, not just the first 300 EcoSim gets (e.g. --sample-size 890 --stop-step 6)")
     parser.add_argument("--no-dedup", action="store_true",
                         help="Keep every genome instead of collapsing clones in step 4")
     parser.add_argument("--clone-threshold", type=float, default=DEFAULT_CLONE_THRESHOLD,
@@ -1075,6 +1098,8 @@ def main():
         parser.error(str(e))
     if not 0 <= args.clone_threshold < 1:
         parser.error("--clone-threshold must be at least 0 and below 1")
+    if args.stop_step < args.start_step:
+        parser.error("--stop-step must not be before --start-step")
     if args.replicates < 1 or any(n < 1 for n in args.gene_counts):
         parser.error("--replicates and --gene-counts must be positive")
     print(f"Keeping: {', '.join(sorted(args.keep)) or 'only ecotype_summary.csv'}")
