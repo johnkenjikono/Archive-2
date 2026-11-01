@@ -354,7 +354,8 @@ Input (one required)
   --csv-file PATH          Batch file: column 1 = species, column 4 = outgroup
 
 Download (step 1)
-  --sample-size INT        Assemblies to randomly sample (default: 200; more = longer runs, more memory)
+  --sample-size INT        Distinct genomes to end up with (default: 200; more = longer runs, more memory)
+  --oversample PERCENT     Extra assemblies to download, trimmed after clone collapsing (default: 15, so 200 becomes 230; 0 = off)
   --seed INT               Sampling seed, for reproducible genome sets (default: 42)
 
 Annotation / pan-genome (steps 2–3)
@@ -398,12 +399,13 @@ Optional analyses
 
 | # | Step | What happens |
 |---|---|---|
-| 1 | **Download** | Lists every *chromosome* or *complete* GenBank (`GCA_`) assembly for the species and draws a random sample of `--sample-size` with a fixed seed, so the same seed always gives the same genomes. Then downloads the `.fna` files. |
+| 1 | **Download** | Lists every *chromosome* or *complete* GenBank (`GCA_`) assembly for the species and draws a random sample of `--sample-size` plus `--oversample` percent (230 by default) with a fixed seed, so the same seed always gives the same genomes. Then downloads the `.fna` files. |
 | – | **Outgroup** | Uses `--outgroup` if given. Otherwise picks a RefSeq reference genome from another species in the same genus, falling back to any complete genome in the genus. The outgroup is annotated alongside the other genomes and appears in the alignment as `outgroup`. |
-| 2 | **Bakta** | Annotates every genome (up to 201), several at a time. Non-coding RNA searches and plots are skipped because Panaroo only uses coding genes. |
+| 2 | **Bakta** | Annotates every genome (up to 231 by default), several at a time. Non-coding RNA searches and plots are skipped because Panaroo only uses coding genes. |
 | 3 | **Panaroo** | Builds the pan-genome in `strict` clean mode and a core-gene alignment with MAFFT (`core_gene_alignment.aln`). Panaroo's core includes the outgroup, so `pangenome/core_gene_counts.csv` also reports the ingroup-only core (genes in ≥95% of ingroup genomes) and how many of those the outgroup shares. |
 | 4 | **Sort** | Checks that all sequences are the same length and moves the outgroup to the top of the alignment. |
 | 4b | **Collapse clones** | Genomes whose core alignments differ at no more than 10⁻⁵ of sites (`--clone-threshold`; 0 means identical only) are collapsed to one representative. A gap against a base counts as a difference. Groups are built greedily in alignment order: each genome joins the closest representative within the threshold, so members are within the threshold of their representative (and at most twice it of each other). `clone_groups.csv` records each genome's differences from its representative. The root genome is never collapsed, and genomes identical to it form their own group, because EcoSim never places the outgroup in an ecotype. Identical sequences give EcoSim zero-length branches and extra taxa without adding information. Every genome is listed in `clone_groups.csv`, and collapsed genomes get their representative's ecotype in the parsed results. `--no-dedup` turns this off. |
+| 4c | **Trim to sample size** | If more than `--sample-size` representatives remain, a seeded random pick cuts them down to that number, plus the outgroup. A dropped representative's clones go with it and leave `clone_groups.csv`. Skipped with `--oversample 0`, `--no-dedup` or `--input-fasta`. |
 | 5 | **Tree** | Builds a maximum-likelihood tree with VeryFastTree (`-nt -gtr -gamma`) on all threads, with SH-like local support values, saved as `full_core_tree_support.nwk`. Rarefaction trees skip support (`-nosupport`). |
 | 6 | **Reroot** | Roots the tree on the outgroup with Biopython. GCA/GCF accession variants are matched automatically. Support values are dropped from the rooted tree, because rerooting leaves the ones near the root on the wrong branches. `--stop-step 6` stops here. |
 | 7 | **Rarefaction** | Creates 100 sub-alignments (change with `--gene-counts` / `--replicates`; `--each-gene` runs every core gene once at the 1-gene level) by concatenating whole core genes drawn at random without replacement: 1, 3, 7, 20 and 100 genes, 20 replicates each. Gene boundaries come from Panaroo's `core_alignment_header.embl`, which must sit next to the alignment (checked before step 4 starts). Genes that are all gaps in any genome, which is how Panaroo pads a gene a genome lacks, are not sampled. The genes in each replicate are listed in `rarefaction_genes.csv`. This shows how the ecotype estimate changes with the number of genes. The whole core alignment is also added as one more replicate, `full_core_genome` (every core gene), so each subset can be compared with it; its tree is the step-5 tree. `--no-full-core` turns this off. |

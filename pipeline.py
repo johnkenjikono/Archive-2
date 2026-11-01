@@ -32,7 +32,7 @@ from steps.rarefaction import create_rarefaction_fastas, find_gene_header, FULL_
 from steps.run_ecosim import run_ecosim_batch, _resolve_ecosim_jar
 from steps.parsing import (summarize_ecotypes_in_folder, write_membership_csv, compare_to_full_core,
                            parse_ecosim_xml, write_tree_support, FULL_CORE_XML)
-from steps.dedup_clones import collapse_identical_sequences, DEFAULT_CLONE_THRESHOLD
+from steps.dedup_clones import collapse_identical_sequences, trim_representatives, DEFAULT_CLONE_THRESHOLD
 from steps.visualize_ecotypes import plot_folder
 from steps.outputs import KEEP_ITEMS, DEFAULT_KEEP, resolve_keep
 from steps.niche_metadata import run_niche_analysis
@@ -47,7 +47,7 @@ ECOSIM_DIR = os.environ.get("ECOSIM_DIR") or str(
     Path(__file__).resolve().parent / "tools" / ("linux" if sys.platform.startswith("linux") else "")
 )
 
-# Default cap on genomes annotated/clustered: 200 sampled + the outgroup. Raised by --sample-size.
+# Default cap on genomes annotated/clustered: 200 sampled + the outgroup. Raised by --sample-size and --oversample.
 MAX_GFF_FILES = 201
 
 PANGENOME_FILES = (
@@ -104,6 +104,10 @@ def write_core_gene_counts(panaroo_results: Path, dest: Path, threshold=0.95):
     return out
 # make_trees_batch builds each tree on at most this many leading sequences.
 TREE_SEQ_CAP = inspect.signature(make_trees_batch).parameters["max_sequences_per_run"].default
+
+def oversampled_size(sample_size, percent):
+    """Genomes to download so that sample_size distinct ones can survive clone collapsing (rounds up)."""
+    return sample_size + (sample_size * percent + 99) // 100
 
 def _cleanup(path, label=None):
     p = str(path)
@@ -382,7 +386,8 @@ def run_panaroo(gff_files: list[Path], roary_dir: Path, threads: int, error_log=
 def run_tree_pipeline(input_fasta, start_step, outgroup_id, base_dir, output_tree_name=None, threads=8, dedup=True,
                       clone_threshold=DEFAULT_CLONE_THRESHOLD,
                       keep=None, full_core=True, gene_counts=None, replicates=20, each_gene=False,
-                      stop_step=10):
+                      stop_step=10, sample_size=None, seed=42):
+    """sample_size: after collapsing clones, randomly trim to this many representatives (None keeps them all)."""
     keep = DEFAULT_KEEP if keep is None else keep
     # Steps 8-10 only read files under base_dir; the alignment path just names them.
     if start_step <= 7 and not os.path.exists(input_fasta):
@@ -443,6 +448,8 @@ def run_tree_pipeline(input_fasta, start_step, outgroup_id, base_dir, output_tre
             if collapse_identical_sequences(sorted_fasta, sorted_fasta, clone_map_path, outgroup_id,
                                             threshold=clone_threshold) is None:
                 sys.exit(1)
+            if sample_size is not None:
+                trim_representatives(sorted_fasta, clone_map_path, sample_size, outgroup_id, seed)
         else:
             _cleanup(clone_map_path, "stale clone map")
     else:
@@ -773,7 +780,7 @@ def write_run_parameters(base_dir, species_name, outgroup_name, args):
         **{k: v for k, v in vars(args).items()
            if k in ("sample_size", "seed", "start_step", "threads", "no_dedup", "clone_threshold", "no_full_core",
                     "gene_counts", "replicates", "each_gene", "outgroup_id", "db",
-                    "stop_step", "ani", "papers", "niche")},
+                    "stop_step", "ani", "papers", "niche", "oversample")},
         # The settings above do not pin the software, and the tools and the Bakta database are
         # both unpinned, so without these a result cannot be reproduced or even diagnosed later.
         "software": collect_provenance(getattr(args, "db", None)),
@@ -806,7 +813,7 @@ def run_pipeline_for_species(species_name, outgroup_name, args):
         if not shutil.which("datasets"):
             print("Error: NCBI 'datasets' CLI tool not found. Run `conda activate ecotype` first (see README).", file=sys.stderr)
             sys.exit(1)
-        process_species_genome(species_name, args.sample_size, str(input_dir), args.seed)
+        process_species_genome(species_name, oversampled_size(args.sample_size, args.oversample), str(input_dir), args.seed)
     if _stopped_after(1, args.stop_step):
         return
 
@@ -842,7 +849,7 @@ def run_pipeline_for_species(species_name, outgroup_name, args):
 
         # Ensure deterministic ordering and cap the number of files Bakta will process
         fasta_files = _outgroup_first(fasta_files)
-        max_files = max(MAX_GFF_FILES, args.sample_size + 1)
+        max_files = max(MAX_GFF_FILES, oversampled_size(args.sample_size, args.oversample) + 1)
         if len(fasta_files) > max_files:
             print(f"Found {len(fasta_files)} FASTA files; limiting to first {max_files} for Bakta processing.")
             fasta_files = fasta_files[:max_files]
@@ -874,7 +881,7 @@ def run_pipeline_for_species(species_name, outgroup_name, args):
 
         # Ensure deterministic ordering and cap the number of GFF files Panaroo will process
         gff_files = _outgroup_first(gff_files)
-        max_files = max(MAX_GFF_FILES, args.sample_size + 1)
+        max_files = max(MAX_GFF_FILES, oversampled_size(args.sample_size, args.oversample) + 1)
         if len(gff_files) > max_files:
             print(f"Found {len(gff_files)} GFF3 files; limiting to first {max_files} for Panaroo processing.")
             gff_files = gff_files[:max_files]
@@ -940,6 +947,9 @@ def run_pipeline_for_species(species_name, outgroup_name, args):
             replicates=args.replicates,
             each_gene=args.each_gene,
             stop_step=args.stop_step,
+            # An alignment passed with --input-fasta is the user's chosen set of genomes, so it is not cut.
+            sample_size=args.sample_size if args.oversample and not args.input_fasta else None,
+            seed=args.seed,
         )
         # Steps 4-7 read the alignment, so keep it for a run that stopped before step 8.
         if args.start_step <= 3 and "panaroo" not in args.keep and args.stop_step >= 8:
@@ -1033,6 +1043,9 @@ def main():
     parser.add_argument("--sample-size", type=int, default=200,
                         help="Number of random distinct assemblies to download if starting at Step 1 (default: 200). "
                              "Run time and memory grow with this: Bakta linearly, Panaroo, tree building and EcoSim faster than that.")
+    parser.add_argument("--oversample", type=int, default=15, metavar="PERCENT",
+                        help="Download this many percent extra assemblies, then after collapsing clones in step 4 randomly "
+                             "trim to --sample-size distinct genomes (default: 15, so 200 becomes 230; 0 = off; off with --no-dedup)")
     parser.add_argument("--seed", type=int, default=42, help="Random seed for reproducible assembly sampling (default: 42)")
     
     # Bakta/Panaroo arguments
@@ -1100,6 +1113,10 @@ def main():
         parser.error("--clone-threshold must be at least 0 and below 1")
     if args.stop_step < args.start_step:
         parser.error("--stop-step must not be before --start-step")
+    if args.oversample < 0:
+        parser.error("--oversample must not be negative")
+    if args.no_dedup:  # nothing is collapsed, so extra genomes would only be downloaded to be thrown away
+        args.oversample = 0
     if args.replicates < 1 or any(n < 1 for n in args.gene_counts):
         parser.error("--replicates and --gene-counts must be positive")
     print(f"Keeping: {', '.join(sorted(args.keep)) or 'only ecotype_summary.csv'}")
