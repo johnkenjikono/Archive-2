@@ -7,7 +7,7 @@ NCBI Datasets ─► Bakta ─► Panaroo ─► VeryFastTree ─► reroot ─�
   (download)    (annotate) (core genes)  (tree)     (outgroup)  (gene subsets)   (demarcate)   (CSV)
 ```
 
-Run it from the desktop window (`bash run_ui.sh`) or from the terminal, one species at a time or a whole CSV of species.
+Run it from the desktop window (`python ui/ui.py`) or from the terminal, one species at a time or a whole CSV of species.
 
 ---
 
@@ -63,19 +63,18 @@ Run it from the desktop window (`bash run_ui.sh`) or from the terminal, one spec
 
 ## Getting started, step by step
 
-This assumes macOS or Linux and no prior setup. Budget about 30 minutes for installing, plus the database download. Setup commands are run once. Only steps 4 and 5 repeat each session.
+This branch targets macOS (Apple Silicon) and assumes no prior setup. Budget about 30 minutes for installing, plus the database download. Setup commands are run once. Only steps 4 and 5 repeat each session.
 
 ### 0. Check you have what you need
 
 | Need | Why | How to check |
 |---|---|---|
-| A terminal | Setup and optional command-line use | Open **Terminal** (macOS) or your Linux terminal |
-| **Conda or Miniforge** | Installs Bakta and Panaroo | `conda --version`. If not found, install [Miniforge](https://github.com/conda-forge/miniforge) first, then open a new terminal |
-| Python 3.10 or newer | Runs the pipeline | `python3 --version` |
-| Git | Gets the code | `git --version` |
+| A terminal | Setup and optional command-line use | Open **Terminal** (Applications > Utilities) |
+| **Conda or Miniforge** | Installs every tool the pipeline needs, including Python and Java. This is the only thing you install by hand | `conda --version`. If not found, install [Miniforge](https://github.com/conda-forge/miniforge) first, then open a new terminal |
+| Git | Gets the code | `git --version` (macOS offers to install it if missing) |
 | Internet | Downloads genomes from NCBI | n/a |
 | Disk space | Full Bakta database is about 70 GB; `light` is much smaller (less precise). Each run needs more for genomes and intermediates | `df -h .` |
-| RAM and cores | 8 cores and 16 GB is enough for a small test run | `nproc` (Linux) or `sysctl -n hw.ncpu` (macOS) |
+| RAM and cores | 8 cores and 16 GB is enough for a small test run | `sysctl -n hw.ncpu` |
 
 ### 1. Get the code
 
@@ -89,18 +88,18 @@ All commands below are run from inside the new `Archive-2` folder.
 ### 2. Install everything (one time)
 
 ```bash
-bash setup.sh
+CONDA_SUBDIR=osx-64 conda env create -f environment.yml
 ```
 
-This takes several minutes. It creates three conda environments (`bakta_env`, `panaroo_env`, `ecotools`) and a Python environment (`venv/`), and on Linux it also builds EcoSim's helper programs. On Arch Linux it asks for your password to install Java and a compiler. Lines starting with `✓` are good. A `⚠` line tells you what is missing and usually how to fix it. It is safe to rerun `setup.sh`: it skips anything that already exists.
+This takes 5 to 15 minutes. It creates one conda environment called `ecotype` holding Bakta, Panaroo, MAFFT, VeryFastTree, the NCBI download tool, Java, Python and every Python package. The `CONDA_SUBDIR=osx-64` part is needed on Apple Silicon Macs because Panaroo is not built natively for them. The Intel versions run through Rosetta. If a program later complains about Rosetta, run `softwareupdate --install-rosetta --agree-to-license` once.
 
 Check it worked:
 
 ```bash
-source venv/bin/activate        # fish shell: source venv/bin/activate.fish
+conda activate ecotype
 datasets --version              # NCBI download tool
 java -version                   # needed by EcoSim
-conda run -n bakta_env bakta --version
+bakta --version
 ```
 
 All three should print a version number, not an error.
@@ -110,8 +109,7 @@ All three should print a version number, not an error.
 Bakta needs a reference database to name genes. This is the largest download.
 
 ```bash
-conda run -n bakta_env bakta_db download --output ~/bakta_db               # full, ~70 GB, recommended
-# conda run -n bakta_env bakta_db download --output ~/bakta_db --type light  # smaller, good for a first test
+bakta_db download --output ~/bakta_db --type light  # smaller, good for a first test
 ```
 
 When it finishes, the database is in `~/bakta_db/db` (or `~/bakta_db/db-light`). **Remember this path.** You give the `db` or `db-light` folder to the pipeline, not `bakta_db` itself.
@@ -120,10 +118,10 @@ When it finishes, the database is in `~/bakta_db/db` (or `~/bakta_db/db-light`).
 
 ```bash
 cd Archive-2
-source venv/bin/activate        # fish shell: source venv/bin/activate.fish
+conda activate ecotype
 ```
 
-Your prompt now starts with `(venv)`. If you skip this, you will see `NCBI 'datasets' CLI tool not found`. `bash run_ui.sh` does this for you.
+Your prompt now starts with `(ecotype)`. If you skip this, you will see `NCBI 'datasets' CLI tool not found`.
 
 ### 5. Run a small test first
 
@@ -132,7 +130,7 @@ Do not start with the default of 200 genomes: that takes hours. Use **10 genomes
 **Option A: the window (no commands to remember)**
 
 ```bash
-bash run_ui.sh
+python ui/ui.py
 ```
 
 1. Set **Start mode** to **Species name**.
@@ -191,51 +189,45 @@ Read the last red or error line of the log, then look it up in [Troubleshooting]
 
 ## Requirements
 
-| Tool | Used in | Installed by `setup.sh`? |
+| Tool | Used in | Installed by `environment.yml`? |
 |---|---|---|
-| [Conda / Miniforge](https://github.com/conda-forge/miniforge) | Bakta and Panaroo environments | No, install it first |
-| Python ≥ 3.10 | The pipeline and the desktop window (stdlib `tkinter`) | Creates `venv/` from `requirements.txt` |
-| [NCBI Datasets CLI](https://www.ncbi.nlm.nih.gov/datasets/docs/v2/download-and-install/) (`datasets`) | Step 1, outgroup/type-strain lookup | Yes: `ecotools` conda env, linked into `venv/bin` |
-| [Bakta](https://github.com/oschwengers/bakta) + its database | Step 2 | Creates `bakta_env`. You download the database |
-| [Panaroo](https://github.com/gtonkinhill/panaroo) + MAFFT | Step 3 | Creates `panaroo_env` |
-| [VeryFastTree](https://github.com/citiususc/veryfasttree) (or FastTree) | Step 5 | Linux: `ecotools` conda env, linked into `venv/bin`. macOS: `brew` |
-| Java 8+ | Step 8 (EcoSim) | Arch: `pacman` (with `gcc-fortran` for the EcoSim helpers). Elsewhere only checked |
+| [Conda / Miniforge](https://github.com/conda-forge/miniforge) | Everything below | No, install it first |
+| Python | The pipeline and the desktop window (`tkinter`) | Yes |
+| [NCBI Datasets CLI](https://www.ncbi.nlm.nih.gov/datasets/docs/v2/download-and-install/) (`datasets`) | Step 1, outgroup/type-strain lookup | Yes |
+| [Bakta](https://github.com/oschwengers/bakta) + its database | Step 2 | Bakta yes. You download the database |
+| [Panaroo](https://github.com/gtonkinhill/panaroo) + MAFFT | Step 3 | Yes |
+| [VeryFastTree](https://github.com/citiususc/veryfasttree) | Step 5 | Yes |
+| Java 8+ | Step 8 (EcoSim) | Yes (OpenJDK) |
 
-**EcoSim is bundled.** `tools/ecosim.jar` and its helper binaries in `tools/bin/` ship with the repo. The binaries in `tools/bin/` are **macOS arm64 (Apple Silicon)** builds. On Linux, `setup.sh` builds them into `tools/linux/bin`, which the pipeline picks up automatically. On any other platform, supply EcoSim binaries built for that platform (see [Configuration](#configuration)).
+**EcoSim is bundled.** `tools/ecosim.jar` and its helper binaries in `tools/bin/` ship with the repo. The binaries in `tools/bin/` are **macOS arm64 (Apple Silicon)** builds. On Intel Macs or any other platform, supply EcoSim binaries built for that platform (see [Configuration](#configuration)).
 
 ---
 
 ## Installation
 
-### 1. Environments and dependencies
+### 1. Environment and dependencies
 
 ```bash
-bash setup.sh
+CONDA_SUBDIR=osx-64 conda env create -f environment.yml
 ```
 
-This script:
-- on Arch Linux, installs `gcc-fortran`, `jre-openjdk`, `git` and `base-devel` with `pacman` if any are missing (asks for sudo)
-- creates the `bakta_env`, `panaroo_env` and `ecotools` (`datasets`, VeryFastTree) conda environments from conda-forge + bioconda only (skips any that already exist)
-- creates `venv/`, installs `requirements.txt`, and links `datasets` and `veryfasttree` into `venv/bin`
-- on Linux, builds EcoSim's helpers into `tools/linux/bin`
+Creates the `ecotype` conda environment from conda-forge + bioconda only. `CONDA_SUBDIR=osx-64` is for Apple Silicon (see [step 2](#2-install-everything-one-time)); skip it on Linux.
 
 ### 2. Bakta database (one-time)
 
 ```bash
-conda run -n bakta_env bakta_db download --output bakta_db                # full database (recommended, ~70 GB unpacked)
-# conda run -n bakta_env bakta_db download --output bakta_db --type light  # much smaller, less precise
+conda activate ecotype
+bakta_db download --output bakta_db                # full database (recommended, ~70 GB unpacked)
+# bakta_db download --output bakta_db --type light  # much smaller, less precise
 ```
 
 Pass the **`db` (or `db-light`) subfolder** to the pipeline, e.g. `--db /path/to/bakta_db/db`.
 
-### 3. Activate the venv before each session
+### 3. Activate the environment before each session
 
 ```bash
-source venv/bin/activate        # bash / zsh
-source venv/bin/activate.fish   # fish
+conda activate ecotype
 ```
-
-`bash run_ui.sh` does this for you when `venv/` exists.
 
 ### Configuration
 
@@ -255,10 +247,10 @@ No configuration is needed if you use the bundled EcoSim. To use your own copy, 
 The window collects the same options as `pipeline.py` and runs it for you. You do not need to assemble a command.
 
 ```bash
-bash run_ui.sh
+python ui/ui.py
 ```
 
-That script activates `venv/` if it exists, then starts `ui/ui.py`. With the venv already active you can also run `python ui/ui.py`.
+Run it with the `ecotype` environment active (`conda activate ecotype`).
 
 **Start mode** (only the fields for the chosen mode are shown):
 
@@ -268,7 +260,7 @@ That script activates `venv/` if it exists, then starts `ui/ui.py`. With the ven
 | **Batch CSV** | A CSV file (column 1 = species, column 4 = optional outgroup) | One row after another, same as `--csv-file`. **Fill blank outgroups** runs `fill_outgroups.py` first (add `--llm` with **Use Claude (LLM)**) and switches the CSV field to the filled file for review |
 | **Local genome folder** | Species (names the results folder) and a folder of `.fna` / `.fasta` / `.fa` files | Copies those genomes into `input/` and starts at step 2 (Bakta). Sample size and seed are hidden. Start step cannot be 1 |
 
-**Options** (always on the screen; Browse buttons pick files and folders):
+**Options** (Browse buttons pick files and folders). Working directory, Bakta database, Start step, Stop step and Core-alignment FASTA are always on the screen; the rest, plus the **Analysis**, **Extra analyses** and **Outputs to keep** boxes, are in the window that **Advanced settings…** opens:
 
 | Window field | Same as |
 |---|---|
@@ -276,14 +268,16 @@ That script activates `venv/` if it exists, then starts `ui/ui.py`. With the ven
 | Bakta database folder | `--db` (required for steps 1–2; point at the `db` or `db-light` subfolder) |
 | Threads | `--threads` (default 12) |
 | Bakta parallel jobs | `--bakta-jobs` (leave blank to use `threads // 4`) |
-| Start step | `--start-step` (1–10) |
+| Start at step | `--start-step` (1–10, listed by name, e.g. "5 · Build tree") |
+| Stop after step | `--stop-step` (1–10; default 10 runs everything. "6 · Reroot tree" stops at the tree) |
 | Core-alignment FASTA | `--input-fasta` (needed when starting at step 4+ unless that file already exists in the species folder) |
 | Outgroup ID | `--outgroup-id` (force a tree leaf) |
 | Setup only | `--setup-only` (create folders and stop) |
 | **Analysis** box | Clone threshold (`--clone-threshold`), Full core genome comparison (`--no-full-core` when unchecked), every gene at the 1-gene level (`--each-gene`), replicates per gene count (`--replicates`) |
+| **Extra analyses** box | ANI within vs. between ecotypes (`--ani`), source papers with Claude summaries (`--papers`), ecotype x host/niche (`--niche`). These run after step 10, so they need Stop step 10; ANI also needs start step 1 or 2 (or an existing `fastani.tsv`) |
 | **Outputs to keep** box | One checkbox per `--keep` item (see [Outputs](#outputs)). Unchecking a default adds `--discard`, checking an extra one adds `--keep` |
 
-**Run:** **Run pipeline** starts one job at a time. The log is the same output as the terminal, including the quoted command so you can replay it. **Stop** ends the job and leaves partial output on disk so you can raise **Start step** and continue. Closing the window while a run is going asks before it stops the job.
+**Run:** **Run pipeline** starts one job at a time. The status line next to the buttons shows the current step and elapsed time, and the progress bar below counts genomes during Bakta and replicates during EcoSim (it pulses during steps that don't report a count). The working directory and Bakta database folder are remembered between launches (in `~/.ecotype_ui.json`). The log is the same output as the terminal, including the quoted command so you can replay it, with step headers in bold and errors and warnings in color. **Open results folder** opens the results once a run finishes. **Stop** ends the job and leaves partial output on disk so you can raise **Start step** and continue; a run that ends at **Stop after step** keeps what the next step needs, so it can be resumed the same way. Closing the window while a run is going asks before it stops the job.
 
 Results land under `<workdir>/<Species_name>/` (or `<workdir>/` for a CSV batch). If `ecotype_summary.csv` was written, the log prints its path.
 
@@ -322,10 +316,10 @@ This writes `species_outgroups.csv`. Rows that already have an outgroup are left
 
 ### On Modal (cloud Linux)
 
-`modal_app.py` runs the same `pipeline.py` in a Linux container on [Modal](https://modal.com). The image holds both conda envs, `datasets`, VeryFastTree, Java and Linux builds of the EcoSim helpers (built by `tools/build_ecosim_linux.sh`). The Bakta database and all results live in Modal Volumes (`bakta-db`, `ecotype-results`), so they survive between runs and `--start-step` resumes work.
+`modal_app.py` runs the same `pipeline.py` in a Linux container on [Modal](https://modal.com). The image holds the same `ecotype` conda env (from `environment.yml`) and Linux builds of the EcoSim helpers (built by `tools/build_ecosim_linux.sh`). The Bakta database and all results live in Modal Volumes (`bakta-db`, `ecotype-results`), so they survive between runs and `--start-step` resumes work.
 
 ```bash
-pip install -r requirements.txt && modal setup                 # one-time: installs the client, logs in
+pip install modal && modal setup   # one-time: installs the client, logs in
 modal run modal_app.py::download_bakta_db                      # one-time; add --light for db-light (then pass --db db-light)
 
 modal run --detach modal_app.py --species "Treponema pallidum" --outgroup "Treponema paraluiscuniculi" --extra "--sample-size 10"   # --detach required; returns at once
@@ -380,6 +374,7 @@ Execution
   --clone-threshold FLOAT  Max per-site divergence for two genomes to count as clones (default: 1e-5; 0 = identical only)
   --input-fasta PATH       Core alignment to use when starting at steps 4-7 (core_alignment_header.embl must be next to it)
   --setup-only             Create the folder structure and exit
+  --stop-step {1..10}      Last step to run (default: 10). At 6 or earlier the tree uses every genome (e.g. --sample-size 890 --stop-step 6)
 
 Rarefaction (steps 7-9)
   --gene-counts N [N ...]  Core genes per replicate (default: 1 3 7 20 100)
@@ -390,6 +385,11 @@ Rarefaction (steps 7-9)
 Outputs (see "Outputs")
   --keep ITEM[,ITEM]       Also keep these (repeatable; "all" keeps everything)
   --discard ITEM[,ITEM]    Drop these defaults (repeatable; "all" drops everything). --keep wins
+
+Optional analyses
+  --ani                    FastANI all-vs-all on the genomes (step 2), then ANI within vs. between ecotypes
+  --papers                 Each genome's BioProject and linked PubMed papers, with Claude summaries (ANTHROPIC_API_KEY)
+  --niche                  Ecotype x host/niche/country association from BioSample metadata (ANTHROPIC_API_KEY)
 ```
 
 ---
@@ -401,16 +401,16 @@ Outputs (see "Outputs")
 | 1 | **Download** | Lists every *chromosome* or *complete* GenBank (`GCA_`) assembly for the species and draws a random sample of `--sample-size` with a fixed seed, so the same seed always gives the same genomes. Then downloads the `.fna` files. |
 | – | **Outgroup** | Uses `--outgroup` if given. Otherwise picks a RefSeq reference genome from another species in the same genus, falling back to any complete genome in the genus. The outgroup is annotated alongside the other genomes and appears in the alignment as `outgroup`. |
 | 2 | **Bakta** | Annotates every genome (up to 201), several at a time. Non-coding RNA searches and plots are skipped because Panaroo only uses coding genes. |
-| 3 | **Panaroo** | Builds the pan-genome in `strict` clean mode and a core-gene alignment with MAFFT (`core_gene_alignment.aln`). |
+| 3 | **Panaroo** | Builds the pan-genome in `strict` clean mode and a core-gene alignment with MAFFT (`core_gene_alignment.aln`). Panaroo's core includes the outgroup, so `pangenome/core_gene_counts.csv` also reports the ingroup-only core (genes in ≥95% of ingroup genomes) and how many of those the outgroup shares. |
 | 4 | **Sort** | Checks that all sequences are the same length and moves the outgroup to the top of the alignment. |
 | 4b | **Collapse clones** | Genomes whose core alignments differ at no more than 10⁻⁵ of sites (`--clone-threshold`; 0 means identical only) are collapsed to one representative. A gap against a base counts as a difference. Groups are built greedily in alignment order: each genome joins the closest representative within the threshold, so members are within the threshold of their representative (and at most twice it of each other). `clone_groups.csv` records each genome's differences from its representative. The root genome is never collapsed, and genomes identical to it form their own group, because EcoSim never places the outgroup in an ecotype. Identical sequences give EcoSim zero-length branches and extra taxa without adding information. Every genome is listed in `clone_groups.csv`, and collapsed genomes get their representative's ecotype in the parsed results. `--no-dedup` turns this off. |
-| 5 | **Tree** | Builds a maximum-likelihood tree with VeryFastTree (`-nt -gtr -gamma -nosupport`) on all threads. |
-| 6 | **Reroot** | Roots the tree on the outgroup with Biopython. GCA/GCF accession variants are matched automatically. |
+| 5 | **Tree** | Builds a maximum-likelihood tree with VeryFastTree (`-nt -gtr -gamma`) on all threads, with SH-like local support values, saved as `full_core_tree_support.nwk`. Rarefaction trees skip support (`-nosupport`). |
+| 6 | **Reroot** | Roots the tree on the outgroup with Biopython. GCA/GCF accession variants are matched automatically. Support values are dropped from the rooted tree, because rerooting leaves the ones near the root on the wrong branches. `--stop-step 6` stops here. |
 | 7 | **Rarefaction** | Creates 100 sub-alignments (change with `--gene-counts` / `--replicates`; `--each-gene` runs every core gene once at the 1-gene level) by concatenating whole core genes drawn at random without replacement: 1, 3, 7, 20 and 100 genes, 20 replicates each. Gene boundaries come from Panaroo's `core_alignment_header.embl`, which must sit next to the alignment (checked before step 4 starts). Genes that are all gaps in any genome, which is how Panaroo pads a gene a genome lacks, are not sampled. The genes in each replicate are listed in `rarefaction_genes.csv`. This shows how the ecotype estimate changes with the number of genes. The whole core alignment is also added as one more replicate, `full_core_genome` (every core gene), so each subset can be compared with it; its tree is the step-5 tree. `--no-full-core` turns this off. |
 | 7b | **Rarefaction trees** | Builds and reroots one tree per sub-alignment. EcoSim's binning is driven by the tree, so reusing the full-alignment tree for every replicate made the rarefaction curve flat by construction. |
 | 8 | **EcoSim** | Runs `ecosim.jar` (demarcation mode, no GUI, 6 GB heap) on each sub-alignment against its own rooted tree, falling back to the full rooted tree for any replicate whose tree could not be built or rerooted. |
-| 9 | **Parse** | Counts the demarcated ecotypes in each EcoSim XML file and writes `ecotype_summary.csv`, plus `ecotype_membership.csv` listing which genome is in which ecotype for every replicate (clones expanded). It then compares every replicate with the full core genome: `rarefaction_comparison.csv` (per replicate), `rarefaction_by_gene_count.csv` (per gene count) and `ecotype_support.csv` (how often each full-core ecotype is recovered exactly at each gene count). |
-| 10 | **Plot** | Draws the tree EcoSim used for the full core genome (or, with `--no-full-core`, each 100-gene replicate) with every ecotype in its own color (`ecotype_plots/*.png`), plus an iTOL `TREE_COLORS` file per tree for the [iTOL](https://itol.embl.de) viewer, and a pie chart of genomes per ecotype (`*_pie.png`) in the same colors. |
+| 9 | **Parse** | Counts the demarcated ecotypes in each EcoSim XML file and writes `ecotype_summary.csv`, plus `ecotype_membership.csv` listing which genome is in which ecotype for every replicate (clones expanded). It then compares every replicate with the full core genome: `rarefaction_comparison.csv` (per replicate), `rarefaction_by_gene_count.csv` (per gene count) and `ecotype_support.csv` (how often each full-core ecotype is recovered exactly at each gene count). `ecotype_summary.csv` also carries EcoSim's own confidence intervals for npop (number of ecotypes), omega and sigma, and `ecotype_tree_support.csv` gives the SH-like support of each full-core ecotype's clade. |
+| 10 | **Plot** | Draws the tree EcoSim used for the full core genome (or, with `--no-full-core`, each 100-gene replicate) with every ecotype in its own color (`ecotype_plots/*.png`), plus an iTOL `TREE_COLORS` file per tree for the [iTOL](https://itol.embl.de) viewer, and a pie chart of genomes per ecotype (`*_pie.png`) in the same colors, and an interactive tree (`*_interactive.html`, opens offline in any browser) whose tips show ecotype, clones and any `--niche` / `--papers` metadata, with links to NCBI and PubMed. |
 
 **How the root is chosen, in order of priority:** `--outgroup-id` → the downloaded outgroup genome → the species' RefSeq reference genome (a proxy for the type strain) → the sequence whose accession number is largest.
 
@@ -452,7 +452,11 @@ ecosim_output_core_gene_alignment/
 ├── ...
 ├── sim_species_g100_t20_results.xml
 ├── full_core_genome_results.xml      # EcoSim on every core gene
-├── ecotype_summary.csv               # file,ecotype_count
+├── ecotype_summary.csv               # file,ecotype_count + EcoSim npop/omega/sigma and their confidence intervals
+├── ecotype_tree_support.csv          # SH-like support of each full-core ecotype's clade
+├── full_core_tree_support.nwk        # step-5 tree (unrooted) with support values
+├── ecotype_ani.csv                   # --ani: ANI within vs. between ecotypes (+ to the outgroup)
+├── genome_sources.csv, papers.csv    # --papers: BioProject, submitter, linked papers + Claude summaries
 ├── rarefaction_comparison.csv        # per replicate vs. full core: count difference, adjusted Rand index, ecotypes recovered
 ├── rarefaction_by_gene_count.csv     # the same, averaged per gene count
 ├── ecotype_support.csv               # per full-core ecotype: share of replicates that recover it exactly, per gene count
@@ -462,7 +466,8 @@ ecosim_output_core_gene_alignment/
 └── ecotype_plots/
     ├── full_core_genome_results.png               # tree colored by ecotype
     ├── full_core_genome_results_itol_colors.txt
-    └── full_core_genome_results_pie.png           # genomes per ecotype
+    ├── full_core_genome_results_pie.png           # genomes per ecotype
+    └── full_core_genome_results_interactive.html  # clickable tree with per-genome metadata and paper links
 ```
 
 To plot other replicates, or to re-plot after the run:
@@ -519,8 +524,17 @@ python steps/parsing.py                        # counts ecotypes in ./ecosim_res
 python steps/post_processing.py ecosim_results # per-ecotype membership spreadsheets
 
 # Do ecotypes match host / isolation source / country? (Claude labels the BioSample metadata;
-# needs ANTHROPIC_API_KEY and `pip install anthropic`. Same as `pipeline.py --niche`.)
+# needs ANTHROPIC_API_KEY. Same as `pipeline.py --niche`.)
 python steps/niche_metadata.py Species_name/ecosim_output_core_gene_alignment "Species name"
+
+# Source BioProjects and papers (same as `pipeline.py --papers`; --no-summaries skips Claude)
+python steps/papers.py Species_name/ecosim_output_core_gene_alignment "Species name"
+
+# ANI within vs. between ecotypes from a FastANI table (same as `pipeline.py --ani`)
+python steps/ani.py Species_name/fastani.tsv Species_name/ecosim_output_core_gene_alignment
+
+# Rebuild the interactive tree (picks up genome_metadata.csv / papers.csv if present)
+python steps/interactive_tree.py Species_name/ecosim_output_core_gene_alignment
 ```
 
 ---
@@ -529,10 +543,8 @@ python steps/niche_metadata.py Species_name/ecosim_output_core_gene_alignment "S
 
 ```
 pipeline.py        Orchestrator: CLI, steps 1–10, batch mode (start here)
-run_ui.sh          Activate venv if present, then launch the desktop window
-setup.sh           Environment setup
+environment.yml    Conda environment with every dependency (`conda env create -f environment.yml`)
 modal_app.py       Run the pipeline on Modal (see "On Modal")
-requirements.txt   Python dependencies
 
 steps/             One module per pipeline step, each also runnable on its own
   download_outgroup.py      NCBI outgroup / type-strain lookup and download
@@ -543,6 +555,9 @@ steps/             One module per pipeline step, each also runnable on its own
   run_ecosim.py             Step 8: EcoSim batch runner
   parsing.py                Step 9: ecotype counts
   niche_metadata.py         Optional (--niche): ecotype x host/niche/country association
+  ani.py                    Optional (--ani): FastANI, ANI within vs. between ecotypes
+  papers.py                 Optional (--papers): source BioProjects, PubMed papers, Claude summaries
+  interactive_tree.py       Step 10: clickable HTML tree
   post_processing.py        Optional: XML → Excel membership tables
 
 ui/                Desktop window
@@ -551,7 +566,7 @@ ui/                Desktop window
 
 tools/             Bundled EcoSim
   ecosim.jar, bin/          EcoSim and its native helpers (macOS arm64)
-  build_ecosim_linux.sh     Builds the Linux helpers (used by setup.sh and modal_app.py)
+  build_ecosim_linux.sh     Builds the Linux helpers (used by modal_app.py)
 ```
 
 ---
@@ -560,18 +575,17 @@ tools/             Bundled EcoSim
 
 | Symptom | Fix |
 |---|---|
-| `bash run_ui.sh` / `python ui/ui.py` fails with `No module named '_tkinter'` | The venv's Python was built without Tk. On macOS with Homebrew: `brew install python-tk`, then recreate `venv/` with `bash setup.sh` |
-| `python: command not found` from `run_ui.sh` | Run `bash setup.sh` first, or activate `venv/` and use `python ui/ui.py` |
+| `python ui/ui.py` fails with `No module named '_tkinter'` or `python: command not found` | The `ecotype` environment is not active. Run `conda activate ecotype` |
 | Local genomes copied but Bakta says no FASTA files | Check **Working directory** — genomes are copied into `<workdir>/<Species_name>/input/` |
-| `NCBI 'datasets' CLI tool not found` | Activate the venv (`source venv/bin/activate`); `setup.sh` links `datasets` there. Or rerun `bash setup.sh` |
+| `NCBI 'datasets' CLI tool not found` | Run `conda activate ecotype`. If that environment does not exist, redo [step 2](#2-install-everything-one-time) |
 | `--db ... is required` | Starting at step 1 or 2 needs `--db /path/to/bakta_db/db` |
-| Bakta fails right away | Check that `--db` points to the `db`/`db-light` subfolder, and that `conda run -n bakta_env bakta --version` works |
+| Bakta fails right away | Check that `--db` points to the `db`/`db-light` subfolder, and that `bakta --version` works (with `ecotype` active) |
 | Bakta is killed or the machine swaps | Lower `--bakta-jobs` |
 | `Sequences have different lengths` | The input isn't an alignment. Use Panaroo's `core_gene_alignment.aln` or align with MAFFT first |
 | `Outgroup ... could not be matched to any tree leaf` | Pass the exact leaf name with `--outgroup-id` (leaf names are the genome file names, e.g. `GCF_000217655.1` or `outgroup`) |
 | `gene_length (1000) exceeds alignment length` | The core alignment is too short for rarefaction, usually because too few genes are shared. Check the genome set and outgroup |
 | `EcoSim jar not found` / `Java not found` | Install Java 8+. Set `ECOSIM_JAR` if you moved the jar |
-| EcoSim fails on Linux or Intel Macs | The bundled `tools/bin/` helpers are Apple Silicon only. On Linux, `bash setup.sh` builds them into `tools/linux/bin` (via `tools/build_ecosim_linux.sh`). Elsewhere, point `ECOSIM_DIR` at a directory with binaries for your platform |
+| EcoSim fails on Intel Macs | The bundled `tools/bin/` helpers are Apple Silicon only. Point `ECOSIM_DIR` at a directory with binaries for your platform |
 | A batch row failed | Look for `Row N failed` in the output, fix the problem, then rerun that species with `--species` |
 
 ---
@@ -585,4 +599,5 @@ If this pipeline contributes to published work, please cite the tools it runs:
 - **VeryFastTree**: Piñeiro C., Abuín J.M., Pichel J.C. (2020). Very Fast Tree: speeding up the estimation of phylogenies for large alignments through parallelization and vectorization strategies. *Bioinformatics*.
 - **FastTree 2**: Price M.N., Dehal P.S., Arkin A.P. (2010). FastTree 2: approximately maximum-likelihood trees for large alignments. *PLoS ONE*.
 - **Ecotype Simulation**: Koeppel A. *et al.* (2008). Identifying the fundamental units of bacterial diversity: a paradigm shift to incorporate ecology into bacterial systematics. *PNAS*.
+- **FastANI** (`--ani`): Jain C. *et al.* (2018). High throughput ANI analysis of 90K prokaryotic genomes reveals clear species boundaries. *Nature Communications*.
 - **NCBI Datasets**: O'Leary N.A. *et al.* (2024). Exploring and retrieving sequence and metadata for species across the tree of life with NCBI Datasets. *Scientific Data*.

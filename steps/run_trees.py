@@ -42,22 +42,19 @@ def find_fasttree_executable():
            or shutil.which("FastTree") or shutil.which("FastTreeMP"))
     if exe:
         return exe
-    # Last resort: the FastTree setup.sh builds on Linux.
+    # Last resort: a Linux FastTree build.
     bundled = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "tools", "linux", "bin", "fasttree")
     for path in ["/usr/local/bin/veryfasttree", "/usr/local/bin/fasttree",
                  "/opt/local/bin/veryfasttree", bundled]:
         if os.path.exists(path):
             return path
     raise FileNotFoundError(
-        "VeryFastTree not found. Install it and ensure it's on PATH.\n"
-        "macOS: brew install veryfasttree\n"
-        "Fallback: brew install fasttree\n"
-        "Linux: bash setup.sh (builds tools/linux/bin/fasttree)"
+        "VeryFastTree not found. Run `conda activate ecotype` (see README)."
     )
 
 def make_trees_batch(final_folder="tree_rdy_fastas", tree_folder="trees_final", 
                      stable_mode=True, fasttree_exe=None, max_retries=1,
-                     max_sequences_per_run=300, error_log=None, threads=None):
+                     max_sequences_per_run=300, error_log=None, threads=None, support=False):
     """
     Build phylogenetic trees using FastTree.
     
@@ -70,6 +67,7 @@ def make_trees_batch(final_folder="tree_rdy_fastas", tree_folder="trees_final",
         max_sequences_per_run: Max sequences per FASTA file (uses first X sequences, None = no limit)
         error_log: Path to error log file (auto-generated if None)
         threads: Threads for tree building (default: all CPUs)
+        support: Compute SH-like local support values (only the full core tree needs them)
     """
     os.makedirs(tree_folder, exist_ok=True)
 
@@ -93,8 +91,8 @@ def make_trees_batch(final_folder="tree_rdy_fastas", tree_folder="trees_final",
         write_error_log(error_log, error_msg)
         raise
 
-    # Support values are never used downstream (EcoSim only needs topology + branch lengths),
-    # so skip computing them.
+    # EcoSim only needs topology + branch lengths; support is computed only when asked for
+    # (the full core tree, for ecotype support).
     if stable_mode:
         # Conservative flags: better for stability with diverse sequences
         base_flags = ["-nt", "-gtr", "-gamma", "-nosupport"]
@@ -106,6 +104,8 @@ def make_trees_batch(final_folder="tree_rdy_fastas", tree_folder="trees_final",
 
     threads = threads or os.cpu_count() or 1
     # VeryFastTree defaults to 1 thread; OpenMP FastTree builds read OMP_NUM_THREADS.
+    if support:
+        base_flags.remove("-nosupport")
     if "veryfasttree" in os.path.basename(fasttree_exe).lower():
         base_flags += ["-threads", str(threads)]
     run_env = {**os.environ, "OMP_NUM_THREADS": str(threads)}
