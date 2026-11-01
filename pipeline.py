@@ -22,7 +22,8 @@ from Bio import Phylo
 from Bio.SeqIO.FastaIO import SimpleFastaParser
 
 # For outgroup download
-from steps.download_outgroup import download_ncbi_fasta, find_outgroup_species, find_typestrain
+from steps.download_outgroup import (download_ncbi_fasta, find_outgroup_species, find_typestrain,
+                                     OUTGROUP_INFO, outgroup_label)
 
 # Imports for the tree and ecosim steps
 from steps.move_largest_numeric import move_largest_numeric_to_top
@@ -557,7 +558,8 @@ def run_tree_pipeline(input_fasta, start_step, outgroup_id, base_dir, output_tre
     trees, pies = "tree_plots" in keep, "pie_charts" in keep
     if start_step <= 10 and (trees or pies):
         print(f"\n--- 10. Plotting ecotypes (trees: {'yes' if trees else 'no'}, pie charts: {'yes' if pies else 'no'}) ---")
-        n_plots = plot_folder(ecosim_out_dir, plots_out_dir, clone_map_path=clone_map_path, trees=trees, pies=pies)
+        n_plots = plot_folder(ecosim_out_dir, plots_out_dir, clone_map_path=clone_map_path, trees=trees, pies=pies,
+                              outgroup_label=outgroup_label(Path(base_dir) / OUTGROUP_INFO))
         print(f"Plotted {n_plots} EcoSim result(s) into {plots_out_dir}")
     elif start_step <= 10:
         print("\n--- Skipping Step 10: tree plots and pie charts not kept ---")
@@ -761,7 +763,7 @@ def run_pipeline_for_species(species_name, outgroup_name, args):
     # --- Outgroup Download (only needed when it will be annotated in Step 2) ---
     if outgroup_name and args.start_step <= 2:
         print(f"\n--- Downloading outgroup genome: {outgroup_name} ---")
-        outgroup_fasta_path = download_ncbi_fasta(outgroup_name, str(input_dir))
+        outgroup_fasta_path = download_ncbi_fasta(outgroup_name, str(input_dir), info_path=base_dir / OUTGROUP_INFO)
         if not outgroup_fasta_path:
             print(f"Error: Could not download outgroup genome for {outgroup_name}", file=sys.stderr)
             sys.exit(1)

@@ -17,8 +17,10 @@ from Bio import Phylo
 
 try:
     from steps.parsing import parse_ecosim_xml, load_clone_map, FULL_CORE_XML
+    from steps.download_outgroup import OUTGROUP_INFO, outgroup_label as read_outgroup_label
 except ImportError:  # run as a script: python steps/visualize_ecotypes.py
     from parsing import parse_ecosim_xml, load_clone_map, FULL_CORE_XML
+    from download_outgroup import OUTGROUP_INFO, outgroup_label as read_outgroup_label
 
 OUTGROUP_COLOR = "#000000"
 SINGLETON_COLOR = "#8c8c8c"
@@ -90,7 +92,8 @@ def plot_ecotype_pie(xml_path, out_png, clone_map_path=None):
     return True
 
 
-def plot_ecotype_tree(xml_path, out_png, tree_path=None, clone_map_path=None, itol_path=None):
+def plot_ecotype_tree(xml_path, out_png, tree_path=None, clone_map_path=None, itol_path=None,
+                      outgroup_label=None):
     """
     Draw the phylogeny with each EcoSim ecotype colored.
 
@@ -98,6 +101,8 @@ def plot_ecotype_tree(xml_path, out_png, tree_path=None, clone_map_path=None, it
     clade shares one color; non-monophyletic ecotypes color only their tips.
     Single-member ecotypes are gray and the outgroup is black. Leaf labels show
     the ecotype number and how many clones were collapsed into the leaf.
+    outgroup_label (e.g. "Listeria innocua ATCC 33090 (GCF_028596125.1)") names the
+    outgroup tip and legend entry; the pipeline renames that genome to plain "outgroup".
     """
     result = parse_ecosim_xml(xml_path)
     if result is None:
@@ -145,6 +150,8 @@ def plot_ecotype_tree(xml_path, out_png, tree_path=None, clone_map_path=None, it
         name = clade.name
         extra = len(clone_map.get(name, [name])) - 1
         if name == outgroup:
+            if outgroup_label:
+                return f"{outgroup_label} [outgroup]"
             tag = "[outgroup]"
         elif name in ecotype_of:
             tag = f"[E{ecotype_of[name]}]"
@@ -175,7 +182,8 @@ def plot_ecotype_tree(xml_path, out_png, tree_path=None, clone_map_path=None, it
                for eco in multi[:40]]
     handles.append(Patch(color=SINGLETON_COLOR, label="single-member ecotype"))
     if outgroup in leaves:
-        handles.append(Patch(color=OUTGROUP_COLOR, label="outgroup"))
+        handles.append(Patch(color=OUTGROUP_COLOR,
+                             label=f"outgroup: {outgroup_label}" if outgroup_label else "outgroup"))
     # Below the figure: tip labels run past the axes and would overlap a legend on the right.
     fig.legend(handles=handles, loc="upper center", bbox_to_anchor=(0.5, 0.0),
                ncol=min(5, len(handles)), frameon=False, fontsize=8, title="Ecotype (unique seqs)")
@@ -190,10 +198,11 @@ def plot_ecotype_tree(xml_path, out_png, tree_path=None, clone_map_path=None, it
     return True
 
 
-def plot_folder(ecosim_dir, output_dir, clone_map_path=None, gene_count="max", trees=True, pies=True):
+def plot_folder(ecosim_dir, output_dir, clone_map_path=None, gene_count="max", trees=True, pies=True,
+                outgroup_label=None):
     """
     Plot EcoSim XMLs in ecosim_dir into output_dir: a tree (PNG + *_itol_colors.txt)
-    and/or a pie chart (*_pie.png) per XML.
+    and/or a pie chart (*_pie.png) per XML. outgroup_label names the outgroup on the trees.
 
     gene_count="max" plots the full core genome result when there is one, otherwise
     the replicates with the most genes (the best-resolved demarcations); an int
@@ -218,7 +227,8 @@ def plot_folder(ecosim_dir, output_dir, clone_map_path=None, gene_count="max", t
             if trees:
                 ok = plot_ecotype_tree(xml_file, os.path.join(output_dir, f"{stem}.png"),
                                        clone_map_path=clone_map_path,
-                                       itol_path=os.path.join(output_dir, f"{stem}_itol_colors.txt"))
+                                       itol_path=os.path.join(output_dir, f"{stem}_itol_colors.txt"),
+                                       outgroup_label=outgroup_label)
             if pies:
                 ok = plot_ecotype_pie(xml_file, os.path.join(output_dir, f"{stem}_pie.png"),
                                       clone_map_path=clone_map_path) and ok
@@ -241,22 +251,29 @@ if __name__ == "__main__":
                         help="Folder mode: 'max' (default: full core genome if present, else most genes), 'all', or e.g. 20")
     parser.add_argument("--no-trees", action="store_true", help="Skip the colored tree plots")
     parser.add_argument("--no-pies", action="store_true", help="Skip the ecotype pie charts")
+    parser.add_argument("--outgroup-label", default=None,
+                        help=f"Name to show for the outgroup (default: read from {OUTGROUP_INFO} in the species folder)")
     args = parser.parse_args()
 
     folder = args.input if os.path.isdir(args.input) else os.path.dirname(os.path.abspath(args.input))
     clone_map = args.clone_map or os.path.join(folder, "clone_groups.csv")
     output = args.output or os.path.join(folder, "ecotype_plots")
+    # The species folder is the parent of ecosim_output_*.
+    og_label = args.outgroup_label or read_outgroup_label(
+        os.path.join(os.path.dirname(os.path.abspath(folder)), OUTGROUP_INFO))
 
     if os.path.isdir(args.input):
         gc = None if args.gene_count == "all" else ("max" if args.gene_count == "max" else int(args.gene_count))
-        n = plot_folder(args.input, output, clone_map, gc, trees=not args.no_trees, pies=not args.no_pies)
+        n = plot_folder(args.input, output, clone_map, gc, trees=not args.no_trees, pies=not args.no_pies,
+                        outgroup_label=og_label)
         print(f"Saved {n} plot(s) to {output}")
     else:
         out_png = output if output.endswith(".png") else os.path.join(
             output, os.path.splitext(os.path.basename(args.input))[0] + ".png")
         if not args.no_trees:
             plot_ecotype_tree(args.input, out_png, args.tree, clone_map,
-                              itol_path=os.path.splitext(out_png)[0] + "_itol_colors.txt")
+                              itol_path=os.path.splitext(out_png)[0] + "_itol_colors.txt",
+                              outgroup_label=og_label)
             print(f"Saved {out_png}")
         if not args.no_pies:
             pie_png = os.path.splitext(out_png)[0] + "_pie.png"
