@@ -277,7 +277,7 @@ Run it with the `ecotype` environment active (`conda activate ecotype`).
 | **Extra analyses** box | ANI within vs. between ecotypes (`--ani`), source papers with Claude summaries (`--papers`), ecotype x host/niche (`--niche`). These run after step 10, so they need Stop step 10; ANI also needs start step 1 or 2 (or an existing `fastani.tsv`) |
 | **Outputs to keep** box | One checkbox per `--keep` item (see [Outputs](#outputs)). Unchecking a default adds `--discard`, checking an extra one adds `--keep` |
 
-**Run:** **Run pipeline** starts one job at a time. The status line next to the buttons shows the current step and elapsed time, and the progress bar below counts genomes during Bakta and replicates during EcoSim (it pulses during steps that don't report a count). The working directory and Bakta database folder are remembered between launches (in `~/.ecotype_ui.json`). The log is the same output as the terminal, including the quoted command so you can replay it, with step headers in bold and errors and warnings in color. **Open results folder** opens the results once a run finishes. **Stop** ends the job and leaves partial output on disk so you can raise **Start step** and continue; a run that ends at **Stop after step** keeps what the next step needs, so it can be resumed the same way. Closing the window while a run is going asks before it stops the job.
+**Run:** **Run pipeline** starts one job at a time. The status line next to the buttons shows the current step and elapsed time, and the progress bar below counts genomes during Bakta and replicates during EcoSim (it pulses during steps that don't report a count). The working directory and Bakta database folder are remembered between launches (in `~/.ecotype_ui.json`). The log is the same output as the terminal, including the quoted command so you can replay it, with step headers in bold and errors and warnings in color. **Open results folder** opens the results once a run finishes, and **Open interactive tree** opens the ecotype tree in your browser (with a CSV batch, you pick which species). **Stop** ends the job and leaves partial output on disk so you can raise **Start step** and continue; a run that ends at **Stop after step** keeps what the next step needs, so it can be resumed the same way. Closing the window while a run is going asks before it stops the job.
 
 Results land under `<workdir>/<Species_name>/` (or `<workdir>/` for a CSV batch). If `ecotype_summary.csv` was written, the log prints its path.
 
@@ -469,7 +469,7 @@ ecosim_output_core_gene_alignment/
     ├── full_core_genome_results.png               # tree colored by ecotype
     ├── full_core_genome_results_itol_colors.txt
     ├── full_core_genome_results_pie.png           # genomes per ecotype
-    └── full_core_genome_results_interactive.html  # clickable tree with per-genome metadata and paper links
+    └── full_core_genome_results_interactive.html  # ecotype overview; click to zoom to every strain, with per-genome metadata and paper links
 ```
 
 To plot other replicates, or to re-plot after the run:

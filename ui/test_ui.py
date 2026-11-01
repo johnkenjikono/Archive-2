@@ -18,6 +18,7 @@ from ui import (
     default_alignment_path,
     find_bakta_dbs,
     find_ecotype_summaries,
+    find_interactive_trees,
     local_input_dir,
     resolve_workdir,
     results_dir,
@@ -34,6 +35,23 @@ from ui import (
     step_from_line,
     step_label,
 )
+
+
+class InteractiveTreeLookupTests(unittest.TestCase):
+    def test_finds_trees_for_one_species_and_for_a_batch_folder(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            single = root / "ecosim_output_x" / "ecotype_plots" / "full_core_genome_results_interactive.html"
+            nested = root / "Other_species" / "ecosim_output_x" / "ecotype_plots" / "sim_interactive.html"
+            for path in (single, nested):
+                path.parent.mkdir(parents=True)
+                path.write_text("")
+            (single.parent / "tree.png").write_text("")
+            self.assertEqual(find_interactive_trees(root), [single, nested])
+
+    def test_no_trees_gives_an_empty_list(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            self.assertEqual(find_interactive_trees(Path(tmp)), [])
 
 
 class StepStatusTests(unittest.TestCase):
