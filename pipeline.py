@@ -558,8 +558,10 @@ def run_tree_pipeline(input_fasta, start_step, outgroup_id, base_dir, output_tre
     trees, pies = "tree_plots" in keep, "pie_charts" in keep
     if start_step <= 10 and (trees or pies):
         print(f"\n--- 10. Plotting ecotypes (trees: {'yes' if trees else 'no'}, pie charts: {'yes' if pies else 'no'}) ---")
+        # The summary and tracks figures are tree plots too, so the tree_plots setting covers them.
         n_plots = plot_folder(ecosim_out_dir, plots_out_dir, clone_map_path=clone_map_path, trees=trees, pies=pies,
-                              outgroup_label=outgroup_label(Path(base_dir) / OUTGROUP_INFO))
+                              outgroup_label=outgroup_label(Path(base_dir) / OUTGROUP_INFO),
+                              summary=trees, tracks=trees)
         print(f"Plotted {n_plots} EcoSim result(s) into {plots_out_dir}")
     elif start_step <= 10:
         print("\n--- Skipping Step 10: tree plots and pie charts not kept ---")
