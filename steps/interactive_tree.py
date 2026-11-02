@@ -70,7 +70,11 @@ def write_interactive_tree(ecosim_out_dir, out_html=None):
     sources = _rows(folder / "genome_sources.csv", "accession")
     papers = _rows(folder / "papers.csv", "pmid")
     support = _rows(folder / "ecotype_tree_support.csv", "ecotype")
-    recovery = _rows(folder / "ecotype_support.csv", "ecotype")
+    # ecotype_support.csv may be left over from an earlier run whose ecotype numbers mean other strains:
+    # trust a row only for the full core tree and only when its members are this ecotype's members.
+    members_key = {str(eco["number"]): ";".join(eco["members"]) for eco in result["ecotypes"]}
+    recovery = {eco: row for eco, row in _rows(folder / "ecotype_support.csv", "ecotype").items()
+                if xml_path.name == FULL_CORE_XML and row.get("members") == members_key.get(eco)}
     params = _run_parameters(folder)
     ecotype_of = {m: eco["number"] for eco in result["ecotypes"] for m in eco["members"]}
     palette = _ecotype_colors(result)

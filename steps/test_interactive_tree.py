@@ -93,6 +93,28 @@ class InteractiveTreeDataTest(unittest.TestCase):
         self.assertEqual(data["gene_counts"], [])
         self.assertIsNone(self.row(data, 1)["support"])
 
+    def test_stale_support_rows_with_other_members_are_ignored(self):
+        write_run(self.folder)
+        (self.folder / "ecotype_support.csv").write_text(
+            "ecotype,size,support_g1,support_g20,members\n1,2,0.9,0.9,x;y\n2,1,0.5,1.0,c\n")
+        data = tree_data(self.folder)
+        self.assertIsNone(self.row(data, 1)["support"])
+        self.assertEqual(self.row(data, 2)["support"], [0.5, 1.0])
+
+    def test_no_matching_support_rows_means_no_recovery_columns(self):
+        write_run(self.folder)
+        (self.folder / "ecotype_support.csv").write_text("ecotype,size,support_g1,members\n1,2,0.9,x;y\n")
+        data = tree_data(self.folder)
+        self.assertEqual(data["gene_counts"], [])
+        self.assertIsNone(self.row(data, 1)["support"])
+
+    def test_support_is_only_used_with_the_full_core_tree(self):
+        write_run(self.folder)
+        (self.folder / FULL_CORE_XML).rename(self.folder / "core_g20_t1_results.xml")
+        data = tree_data(self.folder)
+        self.assertEqual(data["gene_counts"], [])
+        self.assertIsNone(self.row(data, 1)["support"])
+
     def test_strain_keeps_clones_and_environmental_metadata(self):
         write_run(self.folder)
         tip = tree_data(self.folder)["tips"][0]
