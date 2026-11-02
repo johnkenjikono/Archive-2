@@ -163,8 +163,9 @@ class CommandLineTest(unittest.TestCase):
         return fasta_ids(self.work / "Test_species" / "pipeline_temp_core_gene_alignment" / "tree_rdy_fastas"
                          / "core_gene_alignment_sorted.fasta")
 
-    def test_default_run_trims_to_sample_size(self):
-        self.assertEqual(len(self.run_from_step_4()), 2)
+    def test_resume_at_step_4_keeps_every_genome(self):
+        # Step 1 did not run here, so nothing was oversampled and there is nothing to trim back.
+        self.assertEqual(len(self.run_from_step_4()), 4)
 
     def test_oversample_zero_keeps_every_genome(self):
         self.assertEqual(len(self.run_from_step_4("--oversample", "0")), 4)
