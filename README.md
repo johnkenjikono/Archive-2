@@ -527,7 +527,9 @@ python steps/post_processing.py ecosim_results # per-ecotype membership spreadsh
 # needs ANTHROPIC_API_KEY. Same as `pipeline.py --niche`.)
 python steps/niche_metadata.py Species_name/ecosim_output_core_gene_alignment "Species name"
 
-# Source BioProjects and papers (same as `pipeline.py --papers`; --no-summaries skips Claude)
+# Source BioProjects and papers (same as `pipeline.py --papers`; --no-summaries skips Claude).
+# NCBI requests retry on throttling and dropped connections; an optional NCBI_API_KEY
+# raises NCBI's limit from 3 to 10 requests a second.
 python steps/papers.py Species_name/ecosim_output_core_gene_alignment "Species name"
 
 # ANI within vs. between ecotypes from a FastANI table (same as `pipeline.py --ani`)

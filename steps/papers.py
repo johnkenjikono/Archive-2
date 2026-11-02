@@ -11,15 +11,19 @@ Writes into the EcoSim output folder:
   papers.csv          pmid, title, journal, year, doi, url, genomes, summary
 
 Needs ANTHROPIC_API_KEY for the summaries (rows are still written without one).
+NCBI_API_KEY is optional: with it, NCBI allows 10 requests a second instead of 3.
 
   python steps/papers.py ecosim_output_dir "Treponema pallidum"
 """
 import argparse
 import csv
+import http.client
 import json
+import os
 import subprocess
 import tempfile
 import time
+import urllib.error
 import urllib.parse
 import urllib.request
 import xml.etree.ElementTree as ET
@@ -34,15 +38,31 @@ except ImportError:  # run as a script: python steps/papers.py
 EUTILS = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils"
 LLM_MODEL = "claude-opus-5-5"
 BATCH = 200          # ids per E-utilities request
+LINK_BATCH = 40      # BioProjects per elink request: NCBI drops the connection on ~130 or more
 SUMMARY_CHUNK = 25   # papers per Claude request
+RETRIES = 5          # attempts per E-utilities request
+NCBI_API_KEY = os.environ.get("NCBI_API_KEY", "")
 
 
 def _eutils(tool, **params):
-    """POST one E-utilities request (POST, so long id lists fit). Sleeps to stay under NCBI's 3 requests/s."""
+    """POST one E-utilities request (POST, so long id lists fit), retrying throttling (429), server errors
+    and dropped connections with backoff. Sleeps to stay under NCBI's rate limit."""
+    if NCBI_API_KEY:
+        params["api_key"] = NCBI_API_KEY
     data = urllib.parse.urlencode(params, doseq=True).encode()
-    with urllib.request.urlopen(f"{EUTILS}/{tool}.fcgi", data=data, timeout=120) as response:
-        body = response.read()
-    time.sleep(0.4)
+    for attempt in range(RETRIES):
+        try:
+            with urllib.request.urlopen(f"{EUTILS}/{tool}.fcgi", data=data, timeout=120) as response:
+                body = response.read()
+            break
+        except urllib.error.HTTPError as exc:
+            if (exc.code != 429 and exc.code < 500) or attempt == RETRIES - 1:
+                raise
+        except (urllib.error.URLError, http.client.HTTPException, ConnectionError, TimeoutError):
+            if attempt == RETRIES - 1:
+                raise
+        time.sleep(2 ** attempt)
+    time.sleep(0.12 if NCBI_API_KEY else 0.4)
     return body
 
 
@@ -74,12 +94,14 @@ def fetch_bioproject_papers(bioprojects):
         summary = json.loads(_eutils("esummary", db="bioproject", id=",".join(uids), retmode="json"))["result"]
         acc_of = {uid: summary[uid]["project_acc"] for uid in summary.get("uids", [])}
         # One id= per uid keeps a separate linkset per BioProject.
-        links = json.loads(_eutils("elink", dbfrom="bioproject", db="pubmed", id=uids, retmode="json"))
         pmids = {}
-        for linkset in links.get("linksets", []):
-            for db in linkset.get("linksetdbs", []):
-                if db.get("linkname") == "bioproject_pubmed":
-                    pmids[linkset["ids"][0]] = db["links"]
+        for link_start in range(0, len(uids), LINK_BATCH):
+            links = json.loads(_eutils("elink", dbfrom="bioproject", db="pubmed",
+                                       id=uids[link_start:link_start + LINK_BATCH], retmode="json"))
+            for linkset in links.get("linksets", []):
+                for db in linkset.get("linksetdbs", []):
+                    if db.get("linkname") == "bioproject_pubmed":
+                        pmids[linkset["ids"][0]] = db["links"]
         for uid, acc in acc_of.items():
             if acc in chunk:
                 found[acc] = (summary[uid].get("project_title", ""), pmids.get(uid, []))
