@@ -948,7 +948,8 @@ def run_pipeline_for_species(species_name, outgroup_name, args):
             each_gene=args.each_gene,
             stop_step=args.stop_step,
             # An alignment passed with --input-fasta is the user's chosen set of genomes, so it is not cut.
-            sample_size=args.sample_size if args.oversample and not args.input_fasta else None,
+            # Trim only when this invocation oversampled in step 1; a resume keeps what the earlier run downloaded.
+            sample_size=args.sample_size if args.oversample and args.start_step <= 1 and not args.input_fasta else None,
             seed=args.seed,
         )
         # Steps 4-7 read the alignment, so keep it for a run that stopped before step 8.
