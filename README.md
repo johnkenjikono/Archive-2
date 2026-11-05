@@ -260,7 +260,7 @@ Run it with the `ecotype` environment active (`conda activate ecotype`).
 | **Batch CSV** | A CSV file (column 1 = species, column 4 = optional outgroup) | One row after another, same as `--csv-file`. **Fill blank outgroups** runs `fill_outgroups.py` first (add `--llm` with **Use Claude (LLM)**) and switches the CSV field to the filled file for review |
 | **Local genome folder** | Species (names the results folder) and a folder of `.fna` / `.fasta` / `.fa` files | Copies those genomes into `input/` and starts at step 2 (Bakta). Sample size and seed are hidden. Start step cannot be 1 |
 
-**Options** (Browse buttons pick files and folders). Working directory, Bakta database, Start step and Core-alignment FASTA are always on the screen; the rest, plus the **Analysis** and **Outputs to keep** boxes, are in the window that **Advanced settings…** opens:
+**Options** (Browse buttons pick files and folders). Working directory, Bakta database, Start step, Stop step and Core-alignment FASTA are always on the screen; the rest, plus the **Analysis**, **Extra analyses** and **Outputs to keep** boxes, are in the window that **Advanced settings…** opens:
 
 | Window field | Same as |
 |---|---|
@@ -269,13 +269,15 @@ Run it with the `ecotype` environment active (`conda activate ecotype`).
 | Threads | `--threads` (default 12) |
 | Bakta parallel jobs | `--bakta-jobs` (leave blank to use `threads // 4`) |
 | Start at step | `--start-step` (1–10, listed by name, e.g. "5 · Build tree") |
+| Stop after step | `--stop-step` (1–10; default 10 runs everything. "6 · Reroot tree" stops at the tree) |
 | Core-alignment FASTA | `--input-fasta` (needed when starting at step 4+ unless that file already exists in the species folder) |
 | Outgroup ID | `--outgroup-id` (force a tree leaf) |
 | Setup only | `--setup-only` (create folders and stop) |
 | **Analysis** box | Clone threshold (`--clone-threshold`), Full core genome comparison (`--no-full-core` when unchecked), every gene at the 1-gene level (`--each-gene`), replicates per gene count (`--replicates`) |
+| **Extra analyses** box | ANI within vs. between ecotypes (`--ani`), source papers with Claude summaries (`--papers`), ecotype x host/niche (`--niche`). These run after step 10, so they need Stop step 10; ANI also needs start step 1 or 2 (or an existing `fastani.tsv`) |
 | **Outputs to keep** box | One checkbox per `--keep` item (see [Outputs](#outputs)). Unchecking a default adds `--discard`, checking an extra one adds `--keep` |
 
-**Run:** **Run pipeline** starts one job at a time. The status line next to the buttons shows the current step and elapsed time, and the progress bar below counts genomes during Bakta and replicates during EcoSim (it pulses during steps that don't report a count). The working directory and Bakta database folder are remembered between launches (in `~/.ecotype_ui.json`). The log is the same output as the terminal, including the quoted command so you can replay it, with step headers in bold and errors and warnings in color. **Open results folder** opens the results once a run finishes. **Stop** ends the job and leaves partial output on disk so you can raise **Start step** and continue. Closing the window while a run is going asks before it stops the job.
+**Run:** **Run pipeline** starts one job at a time. The status line next to the buttons shows the current step and elapsed time, and the progress bar below counts genomes during Bakta and replicates during EcoSim (it pulses during steps that don't report a count). The working directory and Bakta database folder are remembered between launches (in `~/.ecotype_ui.json`). The log is the same output as the terminal, including the quoted command so you can replay it, with step headers in bold and errors and warnings in color. **Open results folder** opens the results once a run finishes, and **Open interactive tree** opens the ecotype tree in your browser (with a CSV batch, you pick which species). **Stop** ends the job and leaves partial output on disk so you can raise **Start step** and continue; a run that ends at **Stop after step** keeps what the next step needs, so it can be resumed the same way. Closing the window while a run is going asks before it stops the job.
 
 Results land under `<workdir>/<Species_name>/` (or `<workdir>/` for a CSV batch). If `ecotype_summary.csv` was written, the log prints its path.
 
@@ -352,7 +354,8 @@ Input (one required)
   --csv-file PATH          Batch file: column 1 = species, column 4 = outgroup
 
 Download (step 1)
-  --sample-size INT        Assemblies to randomly sample (default: 200; more = longer runs, more memory)
+  --sample-size INT        Distinct genomes to end up with (default: 200; more = longer runs, more memory)
+  --oversample PERCENT     Extra assemblies to download, trimmed after clone collapsing (default: 15, so 200 becomes 230; 0 = off)
   --seed INT               Sampling seed, for reproducible genome sets (default: 42)
 
 Annotation / pan-genome (steps 2–3)
@@ -372,6 +375,7 @@ Execution
   --clone-threshold FLOAT  Max per-site divergence for two genomes to count as clones (default: 1e-5; 0 = identical only)
   --input-fasta PATH       Core alignment to use when starting at steps 4-7 (core_alignment_header.embl must be next to it)
   --setup-only             Create the folder structure and exit
+  --stop-step {1..10}      Last step to run (default: 10). At 6 or earlier the tree uses every genome (e.g. --sample-size 890 --stop-step 6)
 
 Rarefaction (steps 7-9)
   --gene-counts N [N ...]  Core genes per replicate (default: 1 3 7 20 100)
@@ -382,6 +386,11 @@ Rarefaction (steps 7-9)
 Outputs (see "Outputs")
   --keep ITEM[,ITEM]       Also keep these (repeatable; "all" keeps everything)
   --discard ITEM[,ITEM]    Drop these defaults (repeatable; "all" drops everything). --keep wins
+
+Optional analyses
+  --ani                    FastANI all-vs-all on the genomes (step 2), then ANI within vs. between ecotypes
+  --papers                 Each genome's BioProject and linked PubMed papers, with Claude summaries (ANTHROPIC_API_KEY)
+  --niche                  Ecotype x host/niche/country association from BioSample metadata (ANTHROPIC_API_KEY)
 ```
 
 ---
@@ -390,19 +399,20 @@ Outputs (see "Outputs")
 
 | # | Step | What happens |
 |---|---|---|
-| 1 | **Download** | Lists every *chromosome* or *complete* GenBank (`GCA_`) assembly for the species and draws a random sample of `--sample-size` with a fixed seed, so the same seed always gives the same genomes. Then downloads the `.fna` files. |
+| 1 | **Download** | Lists every *chromosome* or *complete* GenBank (`GCA_`) assembly for the species and draws a random sample of `--sample-size` plus `--oversample` percent (230 by default) with a fixed seed, so the same seed always gives the same genomes. Then downloads the `.fna` files. |
 | – | **Outgroup** | Uses `--outgroup` if given. Otherwise picks a RefSeq reference genome from another species in the same genus, falling back to any complete genome in the genus. The outgroup is annotated alongside the other genomes and appears in the alignment as `outgroup`. |
-| 2 | **Bakta** | Annotates every genome (up to 201), several at a time. Non-coding RNA searches and plots are skipped because Panaroo only uses coding genes. |
-| 3 | **Panaroo** | Builds the pan-genome in `strict` clean mode and a core-gene alignment with MAFFT (`core_gene_alignment.aln`). |
+| 2 | **Bakta** | Annotates every genome (up to 231 by default), several at a time. Non-coding RNA searches and plots are skipped because Panaroo only uses coding genes. |
+| 3 | **Panaroo** | Builds the pan-genome in `strict` clean mode and a core-gene alignment with MAFFT (`core_gene_alignment.aln`). Panaroo's core includes the outgroup, so `pangenome/core_gene_counts.csv` also reports the ingroup-only core (genes in ≥95% of ingroup genomes) and how many of those the outgroup shares. |
 | 4 | **Sort** | Checks that all sequences are the same length and moves the outgroup to the top of the alignment. |
 | 4b | **Collapse clones** | Genomes whose core alignments differ at no more than 10⁻⁵ of sites (`--clone-threshold`; 0 means identical only) are collapsed to one representative. A gap against a base counts as a difference. Groups are built greedily in alignment order: each genome joins the closest representative within the threshold, so members are within the threshold of their representative (and at most twice it of each other). `clone_groups.csv` records each genome's differences from its representative. The root genome is never collapsed, and genomes identical to it form their own group, because EcoSim never places the outgroup in an ecotype. Identical sequences give EcoSim zero-length branches and extra taxa without adding information. Every genome is listed in `clone_groups.csv`, and collapsed genomes get their representative's ecotype in the parsed results. `--no-dedup` turns this off. |
-| 5 | **Tree** | Builds a maximum-likelihood tree with VeryFastTree (`-nt -gtr -gamma -nosupport`) on all threads. |
-| 6 | **Reroot** | Roots the tree on the outgroup with Biopython. GCA/GCF accession variants are matched automatically. |
+| 4c | **Trim to sample size** | If more than `--sample-size` representatives remain, a seeded random pick cuts them down to that number, plus the outgroup. A dropped representative's clones go with it and leave `clone_groups.csv`. Skipped with `--oversample 0`, `--no-dedup` or `--input-fasta`. |
+| 5 | **Tree** | Builds a maximum-likelihood tree with VeryFastTree (`-nt -gtr -gamma`) on all threads, with SH-like local support values, saved as `full_core_tree_support.nwk`. Rarefaction trees skip support (`-nosupport`). |
+| 6 | **Reroot** | Roots the tree on the outgroup with Biopython. GCA/GCF accession variants are matched automatically. Support values are dropped from the rooted tree, because rerooting leaves the ones near the root on the wrong branches. `--stop-step 6` stops here. |
 | 7 | **Rarefaction** | Creates 100 sub-alignments (change with `--gene-counts` / `--replicates`; `--each-gene` runs every core gene once at the 1-gene level) by concatenating whole core genes drawn at random without replacement: 1, 3, 7, 20 and 100 genes, 20 replicates each. Gene boundaries come from Panaroo's `core_alignment_header.embl`, which must sit next to the alignment (checked before step 4 starts). Genes that are all gaps in any genome, which is how Panaroo pads a gene a genome lacks, are not sampled. The genes in each replicate are listed in `rarefaction_genes.csv`. This shows how the ecotype estimate changes with the number of genes. The whole core alignment is also added as one more replicate, `full_core_genome` (every core gene), so each subset can be compared with it; its tree is the step-5 tree. `--no-full-core` turns this off. |
 | 7b | **Rarefaction trees** | Builds and reroots one tree per sub-alignment. EcoSim's binning is driven by the tree, so reusing the full-alignment tree for every replicate made the rarefaction curve flat by construction. |
 | 8 | **EcoSim** | Runs `ecosim.jar` (demarcation mode, no GUI, 6 GB heap) on each sub-alignment against its own rooted tree, falling back to the full rooted tree for any replicate whose tree could not be built or rerooted. |
-| 9 | **Parse** | Counts the demarcated ecotypes in each EcoSim XML file and writes `ecotype_summary.csv`, plus `ecotype_membership.csv` listing which genome is in which ecotype for every replicate (clones expanded). It then compares every replicate with the full core genome: `rarefaction_comparison.csv` (per replicate), `rarefaction_by_gene_count.csv` (per gene count) and `ecotype_support.csv` (how often each full-core ecotype is recovered exactly at each gene count). |
-| 10 | **Plot** | Draws the tree EcoSim used for the full core genome (or, with `--no-full-core`, each 100-gene replicate) with every ecotype in its own color (`ecotype_plots/*.png`), plus an iTOL `TREE_COLORS` file per tree for the [iTOL](https://itol.embl.de) viewer, and a pie chart of genomes per ecotype (`*_pie.png`) in the same colors. |
+| 9 | **Parse** | Counts the demarcated ecotypes in each EcoSim XML file and writes `ecotype_summary.csv`, plus `ecotype_membership.csv` listing which genome is in which ecotype for every replicate (clones expanded). It then compares every replicate with the full core genome: `rarefaction_comparison.csv` (per replicate), `rarefaction_by_gene_count.csv` (per gene count) and `ecotype_support.csv` (how often each full-core ecotype is recovered exactly at each gene count). `ecotype_summary.csv` also carries EcoSim's own confidence intervals for npop (number of ecotypes), omega and sigma, and `ecotype_tree_support.csv` gives the SH-like support of each full-core ecotype's clade. |
+| 10 | **Plot** | Draws the tree EcoSim used for the full core genome (or, with `--no-full-core`, each 100-gene replicate) with every ecotype in its own color (`ecotype_plots/*.png`), plus an iTOL `TREE_COLORS` file per tree for the [iTOL](https://itol.embl.de) viewer, and a pie chart of genomes per ecotype (`*_pie.png`) in the same colors, and an interactive tree (`*_interactive.html`, opens offline in any browser) whose tips show ecotype, clones and any `--niche` / `--papers` metadata, with links to NCBI and PubMed. |
 
 **How the root is chosen, in order of priority:** `--outgroup-id` → the downloaded outgroup genome → the species' RefSeq reference genome (a proxy for the type strain) → the sequence whose accession number is largest.
 
@@ -444,7 +454,11 @@ ecosim_output_core_gene_alignment/
 ├── ...
 ├── sim_species_g100_t20_results.xml
 ├── full_core_genome_results.xml      # EcoSim on every core gene
-├── ecotype_summary.csv               # file,ecotype_count
+├── ecotype_summary.csv               # file,ecotype_count + EcoSim npop/omega/sigma and their confidence intervals
+├── ecotype_tree_support.csv          # SH-like support of each full-core ecotype's clade
+├── full_core_tree_support.nwk        # step-5 tree (unrooted) with support values
+├── ecotype_ani.csv                   # --ani: ANI within vs. between ecotypes (+ to the outgroup)
+├── genome_sources.csv, papers.csv    # --papers: BioProject, submitter, linked papers + Claude summaries
 ├── rarefaction_comparison.csv        # per replicate vs. full core: count difference, adjusted Rand index, ecotypes recovered
 ├── rarefaction_by_gene_count.csv     # the same, averaged per gene count
 ├── ecotype_support.csv               # per full-core ecotype: share of replicates that recover it exactly, per gene count
@@ -454,7 +468,8 @@ ecosim_output_core_gene_alignment/
 └── ecotype_plots/
     ├── full_core_genome_results.png               # tree colored by ecotype
     ├── full_core_genome_results_itol_colors.txt
-    └── full_core_genome_results_pie.png           # genomes per ecotype
+    ├── full_core_genome_results_pie.png           # genomes per ecotype
+    └── full_core_genome_results_interactive.html  # ecotype overview; click to zoom to every strain, with per-genome metadata and paper links
 ```
 
 To plot other replicates, or to re-plot after the run:
@@ -513,6 +528,15 @@ python steps/post_processing.py ecosim_results # per-ecotype membership spreadsh
 # Do ecotypes match host / isolation source / country? (Claude labels the BioSample metadata;
 # needs ANTHROPIC_API_KEY. Same as `pipeline.py --niche`.)
 python steps/niche_metadata.py Species_name/ecosim_output_core_gene_alignment "Species name"
+
+# Source BioProjects and papers (same as `pipeline.py --papers`; --no-summaries skips Claude)
+python steps/papers.py Species_name/ecosim_output_core_gene_alignment "Species name"
+
+# ANI within vs. between ecotypes from a FastANI table (same as `pipeline.py --ani`)
+python steps/ani.py Species_name/fastani.tsv Species_name/ecosim_output_core_gene_alignment
+
+# Rebuild the interactive tree (picks up genome_metadata.csv / papers.csv if present)
+python steps/interactive_tree.py Species_name/ecosim_output_core_gene_alignment
 ```
 
 ---
@@ -533,6 +557,9 @@ steps/             One module per pipeline step, each also runnable on its own
   run_ecosim.py             Step 8: EcoSim batch runner
   parsing.py                Step 9: ecotype counts
   niche_metadata.py         Optional (--niche): ecotype x host/niche/country association
+  ani.py                    Optional (--ani): FastANI, ANI within vs. between ecotypes
+  papers.py                 Optional (--papers): source BioProjects, PubMed papers, Claude summaries
+  interactive_tree.py       Step 10: clickable HTML tree
   post_processing.py        Optional: XML → Excel membership tables
 
 ui/                Desktop window
@@ -574,4 +601,5 @@ If this pipeline contributes to published work, please cite the tools it runs:
 - **VeryFastTree**: Piñeiro C., Abuín J.M., Pichel J.C. (2020). Very Fast Tree: speeding up the estimation of phylogenies for large alignments through parallelization and vectorization strategies. *Bioinformatics*.
 - **FastTree 2**: Price M.N., Dehal P.S., Arkin A.P. (2010). FastTree 2: approximately maximum-likelihood trees for large alignments. *PLoS ONE*.
 - **Ecotype Simulation**: Koeppel A. *et al.* (2008). Identifying the fundamental units of bacterial diversity: a paradigm shift to incorporate ecology into bacterial systematics. *PNAS*.
+- **FastANI** (`--ani`): Jain C. *et al.* (2018). High throughput ANI analysis of 90K prokaryotic genomes reveals clear species boundaries. *Nature Communications*.
 - **NCBI Datasets**: O'Leary N.A. *et al.* (2024). Exploring and retrieving sequence and metadata for species across the tree of life with NCBI Datasets. *Scientific Data*.

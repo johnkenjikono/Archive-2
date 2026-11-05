@@ -13,7 +13,7 @@ KEEP_ITEMS = {
     "rarefaction":    (False, "rarefaction sub-alignments and their trees"),
     "ecosim_xml":     (True,  "raw EcoSim XML per replicate (needed to rerun steps 9-10)"),
     "ecotypes":       (True,  "ecotype membership, full-core comparison and ecotype support tables"),
-    "tree_plots":     (True,  "trees colored by ecotype (PNG + iTOL colors)"),
+    "tree_plots":     (True,  "trees colored by ecotype (PNG + iTOL colors + interactive HTML)"),
     "pie_charts":     (True,  "pie charts of genomes per ecotype"),
 }
 DEFAULT_KEEP = {name for name, (default, _) in KEEP_ITEMS.items() if default}

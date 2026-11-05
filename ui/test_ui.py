@@ -18,6 +18,7 @@ from ui import (
     default_alignment_path,
     find_bakta_dbs,
     find_ecotype_summaries,
+    find_interactive_trees,
     local_input_dir,
     resolve_workdir,
     results_dir,
@@ -34,6 +35,23 @@ from ui import (
     step_from_line,
     step_label,
 )
+
+
+class InteractiveTreeLookupTests(unittest.TestCase):
+    def test_finds_trees_for_one_species_and_for_a_batch_folder(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            single = root / "ecosim_output_x" / "ecotype_plots" / "full_core_genome_results_interactive.html"
+            nested = root / "Other_species" / "ecosim_output_x" / "ecotype_plots" / "sim_interactive.html"
+            for path in (single, nested):
+                path.parent.mkdir(parents=True)
+                path.write_text("")
+            (single.parent / "tree.png").write_text("")
+            self.assertEqual(find_interactive_trees(root), [single, nested])
+
+    def test_no_trees_gives_an_empty_list(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            self.assertEqual(find_interactive_trees(Path(tmp)), [])
 
 
 class StepStatusTests(unittest.TestCase):
@@ -131,6 +149,23 @@ class ValidateFormTests(unittest.TestCase):
             "Local genome folder runs start at step 2 (Bakta). Choose 2 or later.",
             errors,
         )
+
+    def test_stop_step_not_before_start_step(self):
+        errors = validate_form(FormValues(mode="species", species="X", start_step=8, stop_step=6))
+        self.assertIn("The stop step must not come before the start step.", errors)
+        self.assertEqual(validate_form(FormValues(mode="species", species="X", start_step=8, stop_step=8)), [])
+
+    def test_ani_needs_step_2_or_an_existing_table(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            values = FormValues(mode="species", species="X", start_step=8, workdir=tmp, ani=True)
+            self.assertTrue(any("ANI needs FastANI" in e for e in validate_form(values)))
+            (Path(tmp) / "X").mkdir()
+            (Path(tmp) / "X" / "fastani.tsv").write_text("")
+            self.assertEqual(validate_form(values), [])
+
+    def test_extra_analyses_need_the_full_run(self):
+        errors = validate_form(FormValues(mode="species", species="X", start_step=8, stop_step=9, papers=True))
+        self.assertTrue(any("set the stop step to 10" in e for e in errors))
 
     def test_db_required_when_start_step_at_most_2(self):
         errors = validate_form(
@@ -348,6 +383,22 @@ class BuildCommandTests(unittest.TestCase):
         self.assertNotIn("--clone-threshold", default)
         argv = build_command(FormValues(mode="species", species="X", clone_threshold=0.0), "python", Path("pipeline.py"))
         self.assertEqual(argv[argv.index("--clone-threshold") + 1], "0")
+
+
+    def test_stop_step_only_when_before_last(self):
+        default = build_command(FormValues(mode="species", species="X"), "python", Path("pipeline.py"))
+        self.assertNotIn("--stop-step", default)
+        argv = build_command(FormValues(mode="species", species="X", stop_step=6), "python", Path("pipeline.py"))
+        self.assertEqual(argv[argv.index("--stop-step") + 1], "6")
+
+    def test_extra_analysis_flags(self):
+        default = build_command(FormValues(mode="species", species="X"), "python", Path("pipeline.py"))
+        for flag in ("--ani", "--papers", "--niche"):
+            self.assertNotIn(flag, default)
+        argv = build_command(FormValues(mode="species", species="X", ani=True, papers=True, niche=True),
+                             "python", Path("pipeline.py"))
+        for flag in ("--ani", "--papers", "--niche"):
+            self.assertIn(flag, argv)
 
 
 class FillOutgroupsCommandTests(unittest.TestCase):

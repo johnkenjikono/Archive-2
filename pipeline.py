@@ -30,11 +30,15 @@ from steps.run_trees import make_trees_batch, write_error_log, find_fasttree_exe
 from steps.reroot_tree import reroot_tree_by_first_fasta
 from steps.rarefaction import create_rarefaction_fastas, find_gene_header, FULL_CORE_NAME
 from steps.run_ecosim import run_ecosim_batch, _resolve_ecosim_jar
-from steps.parsing import summarize_ecotypes_in_folder, write_membership_csv, compare_to_full_core
-from steps.dedup_clones import collapse_identical_sequences, DEFAULT_CLONE_THRESHOLD
+from steps.parsing import (summarize_ecotypes_in_folder, write_membership_csv, compare_to_full_core,
+                           parse_ecosim_xml, write_tree_support, FULL_CORE_XML)
+from steps.dedup_clones import collapse_identical_sequences, trim_representatives, DEFAULT_CLONE_THRESHOLD
 from steps.visualize_ecotypes import plot_folder
 from steps.outputs import KEEP_ITEMS, DEFAULT_KEEP, resolve_keep
 from steps.niche_metadata import run_niche_analysis
+from steps.ani import run_fastani, summarize_ani
+from steps.papers import run_paper_lookup
+from steps.interactive_tree import write_interactive_tree
 
 # Falls back to the bundled tools/ecosim.jar / tools/ dir (where bin/ lives) when env vars are unset.
 ECOSIM_JAR = _resolve_ecosim_jar()
@@ -43,7 +47,7 @@ ECOSIM_DIR = os.environ.get("ECOSIM_DIR") or str(
     Path(__file__).resolve().parent / "tools" / ("linux" if sys.platform.startswith("linux") else "")
 )
 
-# Default cap on genomes annotated/clustered: 200 sampled + the outgroup. Raised by --sample-size.
+# Default cap on genomes annotated/clustered: 200 sampled + the outgroup. Raised by --sample-size and --oversample.
 MAX_GFF_FILES = 201
 
 PANGENOME_FILES = (
@@ -67,8 +71,43 @@ def save_pangenome_outputs(panaroo_results: Path, dest: Path, keep):
             saved.append(name)
     if saved:
         print(f"Saved {', '.join(saved)} to {dest}")
+
+def write_core_gene_counts(panaroo_results: Path, dest: Path, threshold=0.95):
+    """Core genes of the ingroup alone, and how many of them the outgroup also carries.
+
+    Panaroo's own core (and so the alignment) is computed with the outgroup included;
+    this gives the ingroup-only core for reference. threshold matches Panaroo's default
+    --core_threshold. Writes core_gene_counts.csv into dest; None without an outgroup.
+    """
+    rtab = panaroo_results / "gene_presence_absence.Rtab"
+    if not rtab.exists():
+        return None
+    with open(rtab) as f:
+        rows = list(csv.reader(f, delimiter="\t"))
+    genomes = rows[0][1:]
+    if "outgroup" not in genomes:
+        print("No outgroup genome in the Panaroo table; skipped the ingroup/outgroup core gene counts.")
+        return None
+    og = genomes.index("outgroup")
+    ingroup = [i for i in range(len(genomes)) if i != og]
+    core = [r[1:] for r in rows[1:] if sum(r[1 + i] != "0" for i in ingroup) >= threshold * len(ingroup)]
+    shared = sum(r[og] != "0" for r in core)
+    dest.mkdir(parents=True, exist_ok=True)
+    out = dest / "core_gene_counts.csv"
+    with open(out, "w", newline="") as f:
+        writer = csv.writer(f)
+        writer.writerow(["ingroup_genomes", "core_threshold", "ingroup_core_genes",
+                         "shared_with_outgroup", "ingroup_only"])
+        writer.writerow([len(ingroup), threshold, len(core), shared, len(core) - shared])
+    print(f"Ingroup core genes (in >= {threshold:.0%} of {len(ingroup)} genomes): {len(core)}; "
+          f"{shared} also in the outgroup, {len(core) - shared} not. Saved {out}")
+    return out
 # make_trees_batch builds each tree on at most this many leading sequences.
 TREE_SEQ_CAP = inspect.signature(make_trees_batch).parameters["max_sequences_per_run"].default
+
+def oversampled_size(sample_size, percent):
+    """Genomes to download so that sample_size distinct ones can survive clone collapsing (rounds up)."""
+    return sample_size + (sample_size * percent + 99) // 100
 
 def _cleanup(path, label=None):
     p = str(path)
@@ -83,7 +122,7 @@ def _cleanup(path, label=None):
     except Exception as e:
         print(f"Warning: could not remove {name}: {e}")
 
-def _drop_stale_trees(fasta_path, tree_paths, label):
+def _drop_stale_trees(fasta_path, tree_paths, label, cap=TREE_SEQ_CAP):
     """
     Delete cached trees whose leaves are not the sequences in fasta_path.
 
@@ -93,7 +132,7 @@ def _drop_stale_trees(fasta_path, tree_paths, label):
     """
     with open(fasta_path) as handle:
         ids = [title.split(None, 1)[0] for title, _ in SimpleFastaParser(handle)]
-    expected = set(ids[:TREE_SEQ_CAP])
+    expected = set(ids[:cap])
     stale = 0
     for path in tree_paths:
         if not (os.path.exists(path) and os.path.getsize(path) > 0):
@@ -107,6 +146,13 @@ def _drop_stale_trees(fasta_path, tree_paths, label):
             stale += 1
     if stale:
         print(f"Removed {stale} cached {label} built on a different set of sequences.")
+
+def _stopped_after(step, stop_step):
+    """True (and says how to resume) when --stop-step is this step."""
+    if step != stop_step:
+        return False
+    print(f"\n--stop-step {step}: stopping here. Resume with --start-step {step + 1}.")
+    return True
 
 def setup_directories(base_dir: Path):
     input_dir = base_dir / "input"
@@ -339,7 +385,9 @@ def run_panaroo(gff_files: list[Path], roary_dir: Path, threads: int, error_log=
 
 def run_tree_pipeline(input_fasta, start_step, outgroup_id, base_dir, output_tree_name=None, threads=8, dedup=True,
                       clone_threshold=DEFAULT_CLONE_THRESHOLD,
-                      keep=None, full_core=True, gene_counts=None, replicates=20, each_gene=False):
+                      keep=None, full_core=True, gene_counts=None, replicates=20, each_gene=False,
+                      stop_step=10, sample_size=None, seed=42):
+    """sample_size: after collapsing clones, randomly trim to this many representatives (None keeps them all)."""
     keep = DEFAULT_KEEP if keep is None else keep
     # Steps 8-10 only read files under base_dir; the alignment path just names them.
     if start_step <= 7 and not os.path.exists(input_fasta):
@@ -370,6 +418,10 @@ def run_tree_pipeline(input_fasta, start_step, outgroup_id, base_dir, output_tre
     clone_map_path = os.path.join(ecosim_out_dir, "clone_groups.csv")
     rarefaction_genes_path = os.path.join(ecosim_out_dir, "rarefaction_genes.csv")
     plots_out_dir = os.path.join(ecosim_out_dir, "ecotype_plots")
+    # Step 5's tree with FastTree support values, for ecotype support in step 9.
+    support_tree = os.path.join(ecosim_out_dir, "full_core_tree_support.nwk")
+    # A run stopping at the tree is not fed to EcoSim, so it is built on every genome rather than the first TREE_SEQ_CAP.
+    tree_cap = None if stop_step <= 6 else TREE_SEQ_CAP
 
     os.makedirs(temp_tree_rdy, exist_ok=True)
     os.makedirs(ecosim_out_dir, exist_ok=True)
@@ -396,25 +448,34 @@ def run_tree_pipeline(input_fasta, start_step, outgroup_id, base_dir, output_tre
             if collapse_identical_sequences(sorted_fasta, sorted_fasta, clone_map_path, outgroup_id,
                                             threshold=clone_threshold) is None:
                 sys.exit(1)
+            if sample_size is not None:
+                trim_representatives(sorted_fasta, clone_map_path, sample_size, outgroup_id, seed)
         else:
             _cleanup(clone_map_path, "stale clone map")
     else:
         print("--- Skipping Step 4: Using existing sorted FASTA ---")
+    # Early stops keep pipeline_temp_*/ (sorted FASTA, unrooted tree) so the run can resume.
+    if _stopped_after(4, stop_step):
+        return
 
     # --- Step 5: Run FastTree ---
     if start_step <= 5:
-        _drop_stale_trees(sorted_fasta, [unrooted_tree], "full-alignment tree")
+        _drop_stale_trees(sorted_fasta, [unrooted_tree], "full-alignment tree", cap=tree_cap)
         if os.path.exists(unrooted_tree) and os.path.getsize(unrooted_tree) > 0:
             print(f"\n--- Skipping Step 5: Existing tree found for {species_name} ---")
         else:
             print(f"\n--- 5. Building unrooted tree using FastTree ---")
-            make_trees_batch(final_folder=temp_tree_rdy, tree_folder=temp_trees_final, threads=threads)
+            make_trees_batch(final_folder=temp_tree_rdy, tree_folder=temp_trees_final, threads=threads,
+                             support=True, max_sequences_per_run=tree_cap)
 
             if not os.path.exists(unrooted_tree) or os.path.getsize(unrooted_tree) == 0:
                 print("FastTree failed to produce an output tree. Exiting pipeline.")
                 sys.exit(1)
+        shutil.copy2(unrooted_tree, support_tree)
     else:
         print("\n--- Skipping Step 5: Using existing unrooted tree ---")
+    if _stopped_after(5, stop_step):
+        return
 
     # --- Step 6: Reroot Tree ---
     if start_step <= 6:
@@ -430,6 +491,10 @@ def run_tree_pipeline(input_fasta, start_step, outgroup_id, base_dir, output_tre
             sys.exit(1)
     else:
         print("\n--- Skipping Step 6: Using existing rerooted tree ---")
+
+    if _stopped_after(6, stop_step):
+        print(f"Rooted tree: {rerooted_tree}\nUnrooted tree with support values: {support_tree}")
+        return
 
     # --- Step 7: Rarefaction Fasta Creation ---
     if start_step <= 7:
@@ -487,6 +552,8 @@ def run_tree_pipeline(input_fasta, start_step, outgroup_id, base_dir, output_tre
         print(f"Rerooted {rerooted} sub-alignment trees in {rarefaction_tree_dir}")
     else:
         print("\n--- Skipping Step 7: Using existing rarefaction FASTAs and trees ---")
+    if _stopped_after(7, stop_step):
+        return
 
     # --- Step 8: Run EcoSim ---
     if start_step <= 8:
@@ -514,6 +581,8 @@ def run_tree_pipeline(input_fasta, start_step, outgroup_id, base_dir, output_tre
             _cleanup(rerooted_tree, "rerooted tree")
     else:
         print("\n--- Skipping Step 8 ---")
+    if _stopped_after(8, stop_step):
+        return
 
     # --- Step 9: Parse Results ---
     if start_step <= 9:
@@ -526,10 +595,21 @@ def run_tree_pipeline(input_fasta, start_step, outgroup_id, base_dir, output_tre
             csv_path = os.path.join(ecosim_out_dir, "ecotype_summary.csv")
             with open(csv_path, "w", newline="") as f:
                 writer = csv.writer(f)
-                writer.writerow(["file", "ecotype_count"])
+                writer.writerow(["file", "ecotype_count", "npop", "npop_ci_lower", "npop_ci_upper",
+                                 "omega", "omega_ci_lower", "omega_ci_upper",
+                                 "sigma", "sigma_ci_lower", "sigma_ci_upper"])
                 for filename, count in sorted(summary.items()):
-                    writer.writerow([filename, count])
-            print(f"Summary saved to {csv_path}")
+                    r = parse_ecosim_xml(os.path.join(ecosim_out_dir, filename)) or {}
+                    writer.writerow([filename, count]
+                                    + [v for name in ("npop", "omega", "sigma")
+                                       for v in (r.get(name), *r.get(f"{name}_ci", (None, None)))])
+            print(f"Summary (with EcoSim confidence intervals) saved to {csv_path}")
+            full_xml = os.path.join(ecosim_out_dir, FULL_CORE_XML)
+            if os.path.exists(full_xml) and os.path.exists(support_tree):
+                path = write_tree_support(full_xml, support_tree,
+                                          os.path.join(ecosim_out_dir, "ecotype_tree_support.csv"))
+                if path:
+                    print(f"Ecotype clade support saved to {path}")
             if "ecotypes" in keep:
                 membership_csv = write_membership_csv(ecosim_out_dir, clone_map_path)
                 if membership_csv:
@@ -541,6 +621,8 @@ def run_tree_pipeline(input_fasta, start_step, outgroup_id, base_dir, output_tre
                     print("No full core genome result; skipped the rarefaction vs. full-core comparison.")
         else:
             print("No ecotypes found or error in parsing.")
+    if _stopped_after(9, stop_step):
+        return
 
     # --- Step 10: Color the phylogeny by ecotype ---
     trees, pies = "tree_plots" in keep, "pie_charts" in keep
@@ -550,11 +632,6 @@ def run_tree_pipeline(input_fasta, start_step, outgroup_id, base_dir, output_tre
         print(f"Plotted {n_plots} EcoSim result(s) into {plots_out_dir}")
     elif start_step <= 10:
         print("\n--- Skipping Step 10: tree plots and pie charts not kept ---")
-
-    if "ecosim_xml" not in keep:
-        for xml_file in glob.glob(os.path.join(ecosim_out_dir, "*.xml")):
-            os.remove(xml_file)
-        print("Removed: EcoSim XML files")
 
     print(f"\nPipeline for {species_name} completed successfully!")
     
@@ -702,7 +779,8 @@ def write_run_parameters(base_dir, species_name, outgroup_name, args):
         "discarded": sorted(set(KEEP_ITEMS) - args.keep),
         **{k: v for k, v in vars(args).items()
            if k in ("sample_size", "seed", "start_step", "threads", "no_dedup", "clone_threshold", "no_full_core",
-                    "gene_counts", "replicates", "each_gene", "outgroup_id", "db")},
+                    "gene_counts", "replicates", "each_gene", "outgroup_id", "db",
+                    "stop_step", "ani", "papers", "niche", "oversample")},
         # The settings above do not pin the software, and the tools and the Bakta database are
         # both unpinned, so without these a result cannot be reproduced or even diagnosed later.
         "software": collect_provenance(getattr(args, "db", None)),
@@ -735,7 +813,9 @@ def run_pipeline_for_species(species_name, outgroup_name, args):
         if not shutil.which("datasets"):
             print("Error: NCBI 'datasets' CLI tool not found. Run `conda activate ecotype` first (see README).", file=sys.stderr)
             sys.exit(1)
-        process_species_genome(species_name, args.sample_size, str(input_dir), args.seed)
+        process_species_genome(species_name, oversampled_size(args.sample_size, args.oversample), str(input_dir), args.seed)
+    if _stopped_after(1, args.stop_step):
+        return
 
     # --- Outgroup: explicit arg, or auto-detect ---
     if not outgroup_name and not args.no_auto_outgroup:
@@ -769,7 +849,7 @@ def run_pipeline_for_species(species_name, outgroup_name, args):
 
         # Ensure deterministic ordering and cap the number of files Bakta will process
         fasta_files = _outgroup_first(fasta_files)
-        max_files = max(MAX_GFF_FILES, args.sample_size + 1)
+        max_files = max(MAX_GFF_FILES, oversampled_size(args.sample_size, args.oversample) + 1)
         if len(fasta_files) > max_files:
             print(f"Found {len(fasta_files)} FASTA files; limiting to first {max_files} for Bakta processing.")
             fasta_files = fasta_files[:max_files]
@@ -783,8 +863,14 @@ def run_pipeline_for_species(species_name, outgroup_name, args):
         failed = sum(r is None for r in results)
         if failed:
             print(f"Warning: Bakta failed on {failed}/{len(fasta_files)} genome(s).", file=sys.stderr)
+        if args.ani:
+            print(f"\n--- FastANI all-vs-all on {len(fasta_files)} genomes ---")
+            if run_fastani(fasta_files, base_dir / "fastani.tsv", args.threads):
+                print(f"Saved {base_dir / 'fastani.tsv'}")
         if "genomes" not in args.keep:
             _cleanup(input_dir, "input genomes")
+    if _stopped_after(2, args.stop_step):
+        return
 
     # --- Step 3: Panaroo ---
     if args.start_step <= 3:
@@ -795,7 +881,7 @@ def run_pipeline_for_species(species_name, outgroup_name, args):
 
         # Ensure deterministic ordering and cap the number of GFF files Panaroo will process
         gff_files = _outgroup_first(gff_files)
-        max_files = max(MAX_GFF_FILES, args.sample_size + 1)
+        max_files = max(MAX_GFF_FILES, oversampled_size(args.sample_size, args.oversample) + 1)
         if len(gff_files) > max_files:
             print(f"Found {len(gff_files)} GFF3 files; limiting to first {max_files} for Panaroo processing.")
             gff_files = gff_files[:max_files]
@@ -807,6 +893,7 @@ def run_pipeline_for_species(species_name, outgroup_name, args):
         run_panaroo(gff_files, roary_dir, args.threads, error_log)
         core_alignment_path = roary_dir / "results" / "core_gene_alignment.aln"
         save_pangenome_outputs(roary_dir / "results", pangenome_dir, args.keep)
+        write_core_gene_counts(roary_dir / "results", pangenome_dir)
         # Keep annotations when Panaroo finds no core genes, so a rerun needn't redo Bakta.
         if core_alignment_path.exists() and "annotations" not in args.keep:
             _cleanup(bakta_dir, "Bakta annotations")
@@ -820,6 +907,8 @@ def run_pipeline_for_species(species_name, outgroup_name, args):
             # output_roary/ is deleted after a full run; --keep core_alignment saves a copy in pangenome/.
             candidates = [roary_dir / "results" / "core_gene_alignment.aln", pangenome_dir / "core_gene_alignment.aln"]
             core_alignment_path = next((p for p in candidates if p.exists()), None)
+    if _stopped_after(3, args.stop_step):
+        return
 
     # --- Steps 4-10: Tree Pipeline ---
     if args.start_step <= 10:
@@ -857,17 +946,58 @@ def run_pipeline_for_species(species_name, outgroup_name, args):
             gene_counts=args.gene_counts,
             replicates=args.replicates,
             each_gene=args.each_gene,
+            stop_step=args.stop_step,
+            # An alignment passed with --input-fasta is the user's chosen set of genomes, so it is not cut.
+            # Trim only when this invocation oversampled in step 1; a resume keeps what the earlier run downloaded.
+            sample_size=args.sample_size if args.oversample and args.start_step <= 1 and not args.input_fasta else None,
+            seed=args.seed,
         )
-        if args.start_step <= 3 and "panaroo" not in args.keep:
+        # Steps 4-7 read the alignment, so keep it for a run that stopped before step 8.
+        if args.start_step <= 3 and "panaroo" not in args.keep and args.stop_step >= 8:
             _cleanup(roary_dir, "Panaroo output")
+        if args.stop_step < 10:  # the add-ons below need the finished ecotype results
+            return
+
+        alignment_name = core_alignment_path.name.replace(".fasta", "").replace(".aln", "")  # as run_tree_pipeline names it
+        ecosim_dir = base_dir / f"ecosim_output_{alignment_name}"
+        # Optional add-ons: the ecotype results are already saved, so a failure only warns.
+        if args.ani:
+            print("\n--- ANI within vs. between ecotypes ---")
+            ani_tsv = base_dir / "fastani.tsv"
+            if not ani_tsv.exists():
+                print(f"No {ani_tsv.name}: FastANI runs in step 2, so start at step 1 or 2 with --ani.")
+            else:
+                try:
+                    path = summarize_ani(ani_tsv, ecosim_dir)
+                    if path:
+                        print(f"Saved {path}")
+                except Exception as exc:
+                    print(f"Warning: ANI summary failed: {exc}", file=sys.stderr)
 
         if args.niche:
             print("\n--- Ecotype x niche association (Claude-labelled BioSample metadata) ---")
-            alignment_name = core_alignment_path.name.replace(".fasta", "").replace(".aln", "")  # as run_tree_pipeline names it
             try:
-                run_niche_analysis(base_dir / f"ecosim_output_{alignment_name}", species_name)
-            except Exception as exc:  # optional add-on: the ecotype results are already saved
+                run_niche_analysis(ecosim_dir, species_name)
+            except Exception as exc:
                 print(f"Warning: niche analysis failed: {exc}", file=sys.stderr)
+
+        if args.papers:
+            print("\n--- Source BioProjects and papers (Claude summaries) ---")
+            try:
+                run_paper_lookup(ecosim_dir, species_name)
+            except Exception as exc:
+                print(f"Warning: paper lookup failed: {exc}", file=sys.stderr)
+
+        if "tree_plots" in args.keep:
+            html_path = write_interactive_tree(ecosim_dir)
+            if html_path:
+                print(f"Interactive tree saved to {html_path}")
+
+        # Kept until here: the interactive tree reads the tree and ecotypes from the XML.
+        if "ecosim_xml" not in args.keep:
+            for xml_file in ecosim_dir.glob("*.xml"):
+                xml_file.unlink()
+            print("Removed: EcoSim XML files")
 
 def run_csv_batch(csv_path, args):
     """Run the pipeline for every species/outgroup row in the CSV file."""
@@ -914,6 +1044,9 @@ def main():
     parser.add_argument("--sample-size", type=int, default=200,
                         help="Number of random distinct assemblies to download if starting at Step 1 (default: 200). "
                              "Run time and memory grow with this: Bakta linearly, Panaroo, tree building and EcoSim faster than that.")
+    parser.add_argument("--oversample", type=int, default=15, metavar="PERCENT",
+                        help="Download this many percent extra assemblies, then after collapsing clones in step 4 randomly "
+                             "trim to --sample-size distinct genomes (default: 15, so 200 becomes 230; 0 = off; off with --no-dedup)")
     parser.add_argument("--seed", type=int, default=42, help="Random seed for reproducible assembly sampling (default: 42)")
     
     # Bakta/Panaroo arguments
@@ -925,6 +1058,9 @@ def main():
     # Control flow arguments
     parser.add_argument("--start-step", type=int, default=1, choices=range(1, 11),
                         help="Step to start at (1=Download, 2=Bakta, 3=Panaroo, 4=Sort+Dedup, 5=FastTree, 6=Reroot, 7=Rarefaction, 8=EcoSim, 9=Parse, 10=Plot)")
+    parser.add_argument("--stop-step", type=int, default=10, choices=range(1, 11),
+                        help="Last step to run (default: 10). Stopping at 6 or earlier builds the tree on every "
+                             "genome, not just the first 300 EcoSim gets (e.g. --sample-size 890 --stop-step 6)")
     parser.add_argument("--no-dedup", action="store_true",
                         help="Keep every genome instead of collapsing clones in step 4")
     parser.add_argument("--clone-threshold", type=float, default=DEFAULT_CLONE_THRESHOLD,
@@ -961,6 +1097,13 @@ def main():
     parser.add_argument("--niche", action="store_true",
                         help="After the run, fetch NCBI BioSample metadata, have Claude label host/niche, and test "
                              "ecotype x niche association. Needs ANTHROPIC_API_KEY.")
+    parser.add_argument("--ani", action="store_true",
+                        help="Run FastANI all-vs-all on the genomes (step 2) and compare ANI within vs. between "
+                             "ecotypes (ecotype_ani.csv). Needs fastANI on PATH.")
+    parser.add_argument("--papers", action="store_true",
+                        help="After the run, look up each genome's BioProject and linked PubMed papers, and have "
+                             "Claude summarise what each study did (genome_sources.csv, papers.csv, and links in the "
+                             "interactive tree). Needs ANTHROPIC_API_KEY for the summaries.")
 
     args = parser.parse_args()
     try:
@@ -969,6 +1112,12 @@ def main():
         parser.error(str(e))
     if not 0 <= args.clone_threshold < 1:
         parser.error("--clone-threshold must be at least 0 and below 1")
+    if args.stop_step < args.start_step:
+        parser.error("--stop-step must not be before --start-step")
+    if args.oversample < 0:
+        parser.error("--oversample must not be negative")
+    if args.no_dedup:  # nothing is collapsed, so extra genomes would only be downloaded to be thrown away
+        args.oversample = 0
     if args.replicates < 1 or any(n < 1 for n in args.gene_counts):
         parser.error("--replicates and --gene-counts must be positive")
     print(f"Keeping: {', '.join(sorted(args.keep)) or 'only ecotype_summary.csv'}")
