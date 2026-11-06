@@ -17,6 +17,7 @@ Run it from the desktop window (`python ui/ui.py`) or from the terminal, one spe
 - [Getting started, step by step](#getting-started-step-by-step)
 - [Requirements](#requirements)
 - [Installation](#installation)
+  - [On Windows (WSL)](#on-windows-wsl)
 - [Usage](#usage)
   - [Graphical interface](#graphical-interface)
   - [One species](#one-species)
@@ -199,7 +200,7 @@ Read the last red or error line of the log, then look it up in [Troubleshooting]
 | [VeryFastTree](https://github.com/citiususc/veryfasttree) | Step 5 | Yes |
 | Java 8+ | Step 8 (EcoSim) | Yes (OpenJDK) |
 
-**EcoSim is bundled.** `tools/ecosim.jar` and its helper binaries in `tools/bin/` ship with the repo. The binaries in `tools/bin/` are **macOS arm64 (Apple Silicon)** builds. On Intel Macs or any other platform, supply EcoSim binaries built for that platform (see [Configuration](#configuration)).
+**EcoSim is bundled.** `tools/ecosim.jar` and its helper binaries in `tools/bin/` ship with the repo. The binaries in `tools/bin/` are **macOS arm64 (Apple Silicon)** builds. On Intel Macs or any other platform, supply EcoSim binaries built for that platform (see [Configuration](#configuration)). On Linux and WSL, `tools/build_ecosim_linux.sh` builds them (see [On Windows (WSL)](#on-windows-wsl)).
 
 ---
 
@@ -229,6 +230,56 @@ Pass the **`db` (or `db-light`) subfolder** to the pipeline, e.g. `--db /path/to
 conda activate ecotype
 ```
 
+### On Windows (WSL)
+
+On Windows, run the pipeline inside WSL 2 (Windows Subsystem for Linux), which follows the Linux path. Use Windows 11 so the desktop window can open (WSLg). Use an x86 PC: on Windows on ARM, bioconda lacks some tools (Panaroo may not install).
+
+**1. Install WSL (one time).** In PowerShell **as Administrator**:
+
+```powershell
+wsl --install
+```
+
+Reboot, open **Ubuntu** from the Start menu and create a Linux user. `wsl -l -v` should show `VERSION 2`.
+
+**2. Give WSL enough memory.** By default WSL gets only part of your RAM. Create `C:\Users\<you>\.wslconfig`:
+
+```ini
+[wsl2]
+memory=24GB      # leave Windows 4–8 GB
+processors=12
+swap=8GB
+```
+
+Then run `wsl --shutdown` in PowerShell for the change to take effect.
+
+**3. Install the system packages, Miniforge, the code and the environment.** Everything from here on runs in the Ubuntu terminal:
+
+```bash
+sudo apt update && sudo apt install -y build-essential gfortran git curl tmux wslu xdg-utils
+echo 'export BROWSER=wslview' >> ~/.bashrc   # lets the UI's "Open..." buttons open Windows apps
+
+curl -L -O "https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-$(uname)-$(uname -m).sh"
+bash Miniforge3-*.sh -b && ~/miniforge3/bin/conda init bash && exec bash
+
+git clone https://github.com/johnkenjikono/Archive-2.git ~/Archive-2
+cd ~/Archive-2
+conda env create -f environment.yml          # no CONDA_SUBDIR on Linux
+bash tools/build_ecosim_linux.sh             # Linux EcoSim helpers → tools/linux/bin (used automatically)
+conda run -n ecotype bakta_db download --output ~/bakta_db --type light
+```
+
+After that, use the pipeline exactly as on macOS: `conda activate ecotype`, then `python ui/ui.py` or `python pipeline.py ... --db ~/bakta_db/db-light`.
+
+**WSL pitfalls:**
+
+| Pitfall | What to do |
+|---|---|
+| Code or data under `/mnt/c/...` | Keep the repo, `bakta_db` and results in your Linux home (`~`). Windows drives are many times slower from WSL, and Bakta and Panaroo touch thousands of files. Reach your Linux files from Explorer at `\\wsl$\Ubuntu\home\<you>` |
+| A step is "Killed" | WSL hit its `memory=` limit. Raise it in `.wslconfig` or add `--bakta-jobs 1` |
+| Run dies when the terminal closes or the PC sleeps | Start long runs inside `tmux` (detach with Ctrl-b d, reattach with `tmux attach`) and stop Windows from sleeping |
+| C: fills up | The full Bakta database (~70 GB) lives in WSL's virtual disk on C:. Move it with `wsl --manage Ubuntu --move D:\WSL` |
+
 ### Configuration
 
 No configuration is needed if you use the bundled EcoSim. To use your own copy, set:
@@ -236,7 +287,7 @@ No configuration is needed if you use the bundled EcoSim. To use your own copy, 
 | Variable | Default | Purpose |
 |---|---|---|
 | `ECOSIM_JAR` | `tools/ecosim.jar` | Path to the EcoSim jar |
-| `ECOSIM_DIR` | `tools/` | Working directory for EcoSim (must contain its `bin/` helpers) |
+| `ECOSIM_DIR` | `tools/` (`tools/linux/` on Linux and WSL) | Working directory for EcoSim (must contain its `bin/` helpers) |
 
 ---
 
