@@ -55,16 +55,26 @@ def _run_parameters(folder):
 
 
 def write_interactive_tree(ecosim_out_dir, out_html=None):
-    """Write the HTML viewer. Returns its path, or None when there is no EcoSim XML with a tree."""
+    """Write the HTML viewer. Without an EcoSim XML it draws step 6's rooted tree with no ecotypes.
+    Returns its path, or None when there is no tree at all."""
     folder = Path(ecosim_out_dir).resolve()
     xml_path = _pick_xml(folder)
     result = parse_ecosim_xml(xml_path) if xml_path else None
-    if not result or not result["tree"]:
-        print(f"No EcoSim XML with a tree in {folder}; skipping the interactive tree.")
-        return None
+    if result and result["tree"]:
+        tree = Phylo.read(StringIO(result["tree"]), "newick")
+    else:
+        # ponytail: one species per run folder, so rerooted_trees/ holds just its tree
+        xml_path = next(iter(sorted((folder.parent / "rerooted_trees").glob("*.nwk"))), None)
+        if not xml_path:
+            print(f"No EcoSim XML or rooted tree for {folder}; skipping the interactive tree.")
+            return None
+        print(f"No EcoSim XML with a tree in {folder}; drawing {xml_path.name} without ecotypes.")
+        tree = Phylo.read(xml_path, "newick")
+        # reroot_tree.py roots on the outgroup, leaving it the one tip directly under the root.
+        root_tips = [c.name for c in tree.root.clades if c.is_terminal()]
+        result = {"file": xml_path.name, "outgroup": root_tips[0] if len(root_tips) == 1 else None, "ecotypes": []}
     out_html = Path(out_html or folder / "ecotype_plots" / f"{xml_path.stem}_interactive.html")
 
-    tree = Phylo.read(StringIO(result["tree"]), "newick")
     clones = load_clone_map(folder / "clone_groups.csv")
     metadata = _rows(folder / "genome_metadata.csv", "accession")
     sources = _rows(folder / "genome_sources.csv", "accession")
@@ -170,7 +180,8 @@ def write_interactive_tree(ecosim_out_dir, out_html=None):
     species = params.get("species") or folder.parent.name.replace("_", " ")
     source = "full core genome" if xml_path.name == FULL_CORE_XML else result["file"]
     n_genomes = genomes_of(t.name for t in tips)
-    title = f"{species} · {n_genomes} genomes · {len(result['ecotypes'])} ecotypes ({source})"
+    ecotypes = f"{len(result['ecotypes'])} ecotypes" if result["ecotypes"] else "no EcoSim ecotypes"
+    title = f"{species} · {n_genomes} genomes · {ecotypes} ({source})"
     # EcoSim only knows the outgroup as "outgroup"; the run parameters hold its real name.
     root_name = params.get("outgroup")
     subtitle = f"Rooted with outgroup{f' {root_name}' if root_name else ''}; outgroup branch not drawn" if outgroup else ""
@@ -433,7 +444,8 @@ function animateTo(to) {
 function route() {
   const hash = location.hash.slice(1), eco = /^E([0-9]+)$/.exec(hash), n = eco && +eco[1];
   const known = eco && ROWS.some(r => r.eco === n);
-  const next = known ? n : hash === "all" ? "all" : "overview";
+  // Without ecotypes the overview is one row per strain, so open on the full tree instead.
+  const next = known ? n : hash === "all" || !ROWS.some(r => r.eco !== null) ? "all" : "overview";
   const was = view;
   view = next;
   document.getElementById("to-overview").toggleAttribute("aria-current", false);

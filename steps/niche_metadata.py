@@ -25,10 +25,12 @@ from collections import Counter
 from math import sqrt
 from pathlib import Path
 
+from Bio import Phylo
+
 try:
-    from steps.parsing import FULL_CORE_XML
+    from steps.parsing import FULL_CORE_XML, load_clone_map
 except ImportError:  # run as a script: python steps/niche_metadata.py
-    from parsing import FULL_CORE_XML
+    from parsing import FULL_CORE_XML, load_clone_map
 
 LLM_MODEL = "claude-opus-5"
 # Fields Claude sees; country and year are parsed without it.
@@ -49,6 +51,19 @@ def load_membership(membership_csv):
     else:  # ponytail: no full-core run, so use the replicate with the most genes (lowest trial on ties)
         chosen = max(files, key=lambda name: (int(files[name]["gene_count"] or 0), -int(files[name]["trial"] or 0)))
     return chosen, {r["taxon"]: r["ecotype"] for r in rows if r["file"] == chosen}
+
+
+def load_genomes(out):
+    """Like load_membership on out/ecotype_membership.csv; without one (EcoSim failed or was not kept),
+    every genome in step 5's tree, clones expanded, with no ecotype. (None, {}) if neither exists."""
+    membership_csv = out / "ecotype_membership.csv"
+    if membership_csv.exists():
+        return load_membership(membership_csv)
+    tree = out / "full_core_tree_support.nwk"
+    if not tree.exists():
+        return None, {}
+    clones = load_clone_map(out / "clone_groups.csv")
+    return tree.name, {g: "" for tip in Phylo.read(tree, "newick").get_terminals() for g in clones.get(tip.name, [tip.name])}
 
 
 def fetch_biosamples(accessions):
@@ -170,13 +185,13 @@ def write_crosstab(path, ecotype_of, category_of):
 
 
 def run_niche_analysis(ecosim_out_dir, species, labeler=label_with_claude, fetcher=fetch_biosamples):
-    """Run the whole step on one EcoSim output folder. Returns the association CSV path, or None."""
+    """Run the whole step on one EcoSim output folder. Returns the association CSV path
+    (genome_metadata.csv when there are no ecotypes to test), or None."""
     out = Path(ecosim_out_dir)
-    membership_csv = out / "ecotype_membership.csv"
-    if not membership_csv.exists():
-        print(f"No {membership_csv.name} in {out}; skipping niche analysis.")
+    xml_used, ecotype_of = load_genomes(out)
+    if not ecotype_of:
+        print(f"No ecotype_membership.csv or tree in {out}; skipping niche analysis.")
         return None
-    xml_used, ecotype_of = load_membership(membership_csv)
     ecotype_of = {a: e for a, e in ecotype_of.items() if a.startswith(("GCA_", "GCF_"))}
     print(f"Niche analysis on {xml_used}: {len(ecotype_of)} genomes")
 
@@ -195,6 +210,9 @@ def run_niche_analysis(ecosim_out_dir, species, labeler=label_with_claude, fetch
             country, year = country_and_year(attrs)
             columns["host"][acc], columns["niche"][acc], columns["country"][acc] = host, niche, country
             writer.writerow([acc, ecotype_of[acc], host, niche, country, year, *(attrs.get(k, "") for k in LLM_FIELDS)])
+    if not any(ecotype_of.values()):
+        print(f"Saved {out / 'genome_metadata.csv'}; no ecotypes, so no association test.")
+        return out / "genome_metadata.csv"
 
     assoc_path = out / "ecotype_niche_association.csv"
     with open(assoc_path, "w", newline="") as f:

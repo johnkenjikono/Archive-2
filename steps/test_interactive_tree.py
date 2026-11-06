@@ -6,6 +6,7 @@ import unittest
 from pathlib import Path
 
 from steps.interactive_tree import write_interactive_tree
+from steps.niche_metadata import load_genomes
 from steps.parsing import FULL_CORE_XML
 
 # outgroup is sister to everything; E1 = (a,b) and E2 = c are clades, E3 = d + e is split by c2 (E4).
@@ -122,6 +123,24 @@ class InteractiveTreeDataTest(unittest.TestCase):
         clone = next(g for g in tip["genomes"] if g["accession"] == "a2")
         self.assertEqual((clone["host"], clone["niche"], clone["country"], clone["year"]),
                          ("cow", "soil", "Peru", "2001"))
+
+    def test_without_ecosim_draws_the_rooted_tree_with_metadata_and_no_ecotypes(self):
+        write_run(self.folder)
+        (self.folder / FULL_CORE_XML).unlink()
+        rooted = self.folder.parent / "rerooted_trees"
+        rooted.mkdir()
+        (rooted / "Listeria monocytogenes.nwk").write_text(TREE.replace("outgroup", "GCA_9.1"))
+        data = tree_data(self.folder)
+        self.assertEqual([t["name"] for t in data["tips"]], ["a", "b", "c", "d", "c2", "e"])
+        self.assertTrue(all(r["eco"] is None for r in data["rows"]))
+        self.assertIn("no EcoSim ecotypes", data["title"])
+        self.assertEqual(data["tips"][0]["genomes"][1]["host"], "cow")
+
+        (self.folder / "full_core_tree_support.nwk").write_text(TREE)
+        source, ecotype_of = load_genomes(self.folder)
+        self.assertEqual(source, "full_core_tree_support.nwk")
+        self.assertEqual(sorted(ecotype_of), ["a", "a2", "a3", "b", "c", "c2", "d", "e", "outgroup"])
+        self.assertFalse(any(ecotype_of.values()))
 
     def test_title_names_species_genomes_and_ecotypes(self):
         write_run(self.folder)
