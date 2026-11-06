@@ -27,9 +27,9 @@ from collections import defaultdict
 from pathlib import Path
 
 try:
-    from steps.niche_metadata import load_membership
+    from steps.niche_metadata import load_genomes
 except ImportError:  # run as a script: python steps/papers.py
-    from niche_metadata import load_membership
+    from niche_metadata import load_genomes
 
 EUTILS = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils"
 LLM_MODEL = "claude-opus-5-5"
@@ -157,11 +157,10 @@ def summarize_with_claude(species, papers):
 def run_paper_lookup(ecosim_out_dir, species, summarizer=summarize_with_claude):
     """Run the whole step on one EcoSim output folder. Returns the papers.csv path, or None."""
     out = Path(ecosim_out_dir)
-    membership_csv = out / "ecotype_membership.csv"
-    if not membership_csv.exists():
-        print(f"No {membership_csv.name} in {out}; skipping the paper lookup.")
+    _, ecotype_of = load_genomes(out)
+    if not ecotype_of:
+        print(f"No ecotype_membership.csv or tree in {out}; skipping the paper lookup.")
         return None
-    _, ecotype_of = load_membership(membership_csv)
     accessions = sorted(a for a in ecotype_of if a.startswith(("GCA_", "GCF_")))
 
     projects = fetch_assembly_projects(accessions)

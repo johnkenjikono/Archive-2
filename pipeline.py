@@ -560,7 +560,7 @@ def run_tree_pipeline(input_fasta, start_step, outgroup_id, base_dir, output_tre
         print(f"\n--- 8. Running EcoSim ---")
         if not (ECOSIM_JAR and os.path.exists(ECOSIM_JAR)):
             print("EcoSim jar not found. Set ECOSIM_JAR: export ECOSIM_JAR=~/ecosim/ecosim.jar")
-            sys.exit(1)  # keep rarefaction FASTAs + tree so the run can resume with --start-step 8
+            return False  # keep rarefaction FASTAs + tree so the run can resume with --start-step 8
         succeeded = run_ecosim_batch(
             fasta_dir=rarefaction_out_dir,
             tree_dir=rarefaction_tree_dir,
@@ -573,7 +573,7 @@ def run_tree_pipeline(input_fasta, start_step, outgroup_id, base_dir, output_tre
         )
         if not succeeded:
             print("EcoSim produced no results; keeping inputs for a rerun with --start-step 8.")
-            sys.exit(1)
+            return False  # the caller still draws the tree and fetches metadata, then exits with an error
         if "rarefaction" not in keep:
             _cleanup(rarefaction_out_dir, "rarefaction FASTAs")
             _cleanup(rarefaction_tree_dir, "rarefaction trees")
@@ -932,7 +932,7 @@ def run_pipeline_for_species(species_name, outgroup_name, args):
                 print("Could not identify typestrain from NCBI.")
             resolved_outgroup_id = ts_acc
 
-        run_tree_pipeline(
+        ecosim_ok = run_tree_pipeline(
             input_fasta=str(core_alignment_path),
             start_step=max(4, args.start_step),
             outgroup_id=resolved_outgroup_id,
@@ -951,11 +951,13 @@ def run_pipeline_for_species(species_name, outgroup_name, args):
             # Trim only when this invocation oversampled in step 1; a resume keeps what the earlier run downloaded.
             sample_size=args.sample_size if args.oversample and args.start_step <= 1 and not args.input_fasta else None,
             seed=args.seed,
-        )
-        # Steps 4-7 read the alignment, so keep it for a run that stopped before step 8.
-        if args.start_step <= 3 and "panaroo" not in args.keep and args.stop_step >= 8:
+        ) is not False
+        # Steps 4-7 read the alignment, so keep it for a run that stopped before step 8 (or whose EcoSim failed).
+        if args.start_step <= 3 and "panaroo" not in args.keep and args.stop_step >= 8 and ecosim_ok:
             _cleanup(roary_dir, "Panaroo output")
         if args.stop_step < 10:  # the add-ons below need the finished ecotype results
+            if not ecosim_ok:
+                sys.exit(1)
             return
 
         alignment_name = core_alignment_path.name.replace(".fasta", "").replace(".aln", "")  # as run_tree_pipeline names it
@@ -998,6 +1000,8 @@ def run_pipeline_for_species(species_name, outgroup_name, args):
             for xml_file in ecosim_dir.glob("*.xml"):
                 xml_file.unlink()
             print("Removed: EcoSim XML files")
+        if not ecosim_ok:
+            sys.exit("EcoSim failed: saved the tree and metadata without ecotypes; rerun with --start-step 8.")
 
 def run_csv_batch(csv_path, args):
     """Run the pipeline for every species/outgroup row in the CSV file."""
