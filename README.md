@@ -199,7 +199,7 @@ Read the last red or error line of the log, then look it up in [Troubleshooting]
 | [VeryFastTree](https://github.com/citiususc/veryfasttree) | Step 5 | Yes |
 | Java 8+ | Step 8 (EcoSim) | Yes (OpenJDK) |
 
-**EcoSim is bundled.** `tools/ecosim.jar` and its helper binaries in `tools/bin/` ship with the repo. The binaries in `tools/bin/` are **macOS arm64 (Apple Silicon)** builds. On Intel Macs or any other platform, supply EcoSim binaries built for that platform (see [Configuration](#configuration)).
+**EcoSim is bundled.** `tools/ecosim.jar` and its helper binaries in `tools/bin/` ship with the repo. The binaries in `tools/bin/` are **macOS arm64 (Apple Silicon)** builds. The jar is EcoSim 2.1.7 plus upstream commit [48b2499](https://github.com/sandain/ecosim/commit/48b249933c72f0afdfb79eeecefdbd43698e1b95) (Java only), which replaces an alignment reader that fetched one byte per system call: without it, step 8 spent about 50 minutes on Modal (5 minutes on a Mac) reading a 200-genome core alignment that EcoSim then analyses in a few seconds. The binaries are unchanged 2.1.7 builds (see `tools/build_ecosim_linux.sh`). On Intel Macs or any other platform, supply EcoSim binaries built for that platform (see [Configuration](#configuration)).
 
 ---
 
