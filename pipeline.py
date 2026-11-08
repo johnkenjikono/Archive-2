@@ -34,6 +34,7 @@ from steps.run_ecosim import run_ecosim_batch, _resolve_ecosim_jar
 from steps.parsing import (summarize_ecotypes_in_folder, write_membership_csv, compare_to_full_core,
                            parse_ecosim_xml, write_tree_support, FULL_CORE_XML)
 from steps.dedup_clones import collapse_identical_sequences, DEFAULT_CLONE_THRESHOLD
+from steps.recombination import mask_recombinant_regions, find_presence_absence, gubbins_command, GUBBINS_ENV
 from steps.visualize_ecotypes import plot_folder
 from steps.outputs import KEEP_ITEMS, DEFAULT_KEEP, resolve_keep
 from steps.niche_metadata import run_niche_analysis
@@ -383,7 +384,7 @@ def run_panaroo(gff_files: list[Path], roary_dir: Path, threads: int, error_log=
 def run_tree_pipeline(input_fasta, start_step, outgroup_id, base_dir, output_tree_name=None, threads=8, dedup=True,
                       clone_threshold=DEFAULT_CLONE_THRESHOLD,
                       keep=None, full_core=True, gene_counts=None, replicates=20, each_gene=False,
-                      stop_step=10):
+                      stop_step=10, mask_recombination=False, shared_tree=False):
     keep = DEFAULT_KEEP if keep is None else keep
     # Steps 8-10 only read files under base_dir; the alignment path just names them.
     if start_step <= 7 and not os.path.exists(input_fasta):
@@ -395,6 +396,12 @@ def run_tree_pipeline(input_fasta, start_step, outgroup_id, base_dir, output_tre
         print(f" Error: no core_alignment_header.embl next to '{input_fasta}'.")
         print("   Step 7 samples whole core genes and needs the gene coordinates Panaroo writes")
         print("   alongside core_gene_alignment.aln. Keep both files in the same folder.")
+        sys.exit(1)
+    # Step 4d puts the core genes in genome order using Panaroo's gene table.
+    presence_csv = find_presence_absence(input_fasta, base_dir) if mask_recombination and start_step <= 4 else None
+    if mask_recombination and start_step <= 4 and not presence_csv:
+        print(f" Error: --mask-recombination needs Panaroo's gene_presence_absence.csv next to '{input_fasta}'")
+        print(f"   or in {os.path.join(base_dir, 'pangenome')}, from the same Panaroo run as the alignment.")
         sys.exit(1)
 
     species_name = os.path.basename(input_fasta).replace(".fasta", "").replace(".aln", "")
@@ -429,6 +436,8 @@ def run_tree_pipeline(input_fasta, start_step, outgroup_id, base_dir, output_tre
     final_tree_name = f"{output_tree_name}.nwk" if output_tree_name else f"{species_name}.nwk"
     rerooted_tree = os.path.join(final_rerooted_dir, final_tree_name)
     aligned_fasta = os.path.join(temp_tree_rdy, f"{species_name}_aligned.fasta")
+    # Written by step 4d, so its presence says the alignment behind the cached trees was masked.
+    masking_csv = os.path.join(ecosim_out_dir, "recombination_masking.csv")
 
     # --- Step 4: Move largest numeric outgroup to top ---
     if start_step <= 4:
@@ -446,8 +455,26 @@ def run_tree_pipeline(input_fasta, start_step, outgroup_id, base_dir, output_tre
                 sys.exit(1)
         else:
             _cleanup(clone_map_path, "stale clone map")
+        # Steps 5 and 7b reuse cached trees whose leaves match, and masking changes the
+        # sequences but not the leaves, so drop trees built on the other kind of alignment.
+        was_masked = os.path.exists(masking_csv)
+        if was_masked != mask_recombination:
+            for cached in (unrooted_tree, temp_rare_trees, rarefaction_tree_dir):
+                _cleanup(cached, f"cached tree(s) built on the {'masked' if was_masked else 'unmasked'} alignment")
+        if mask_recombination:
+            print("--- 4d. Masking recombinant regions with Gubbins ---")
+            if mask_recombinant_regions(sorted_fasta, gene_header, presence_csv, ecosim_out_dir,
+                                        os.path.join(base_dir, f"pipeline_temp_{species_name}", "gubbins"),
+                                        outgroup_id, threads=threads) is None:
+                sys.exit(1)
+        elif was_masked:
+            for name in ("recombination_masking.csv", "recombination_predictions.gff", "recombination_per_branch.tsv"):
+                _cleanup(os.path.join(ecosim_out_dir, name), f"{name} from an earlier masked run")
     else:
         print("--- Skipping Step 4: Using existing sorted FASTA ---")
+        if mask_recombination and not os.path.exists(masking_csv):
+            print("Warning: --mask-recombination is applied in step 4, and the existing sorted FASTA was not "
+                  "masked. Start at step 4 to mask it.", file=sys.stderr)
     # Early stops keep pipeline_temp_*/ (sorted FASTA, unrooted tree) so the run can resume.
     if _stopped_after(4, stop_step):
         return
@@ -507,6 +534,14 @@ def run_tree_pipeline(input_fasta, start_step, outgroup_id, base_dir, output_tre
             each_gene=each_gene,
             include_full=full_core,
         )
+    if start_step <= 7 and shared_tree:
+        # The lab's Rare.sh protocol: EcoSim runs every draw against the one full core-genome tree.
+        # EcoSim bins sequences on the tree it is given, so the draws then differ only in length;
+        # per-draw trees from an earlier run are dropped so step 8 can never pick them up.
+        print("--shared-tree: each draw runs against the step-6 full core-genome tree (no per-draw trees).")
+        _cleanup(temp_rare_trees, "per-draw trees from an earlier run")
+        _cleanup(rarefaction_tree_dir, "per-draw trees from an earlier run")
+    elif start_step <= 7:
         print(f"\n--- 7b. Building one tree per rarefaction replicate ---")
         _drop_stale_trees(
             sorted_fasta,
@@ -545,7 +580,8 @@ def run_tree_pipeline(input_fasta, start_step, outgroup_id, base_dir, output_tre
                 print(log.getvalue())
         print(f"Rerooted {rerooted} sub-alignment trees in {rarefaction_tree_dir}")
     else:
-        print("\n--- Skipping Step 7: Using existing rarefaction FASTAs and trees ---")
+        print("\n--- Skipping Step 7: Using existing rarefaction FASTAs"
+              f"{'' if shared_tree else ' and trees'} ---")
     if _stopped_after(7, stop_step):
         return
 
@@ -555,9 +591,24 @@ def run_tree_pipeline(input_fasta, start_step, outgroup_id, base_dir, output_tre
         if not (ECOSIM_JAR and os.path.exists(ECOSIM_JAR)):
             print("EcoSim jar not found. Set ECOSIM_JAR: export ECOSIM_JAR=~/ecosim/ecosim.jar")
             sys.exit(1)  # keep rarefaction FASTAs + tree so the run can resume with --start-step 8
+        has_draw_trees = bool(glob.glob(os.path.join(rarefaction_tree_dir, "*.nwk")))
+        if shared_tree and has_draw_trees:
+            # Left by a default step 7, so finished results may have used them: rerun every draw
+            # against the full tree instead.
+            print("Per-draw trees found; --shared-tree reruns every draw on the full core-genome tree.")
+            for stale_xml in glob.glob(os.path.join(ecosim_out_dir, "*_results.xml")):
+                os.remove(stale_xml)
+            _cleanup(rarefaction_tree_dir, "per-draw rarefaction trees")
+        elif not shared_tree and not has_draw_trees:
+            # Running every draw on the full tree would make the rarefaction vacuous (EcoSim bins on
+            # the tree it is given), so refuse rather than fall back silently.
+            print("Error: no per-draw rarefaction trees found. Start at step 7 to build them, or pass "
+                  "--shared-tree to run every draw against the full core-genome tree.", file=sys.stderr)
+            sys.exit(1)
         succeeded = run_ecosim_batch(
             fasta_dir=rarefaction_out_dir,
-            tree_dir=rarefaction_tree_dir,
+            # With --shared-tree no tree folder is passed, so a stale per-draw tree is never used.
+            tree_dir=None if shared_tree else rarefaction_tree_dir,
             full_tree_path=rerooted_tree,
             output_dir=ecosim_out_dir,
             ecosim_jar=ECOSIM_JAR,
@@ -763,6 +814,7 @@ def collect_provenance(db_path):
         "mafft": _probe_version(["mafft", "--version"], conda_env="panaroo_env"),
         "veryfasttree": _fasttree_version(),
         "datasets": _probe_version(["datasets", "--version"]),
+        "gubbins": _probe_version(["run_gubbins.py", "--version"], conda_env=GUBBINS_ENV),
         "ecosim_jar": _ecosim_jar_info(),
     }
 
@@ -777,7 +829,7 @@ def write_run_parameters(base_dir, species_name, outgroup_name, args):
         **{k: v for k, v in vars(args).items()
            if k in ("sample_size", "seed", "start_step", "threads", "no_dedup", "clone_threshold", "no_full_core",
                     "gene_counts", "replicates", "each_gene", "outgroup_id", "db",
-                    "stop_step", "ani", "papers", "niche")},
+                    "stop_step", "ani", "papers", "niche", "mask_recombination", "shared_tree")},
         # The settings above do not pin the software, and the tools and the Bakta database are
         # both unpinned, so without these a result cannot be reproduced or even diagnosed later.
         "software": collect_provenance(getattr(args, "db", None)),
@@ -944,6 +996,8 @@ def run_pipeline_for_species(species_name, outgroup_name, args):
             replicates=args.replicates,
             each_gene=args.each_gene,
             stop_step=args.stop_step,
+            mask_recombination=args.mask_recombination,
+            shared_tree=args.shared_tree,
         )
         # Steps 4-7 read the alignment, so keep it for a run that stopped before step 8.
         if args.start_step <= 3 and "panaroo" not in args.keep and args.stop_step >= 8:
@@ -1056,6 +1110,10 @@ def main():
     parser.add_argument("--clone-threshold", type=float, default=DEFAULT_CLONE_THRESHOLD,
                         help=f"Genomes whose core alignments differ at no more than this fraction of sites are "
                              f"collapsed as clones in step 4 (default: {DEFAULT_CLONE_THRESHOLD:g}; 0 = identical only)")
+    parser.add_argument("--mask-recombination", action="store_true",
+                        help="In step 4, after collapsing clones, detect recombination with Gubbins and mask it "
+                             "(as gaps) in the ingroup before the tree is built. Needs the gubbins conda env "
+                             "(environment-gubbins.yml) or run_gubbins.py on PATH")
 
     # Rarefaction arguments
     parser.add_argument("--gene-counts", type=int, nargs="+", default=[1, 3, 7, 20, 100], metavar="N",
@@ -1067,6 +1125,11 @@ def main():
                              "(one EcoSim run per core gene: can be thousands)")
     parser.add_argument("--no-full-core", action="store_true",
                         help="Don't run EcoSim on the complete core genome (skips the rarefaction vs. full-core comparison)")
+    parser.add_argument("--shared-tree", action="store_true",
+                        help="Run every rarefaction replicate against the step-6 full core-genome tree instead of "
+                             "building one tree per replicate (step 7b). This is the lab's Rare.sh protocol, but EcoSim "
+                             "bins sequences on the tree it is given, so the replicates then differ only in alignment "
+                             "length; use it only to reproduce that protocol")
 
     # Output arguments
     keep_help = "; ".join(f"{name}{' (default)' if default else ''}: {desc}" for name, (default, desc) in KEEP_ITEMS.items())
@@ -1106,6 +1169,10 @@ def main():
         parser.error("--stop-step must not be before --start-step")
     if args.replicates < 1 or any(n < 1 for n in args.gene_counts):
         parser.error("--replicates and --gene-counts must be positive")
+    # Check now rather than after hours of annotation.
+    if args.mask_recombination and args.start_step <= 4 and not gubbins_command():
+        parser.error(f"--mask-recombination needs Gubbins: conda env create -f environment-gubbins.yml "
+                     f"(the '{GUBBINS_ENV}' env), or run_gubbins.py on PATH")
     print(f"Keeping: {', '.join(sorted(args.keep)) or 'only ecotype_summary.csv'}")
 
     if args.csv_file:

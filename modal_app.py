@@ -29,6 +29,10 @@ image = (
     .add_local_file(HERE / "tools" / "build_ecosim_linux.sh", "/opt/build_ecosim_linux.sh", copy=True)
     .run_commands("bash /opt/build_ecosim_linux.sh /opt/ecosim")
     .env({"ECOSIM_DIR": "/opt/ecosim"})
+    # Gubbins (--mask-recombination) pins Python 3.10, so it gets its own env; added last so the
+    # layers above stay cached.
+    .add_local_file(HERE / "environment-gubbins.yml", "/opt/environment-gubbins.yml", copy=True)
+    .run_commands("conda env create -y -f /opt/environment-gubbins.yml", "conda clean -afy")
     # Only the code: local species result folders stay off the image.
     .add_local_file(HERE / "pipeline.py", "/repo/pipeline.py")
     .add_local_dir(HERE / "steps", "/repo/steps", ignore=["__pycache__"])

@@ -56,7 +56,8 @@ Run it from the desktop window (`python ui/ui.py`) or from the terminal, one spe
 - **Core genome**: genes present in every genome analysed.
 - **Outgroup**: a related but different species, used only to anchor the root of the tree. It is never counted as part of an ecotype.
 - **Clones**: genomes with (nearly) identical core genes. The pipeline merges them so they do not inflate the tree, then gives each clone its representative's ecotype in the final tables.
-- **Replicate**: one random draw of genes. Each replicate gets its own tree and its own EcoSim run.
+- **Replicate**: one random draw of genes. Each replicate gets its own tree and its own EcoSim run (`--shared-tree` runs them all against the full core-genome tree instead).
+- **Recombination**: DNA a genome picked up from another strain. `--mask-recombination` hides it before the tree is built, because EcoSim assumes differences come from mutation alone.
 - **Terminal / command line**: the text window where you type commands. Everything below that starts with `bash`, `python`, `conda` or `source` goes there.
 
 ---
@@ -197,6 +198,7 @@ Read the last red or error line of the log, then look it up in [Troubleshooting]
 | [Bakta](https://github.com/oschwengers/bakta) + its database | Step 2 | Bakta yes. You download the database |
 | [Panaroo](https://github.com/gtonkinhill/panaroo) + MAFFT | Step 3 | Yes |
 | [VeryFastTree](https://github.com/citiususc/veryfasttree) | Step 5 | Yes |
+| [Gubbins](https://github.com/nickjcroucher/gubbins) | Step 4d, only with `--mask-recombination` | No: its own `gubbins` env from `environment-gubbins.yml` (see below) |
 | Java 8+ | Step 8 (EcoSim) | Yes (OpenJDK) |
 
 **EcoSim is bundled.** `tools/ecosim.jar` and its helper binaries in `tools/bin/` ship with the repo. The binaries in `tools/bin/` are **macOS arm64 (Apple Silicon)** builds. The jar is EcoSim 2.1.7 plus upstream commit [48b2499](https://github.com/sandain/ecosim/commit/48b249933c72f0afdfb79eeecefdbd43698e1b95) (Java only), which replaces an alignment reader that fetched one byte per system call: without it, step 8 spent about 50 minutes on Modal (5 minutes on a Mac) reading a 200-genome core alignment that EcoSim then analyses in a few seconds. The binaries are unchanged 2.1.7 builds (see `tools/build_ecosim_linux.sh`). On Intel Macs or any other platform, supply EcoSim binaries built for that platform (see [Configuration](#configuration)).
@@ -212,6 +214,14 @@ CONDA_SUBDIR=osx-64 conda env create -f environment.yml
 ```
 
 Creates the `ecotype` conda environment from conda-forge + bioconda only. `CONDA_SUBDIR=osx-64` is for Apple Silicon (see [step 2](#2-install-everything-one-time)); skip it on Linux.
+
+Only for `--mask-recombination`, also create the `gubbins` environment (about 450 MB; it has native Apple Silicon builds, so no `CONDA_SUBDIR`):
+
+```bash
+conda env create -f environment-gubbins.yml
+```
+
+It is separate because Gubbins pins Python 3.10 and numpy 1.23.0, which the `ecotype` environment cannot share. The pipeline calls it with `conda run -n gubbins`, so it never needs activating, and falls back to a `run_gubbins.py` on `PATH`.
 
 ### 2. Bakta database (one-time)
 
@@ -316,7 +326,7 @@ This writes `species_outgroups.csv`. Rows that already have an outgroup are left
 
 ### On Modal (cloud Linux)
 
-`modal_app.py` runs the same `pipeline.py` in a Linux container on [Modal](https://modal.com). The image holds the same `ecotype` conda env (from `environment.yml`) and Linux builds of the EcoSim helpers (built by `tools/build_ecosim_linux.sh`). The Bakta database and all results live in Modal Volumes (`bakta-db`, `ecotype-results`), so they survive between runs and `--start-step` resumes work.
+`modal_app.py` runs the same `pipeline.py` in a Linux container on [Modal](https://modal.com). The image holds the same `ecotype` conda env (from `environment.yml`), the `gubbins` env for `--mask-recombination` (from `environment-gubbins.yml`) and Linux builds of the EcoSim helpers (built by `tools/build_ecosim_linux.sh`). The Bakta database and all results live in Modal Volumes (`bakta-db`, `ecotype-results`), so they survive between runs and `--start-step` resumes work.
 
 ```bash
 pip install modal && modal setup   # one-time: installs the client, logs in
@@ -372,6 +382,7 @@ Execution
   --start-step {1..10}     Step to start from (default: 1)
   --no-dedup               Keep every genome (skip clone collapsing in step 4)
   --clone-threshold FLOAT  Max per-site divergence for two genomes to count as clones (default: 1e-5; 0 = identical only)
+  --mask-recombination     Mask recombination found by Gubbins in step 4 (needs the gubbins env)
   --input-fasta PATH       Core alignment to use when starting at steps 4-7 (core_alignment_header.embl must be next to it)
   --setup-only             Create the folder structure and exit
   --stop-step {1..10}      Last step to run (default: 10). At 6 or earlier the tree uses every genome (e.g. --sample-size 890 --stop-step 6)
@@ -381,6 +392,7 @@ Rarefaction (steps 7-9)
   --replicates INT         Random replicates per gene count (default: 20); each one is an EcoSim run
   --each-gene              At the 1-gene level, run every core gene once instead of random replicates
   --no-full-core           Skip the EcoSim run on the complete core genome (and the comparison to it)
+  --shared-tree            Run every replicate against the full core-genome tree instead of building one tree per replicate (step 7b)
 
 Outputs (see "Outputs")
   --keep ITEM[,ITEM]       Also keep these (repeatable; "all" keeps everything)
@@ -404,11 +416,12 @@ Optional analyses
 | 3 | **Panaroo** | Builds the pan-genome in `strict` clean mode and a core-gene alignment with MAFFT (`core_gene_alignment.aln`). Panaroo's core includes the outgroup, so `pangenome/core_gene_counts.csv` also reports the ingroup-only core (genes in ≥95% of ingroup genomes) and how many of those the outgroup shares. |
 | 4 | **Sort** | Checks that all sequences are the same length and moves the outgroup to the top of the alignment. |
 | 4b | **Collapse clones** | Genomes whose core alignments differ at no more than 10⁻⁵ of sites (`--clone-threshold`; 0 means identical only) are collapsed to one representative. A gap against a base counts as a difference. Groups are built greedily in alignment order: each genome joins the closest representative within the threshold, so members are within the threshold of their representative (and at most twice it of each other). `clone_groups.csv` records each genome's differences from its representative. The root genome is never collapsed, and genomes identical to it form their own group, because EcoSim never places the outgroup in an ecotype. Identical sequences give EcoSim zero-length branches and extra taxa without adding information. Every genome is listed in `clone_groups.csv`, and collapsed genomes get their representative's ecotype in the parsed results. `--no-dedup` turns this off. |
+| 4d | **Mask recombination** | Only with `--mask-recombination`. [Gubbins](https://github.com/nickjcroucher/gubbins) finds stretches of each branch whose SNP density marks them as imported by recombination, and they are replaced by gaps, leaving the clonal frame that EcoSim's model assumes. Gubbins reads where SNPs sit along the genome, and Panaroo concatenates core genes in file-name order, so the genes are first put back in the order they sit in one reference genome (Bakta locus tags count along the chromosome; the genome placing the most core genes is used), and Gubbins's blocks are mapped back afterwards. Only the ingroup goes to Gubbins (VeryFastTree as its tree builder, `--filter-percentage 100` so no genome is dropped, and the run stops if one is missing from its tree); the outgroup is another species, whose long branch is where false positives are likeliest, and is left unmasked. Masking happens after clone collapsing. EcoSim bins on the tree and VeryFastTree treats gaps as missing data, so a masked site counts as unknown rather than as a difference. Writes `recombination_masking.csv`, `recombination_predictions.gff` and `recombination_per_branch.tsv`. A restart reuses Gubbins's results for an identical alignment. |
 | 5 | **Tree** | Builds a maximum-likelihood tree with VeryFastTree (`-nt -gtr -gamma`) on all threads, with SH-like local support values, saved as `full_core_tree_support.nwk`. Rarefaction trees skip support (`-nosupport`). |
 | 6 | **Reroot** | Roots the tree on the outgroup with Biopython. GCA/GCF accession variants are matched automatically. Support values are dropped from the rooted tree, because rerooting leaves the ones near the root on the wrong branches. `--stop-step 6` stops here. |
-| 7 | **Rarefaction** | Creates 100 sub-alignments (change with `--gene-counts` / `--replicates`; `--each-gene` runs every core gene once at the 1-gene level) by concatenating whole core genes drawn at random without replacement: 1, 3, 7, 20 and 100 genes, 20 replicates each. Gene boundaries come from Panaroo's `core_alignment_header.embl`, which must sit next to the alignment (checked before step 4 starts). Genes that are all gaps in any genome, which is how Panaroo pads a gene a genome lacks, are not sampled. The genes in each replicate are listed in `rarefaction_genes.csv`. This shows how the ecotype estimate changes with the number of genes. The whole core alignment is also added as one more replicate, `full_core_genome` (every core gene), so each subset can be compared with it; its tree is the step-5 tree. `--no-full-core` turns this off. |
-| 7b | **Rarefaction trees** | Builds and reroots one tree per sub-alignment. EcoSim's binning is driven by the tree, so reusing the full-alignment tree for every replicate made the rarefaction curve flat by construction. |
-| 8 | **EcoSim** | Runs `ecosim.jar` (demarcation mode, no GUI, 6 GB heap) on each sub-alignment against its own rooted tree, falling back to the full rooted tree for any replicate whose tree could not be built or rerooted. |
+| 7 | **Rarefaction** | Creates 100 sub-alignments (change with `--gene-counts` / `--replicates`; `--each-gene` runs every core gene once at the 1-gene level) by concatenating whole core genes drawn at random without replacement: 1, 3, 7, 20 and 100 genes, 20 replicates each. Gene boundaries come from Panaroo's `core_alignment_header.embl`, which must sit next to the alignment (checked before step 4 starts). Genes that are all gaps in any genome, which is how Panaroo pads a gene a genome lacks, are not sampled. With `--mask-recombination` the draws come from the masked alignment, so a gene Gubbins masks entirely in some genome leaves the pool too (step 4d logs how many). The genes in each replicate are listed in `rarefaction_genes.csv`. This shows how the ecotype estimate changes with the number of genes. The whole core alignment is also added as one more replicate, `full_core_genome` (every core gene), so each subset can be compared with it; its tree is the step-5 tree. `--no-full-core` turns this off. |
+| 7b | **Rarefaction trees** | Builds and reroots one tree per sub-alignment. EcoSim bins sequences on the tree it is given, so reusing the full-alignment tree for every replicate would make the rarefaction flat by construction. `--shared-tree` skips this step and runs every replicate against the full core-genome tree, which is the lab's [`Rare.sh`](https://github.com/Jocelyn0830/Bacillus-Genomes/blob/main/rarefaction/Rare.sh) protocol; use it only to reproduce that protocol. It also deletes per-replicate trees left by an earlier run. |
+| 8 | **EcoSim** | Runs `ecosim.jar` (demarcation mode, no GUI, 6 GB heap) on each sub-alignment against its own rooted tree, falling back to the full rooted tree for any replicate whose tree could not be built or rerooted. EcoSim reads only the alignment's length and outgroup name from the FASTA; the binning curve it fits comes from the tree. With `--shared-tree` every replicate runs against the step-6 full core-genome tree, so replicates differ only through their sequence length; a resume at step 8 with the flag reruns any result that may have used a per-replicate tree, and a resume without the flag refuses to run when no per-replicate trees exist. |
 | 9 | **Parse** | Counts the demarcated ecotypes in each EcoSim XML file and writes `ecotype_summary.csv`, plus `ecotype_membership.csv` listing which genome is in which ecotype for every replicate (clones expanded). It then compares every replicate with the full core genome: `rarefaction_comparison.csv` (per replicate), `rarefaction_by_gene_count.csv` (per gene count) and `ecotype_support.csv` (how often each full-core ecotype is recovered exactly at each gene count). `ecotype_summary.csv` also carries EcoSim's own confidence intervals for npop (number of ecotypes), omega and sigma, and `ecotype_tree_support.csv` gives the SH-like support of each full-core ecotype's clade. |
 | 10 | **Plot** | Draws the tree EcoSim used for the full core genome (or, with `--no-full-core`, each 100-gene replicate) with every ecotype in its own color (`ecotype_plots/*.png`), plus an iTOL `TREE_COLORS` file per tree for the [iTOL](https://itol.embl.de) viewer, and a pie chart of genomes per ecotype (`*_pie.png`) in the same colors, and an interactive tree (`*_interactive.html`, opens offline in any browser) whose tips show ecotype, clones and any `--niche` / `--papers` metadata, with links to NCBI and PubMed. |
 
@@ -462,6 +475,10 @@ ecosim_output_core_gene_alignment/
 ├── ecotype_support.csv               # per full-core ecotype: share of replicates that recover it exactly, per gene count
 ├── ecotype_membership.csv            # file,gene_count,trial,ecotype,ecotype_size,taxon,representative
 ├── clone_groups.csv                  # representative,member,group_size (one row per genome)
+├── recombination_masking.csv         # --mask-recombination: genome,blocks,masked_sites,masked_fraction; the "all"
+│                                     #   row counts every block and the columns masked in at least one genome
+├── recombination_predictions.gff     # --mask-recombination: Gubbins blocks (coordinates in reference gene order)
+├── recombination_per_branch.tsv      # --mask-recombination: Gubbins per-branch statistics, incl. r/m
 ├── rarefaction_genes.csv             # which core genes went into each replicate
 └── ecotype_plots/
     ├── full_core_genome_results.png               # tree colored by ecotype
@@ -493,6 +510,8 @@ python steps/post_processing.py Species_name/ecosim_output_core_gene_alignment
 | `--bakta-jobs` | Genomes annotated at the same time. Each job gets `threads / jobs` threads. Lower it if you run out of RAM, since every Bakta job loads its own database indexes. |
 | `--sample-size` | Bakta time grows linearly with genome count; Panaroo and tree building grow faster than that. |
 | `memory_gb` in `pipeline.py` | EcoSim Java heap (default 6 GB). Raise it for very large alignments. |
+| `--shared-tree` | Off by default. Skips step 7b, one VeryFastTree run per replicate, one after another: on the 200-genome *Listeria* test (2.4 Mb alignment, 16 CPUs) the 25 trees of 5 replicates × 1–100 genes took about 12 minutes, most of it the 100-gene draws, so the default 20 replicates cost roughly 45 minutes. The saving comes at the price of a rarefaction that no longer tests the genes (see step 7b). |
+| `--mask-recombination` | Adds one Gubbins run in step 4. Its time grows roughly with the square of the number of genomes; the core-genome size and the number of SNPs matter too. |
 
 Steps 2 and 5 skip genomes and trees whose output already exists, so an interrupted run can be restarted without redoing that work.
 
@@ -511,6 +530,9 @@ python steps/run_trees.py [--fast] [--max-sequences N]
 
 # Root a tree
 python steps/reroot_tree.py sorted.fasta unrooted.nwk rooted.nwk [outgroup_id]
+
+# Mask recombination found by Gubbins, in place (same as `pipeline.py --mask-recombination`)
+python steps/recombination.py sorted.fasta core_alignment_header.embl gene_presence_absence.csv out_dir [outgroup_id]
 
 # Rarefaction sub-alignments
 python steps/rarefaction.py sorted.fasta [output_folder]
@@ -546,11 +568,15 @@ python steps/interactive_tree.py Species_name/ecosim_output_core_gene_alignment
 ```
 pipeline.py        Orchestrator: CLI, steps 1–10, batch mode (start here)
 environment.yml    Conda environment with every dependency (`conda env create -f environment.yml`)
+environment-gubbins.yml  Separate `gubbins` environment, only for --mask-recombination
 modal_app.py       Run the pipeline on Modal (see "On Modal")
 
 steps/             One module per pipeline step, each also runnable on its own
   download_outgroup.py      NCBI outgroup / type-strain lookup and download
   move_largest_numeric.py   Step 4: alignment check and outgroup ordering
+  recombination.py          Step 4d (--mask-recombination): Gubbins on genome-ordered core genes, masking
+  test_recombination.py     Unit tests for step 4d (a fake run_gubbins.py, so Gubbins is not needed)
+  test_rarefaction_trees.py Unit tests for steps 7-8 with and without --shared-tree
   run_trees.py              Step 5: VeryFastTree/FastTree wrapper
   reroot_tree.py            Step 6: outgroup rooting
   rarefaction.py            Step 7: gene-window sub-alignments
@@ -601,5 +627,6 @@ If this pipeline contributes to published work, please cite the tools it runs:
 - **VeryFastTree**: Piñeiro C., Abuín J.M., Pichel J.C. (2020). Very Fast Tree: speeding up the estimation of phylogenies for large alignments through parallelization and vectorization strategies. *Bioinformatics*.
 - **FastTree 2**: Price M.N., Dehal P.S., Arkin A.P. (2010). FastTree 2: approximately maximum-likelihood trees for large alignments. *PLoS ONE*.
 - **Ecotype Simulation**: Koeppel A. *et al.* (2008). Identifying the fundamental units of bacterial diversity: a paradigm shift to incorporate ecology into bacterial systematics. *PNAS*.
+- **Gubbins** (`--mask-recombination`): Croucher N.J. *et al.* (2015). Rapid phylogenetic analysis of large samples of recombinant bacterial whole genome sequences using Gubbins. *Nucleic Acids Research*.
 - **FastANI** (`--ani`): Jain C. *et al.* (2018). High throughput ANI analysis of 90K prokaryotic genomes reveals clear species boundaries. *Nature Communications*.
 - **NCBI Datasets**: O'Leary N.A. *et al.* (2024). Exploring and retrieving sequence and metadata for species across the tree of life with NCBI Datasets. *Scientific Data*.

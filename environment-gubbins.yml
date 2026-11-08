@@ -1,0 +1,10 @@
+# Only needed for --mask-recombination. Kept apart from environment.yml because Gubbins pins
+# Python 3.10 and numpy 1.23.0, which would drag every other tool in the ecotype env back with
+# it. The pipeline calls it with `conda run -n gubbins`.
+name: gubbins
+channels:
+  - conda-forge
+  - bioconda
+  - nodefaults
+dependencies:
+  - gubbins>=3.4,<4   # brings its own VeryFastTree and IQ-TREE
