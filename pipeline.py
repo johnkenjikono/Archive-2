@@ -595,6 +595,10 @@ def run_tree_pipeline(input_fasta, start_step, outgroup_id, base_dir, output_tre
     # --- Step 8: Run EcoSim ---
     if start_step <= 8:
         print(f"\n--- 8. Running EcoSim ---")
+        # Step 9 rewrites these only sometimes; an older run's copy would be plotted against the new XMLs.
+        for name in ("rarefaction_comparison.csv", "rarefaction_by_gene_count.csv", "ecotype_support.csv"):
+            with contextlib.suppress(FileNotFoundError):
+                os.remove(os.path.join(ecosim_out_dir, name))
         if not (ECOSIM_JAR and os.path.exists(ECOSIM_JAR)):
             print("EcoSim jar not found. Set ECOSIM_JAR: export ECOSIM_JAR=~/ecosim/ecosim.jar")
             sys.exit(1)  # keep rarefaction FASTAs + tree so the run can resume with --start-step 8
@@ -682,7 +686,10 @@ def run_tree_pipeline(input_fasta, start_step, outgroup_id, base_dir, output_tre
         print(f"\n--- 10. Plotting ecotypes (trees: {'yes' if trees else 'no'}, pie charts: {'yes' if pies else 'no'}) ---")
         # The summary and tracks figures are tree plots too, so the tree_plots setting covers them.
         n_plots = plot_folder(ecosim_out_dir, plots_out_dir, clone_map_path=clone_map_path, trees=trees, pies=pies,
-                              outgroup_label=outgroup_label(Path(base_dir) / OUTGROUP_INFO),
+                              # Only the downloaded genome is named in outgroup.json; a type strain or
+                              # --outgroup-id root must not inherit its species name.
+                              outgroup_label=(outgroup_label(Path(base_dir) / OUTGROUP_INFO)
+                                              if outgroup_id == "outgroup" else None),
                               summary=trees, tracks=trees)
         print(f"Plotted {n_plots} EcoSim result(s) into {plots_out_dir}")
     elif start_step <= 10:
@@ -882,6 +889,10 @@ def run_pipeline_for_species(species_name, outgroup_name, args):
             print(f"Auto-detected outgroup: {og_org} ({og_acc})")
         else:
             print("Could not auto-detect outgroup; continuing without one.")
+
+    if not outgroup_name:
+        # A record left by an earlier run in this species folder would name a genome this run lacks.
+        (base_dir / OUTGROUP_INFO).unlink(missing_ok=True)
 
     # --- Outgroup Download (only needed when it will be annotated in Step 2) ---
     if outgroup_name and args.start_step <= 2:
