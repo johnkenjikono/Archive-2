@@ -253,6 +253,11 @@ def find_ecotype_summaries(root: Path) -> list[Path]:
     return out
 
 
+def find_interactive_trees(root: Path) -> list[Path]:
+    pattern = "ecosim_output_*/ecotype_plots/*_interactive.html"
+    return sorted(root.glob(pattern)) + sorted(root.glob(f"*/{pattern}"))
+
+
 def find_bakta_dbs(roots: list[Path] | None = None) -> list[str]:
     """Installed Bakta DB folders (`db` / `db-light` holding version.json) in the usual download spots."""
     if roots is None:
@@ -629,6 +634,8 @@ def main() -> None:
             self.stop_btn.pack(side="left", padx=4, pady=4)
             self.open_btn = ttk.Button(btns, text="Open results folder", command=self._open_results, state="disabled")
             self.open_btn.pack(side="left", padx=4, pady=4)
+            self.tree_btn = ttk.Button(btns, text="Open interactive tree", command=self._open_tree, state="disabled")
+            self.tree_btn.pack(side="left", padx=4, pady=4)
             ttk.Label(btns, textvariable=self.status_var).pack(side="left", padx=12)
             self.progress = ttk.Progressbar(run, mode="determinate")
             self.progress.pack(fill="x", padx=4)
@@ -715,6 +722,7 @@ def main() -> None:
             self._step = 0
             self._total = self._done = 0
             self.open_btn.configure(state="disabled")
+            self.tree_btn.configure(state="disabled")
             self._set_form_enabled(False)
 
         def _track_progress(self, line: str) -> None:
@@ -750,6 +758,16 @@ def main() -> None:
         def _open_results(self) -> None:
             opener = "open" if sys.platform == "darwin" else "xdg-open"
             subprocess.Popen([opener, str(results_dir(self._pending_values))])
+
+        def _open_tree(self) -> None:
+            root = results_dir(self._pending_values)
+            trees = find_interactive_trees(root)
+            # A CSV batch has one tree per species, so let the user pick rather than open them all.
+            tree = trees[0] if len(trees) == 1 else filedialog.askopenfilename(
+                initialdir=root, title="Choose an interactive tree", filetypes=[("Interactive tree", "*_interactive.html")])
+            if tree:
+                opener = "open" if sys.platform == "darwin" else "xdg-open"
+                subprocess.Popen([opener, str(tree)])
 
         def _log(self, line: str) -> None:
             try:
@@ -873,6 +891,8 @@ def main() -> None:
                     self._log(f"Ecotype summary: {summary}")
                 self._finish("✅ Finished", success=True)
                 self.open_btn.configure(state="normal")
+                if find_interactive_trees(out):
+                    self.tree_btn.configure(state="normal")
                 return
             self._log("Pipeline failed — see the messages above.")
             self._finish(f"❌ Failed at {self._step_text}")

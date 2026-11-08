@@ -17,6 +17,7 @@ Run it from the desktop window (`python ui/ui.py`) or from the terminal, one spe
 - [Getting started, step by step](#getting-started-step-by-step)
 - [Requirements](#requirements)
 - [Installation](#installation)
+  - [On Windows (WSL)](#on-windows-wsl)
 - [Usage](#usage)
   - [Graphical interface](#graphical-interface)
   - [One species](#one-species)
@@ -239,6 +240,56 @@ Pass the **`db` (or `db-light`) subfolder** to the pipeline, e.g. `--db /path/to
 conda activate ecotype
 ```
 
+### On Windows (WSL)
+
+On Windows, run the pipeline inside WSL 2 (Windows Subsystem for Linux), which follows the Linux path. Use Windows 11 so the desktop window can open (WSLg). Use an x86 PC: on Windows on ARM, bioconda lacks some tools (Panaroo may not install).
+
+**1. Install WSL (one time).** In PowerShell **as Administrator**:
+
+```powershell
+wsl --install
+```
+
+Reboot, open **Ubuntu** from the Start menu and create a Linux user. `wsl -l -v` should show `VERSION 2`.
+
+**2. Give WSL enough memory.** By default WSL gets only part of your RAM. Create `C:\Users\<you>\.wslconfig`:
+
+```ini
+[wsl2]
+memory=24GB      # leave Windows 4–8 GB
+processors=12
+swap=8GB
+```
+
+Then run `wsl --shutdown` in PowerShell for the change to take effect.
+
+**3. Install the system packages, Miniforge, the code and the environment.** Everything from here on runs in the Ubuntu terminal:
+
+```bash
+sudo apt update && sudo apt install -y build-essential gfortran git curl tmux wslu xdg-utils
+echo 'export BROWSER=wslview' >> ~/.bashrc   # lets the UI's "Open..." buttons open Windows apps
+
+curl -L -O "https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-$(uname)-$(uname -m).sh"
+bash Miniforge3-*.sh -b && ~/miniforge3/bin/conda init bash && exec bash
+
+git clone https://github.com/johnkenjikono/Archive-2.git ~/Archive-2
+cd ~/Archive-2
+conda env create -f environment.yml          # no CONDA_SUBDIR on Linux
+bash tools/build_ecosim_linux.sh             # Linux EcoSim helpers → tools/linux/bin (used automatically)
+conda run -n ecotype bakta_db download --output ~/bakta_db --type light
+```
+
+After that, use the pipeline exactly as on macOS: `conda activate ecotype`, then `python ui/ui.py` or `python pipeline.py ... --db ~/bakta_db/db-light`.
+
+**WSL pitfalls:**
+
+| Pitfall | What to do |
+|---|---|
+| Code or data under `/mnt/c/...` | Keep the repo, `bakta_db` and results in your Linux home (`~`). Windows drives are many times slower from WSL, and Bakta and Panaroo touch thousands of files. Reach your Linux files from Explorer at `\\wsl$\Ubuntu\home\<you>` |
+| A step is "Killed" | WSL hit its `memory=` limit. Raise it in `.wslconfig` or add `--bakta-jobs 1` |
+| Run dies when the terminal closes or the PC sleeps | Start long runs inside `tmux` (detach with Ctrl-b d, reattach with `tmux attach`) and stop Windows from sleeping |
+| C: fills up | The full Bakta database (~70 GB) lives in WSL's virtual disk on C:. Move it with `wsl --manage Ubuntu --move D:\WSL` |
+
 ### Configuration
 
 No configuration is needed if you use the bundled EcoSim. To use your own copy, set:
@@ -246,7 +297,7 @@ No configuration is needed if you use the bundled EcoSim. To use your own copy, 
 | Variable | Default | Purpose |
 |---|---|---|
 | `ECOSIM_JAR` | `tools/ecosim.jar` | Path to the EcoSim jar |
-| `ECOSIM_DIR` | `tools/` | Working directory for EcoSim (must contain its `bin/` helpers) |
+| `ECOSIM_DIR` | `tools/` (`tools/linux/` on Linux and WSL) | Working directory for EcoSim (must contain its `bin/` helpers) |
 
 ---
 
@@ -287,7 +338,7 @@ Run it with the `ecotype` environment active (`conda activate ecotype`).
 | **Extra analyses** box | ANI within vs. between ecotypes (`--ani`), source papers with Claude summaries (`--papers`), ecotype x host/niche (`--niche`). These run after step 10, so they need Stop step 10; ANI also needs start step 1 or 2 (or an existing `fastani.tsv`) |
 | **Outputs to keep** box | One checkbox per `--keep` item (see [Outputs](#outputs)). Unchecking a default adds `--discard`, checking an extra one adds `--keep` |
 
-**Run:** **Run pipeline** starts one job at a time. The status line next to the buttons shows the current step and elapsed time, and the progress bar below counts genomes during Bakta and replicates during EcoSim (it pulses during steps that don't report a count). The working directory and Bakta database folder are remembered between launches (in `~/.ecotype_ui.json`). The log is the same output as the terminal, including the quoted command so you can replay it, with step headers in bold and errors and warnings in color. **Open results folder** opens the results once a run finishes. **Stop** ends the job and leaves partial output on disk so you can raise **Start step** and continue; a run that ends at **Stop after step** keeps what the next step needs, so it can be resumed the same way. Closing the window while a run is going asks before it stops the job.
+**Run:** **Run pipeline** starts one job at a time. The status line next to the buttons shows the current step and elapsed time, and the progress bar below counts genomes during Bakta and replicates during EcoSim (it pulses during steps that don't report a count). The working directory and Bakta database folder are remembered between launches (in `~/.ecotype_ui.json`). The log is the same output as the terminal, including the quoted command so you can replay it, with step headers in bold and errors and warnings in color. **Open results folder** opens the results once a run finishes, and **Open interactive tree** opens the ecotype tree in your browser (with a CSV batch, you pick which species). **Stop** ends the job and leaves partial output on disk so you can raise **Start step** and continue; a run that ends at **Stop after step** keeps what the next step needs, so it can be resumed the same way. Closing the window while a run is going asks before it stops the job.
 
 Results land under `<workdir>/<Species_name>/` (or `<workdir>/` for a CSV batch). If `ecotype_summary.csv` was written, the log prints its path.
 
@@ -364,7 +415,8 @@ Input (one required)
   --csv-file PATH          Batch file: column 1 = species, column 4 = outgroup
 
 Download (step 1)
-  --sample-size INT        Assemblies to randomly sample (default: 200; more = longer runs, more memory)
+  --sample-size INT        Distinct genomes to end up with (default: 200; more = longer runs, more memory)
+  --oversample PERCENT     Extra assemblies to download, trimmed after clone collapsing (default: 15, so 200 becomes 230; 0 = off)
   --seed INT               Sampling seed, for reproducible genome sets (default: 42)
 
 Annotation / pan-genome (steps 2–3)
@@ -410,12 +462,13 @@ Optional analyses
 
 | # | Step | What happens |
 |---|---|---|
-| 1 | **Download** | Lists every *chromosome* or *complete* GenBank (`GCA_`) assembly for the species and draws a random sample of `--sample-size` with a fixed seed, so the same seed always gives the same genomes. Then downloads the `.fna` files. |
+| 1 | **Download** | Lists every *chromosome* or *complete* GenBank (`GCA_`) assembly for the species and draws a random sample of `--sample-size` plus `--oversample` percent (230 by default) with a fixed seed, so the same seed always gives the same genomes. Then downloads the `.fna` files. |
 | – | **Outgroup** | Uses `--outgroup` if given. Otherwise picks a RefSeq reference genome from another species in the same genus, falling back to any complete genome in the genus. The outgroup is annotated alongside the other genomes and appears in the alignment as `outgroup`. |
-| 2 | **Bakta** | Annotates every genome (up to 201), several at a time. Non-coding RNA searches and plots are skipped because Panaroo only uses coding genes. |
+| 2 | **Bakta** | Annotates every genome (up to 231 by default), several at a time. Non-coding RNA searches and plots are skipped because Panaroo only uses coding genes. |
 | 3 | **Panaroo** | Builds the pan-genome in `strict` clean mode and a core-gene alignment with MAFFT (`core_gene_alignment.aln`). Panaroo's core includes the outgroup, so `pangenome/core_gene_counts.csv` also reports the ingroup-only core (genes in ≥95% of ingroup genomes) and how many of those the outgroup shares. |
 | 4 | **Sort** | Checks that all sequences are the same length and moves the outgroup to the top of the alignment. |
 | 4b | **Collapse clones** | Genomes whose core alignments differ at no more than 10⁻⁵ of sites (`--clone-threshold`; 0 means identical only) are collapsed to one representative. A gap against a base counts as a difference. Groups are built greedily in alignment order: each genome joins the closest representative within the threshold, so members are within the threshold of their representative (and at most twice it of each other). `clone_groups.csv` records each genome's differences from its representative. The root genome is never collapsed, and genomes identical to it form their own group, because EcoSim never places the outgroup in an ecotype. Identical sequences give EcoSim zero-length branches and extra taxa without adding information. Every genome is listed in `clone_groups.csv`, and collapsed genomes get their representative's ecotype in the parsed results. `--no-dedup` turns this off. |
+| 4c | **Trim to sample size** | If more than `--sample-size` representatives remain, a seeded random pick cuts them down to that number, plus the outgroup. A dropped representative's clones go with it and leave `clone_groups.csv`. Skipped with `--oversample 0`, `--no-dedup` or `--input-fasta`. |
 | 4d | **Mask recombination** | Only with `--mask-recombination`. [Gubbins](https://github.com/nickjcroucher/gubbins) finds stretches of each branch whose SNP density marks them as imported by recombination, and they are replaced by gaps, leaving the clonal frame that EcoSim's model assumes. Gubbins reads where SNPs sit along the genome, and Panaroo concatenates core genes in file-name order, so the genes are first put back in the order they sit in one reference genome (Bakta locus tags count along the chromosome; the genome placing the most core genes is used), and Gubbins's blocks are mapped back afterwards. Only the ingroup goes to Gubbins (VeryFastTree as its tree builder, `--filter-percentage 100` so no genome is dropped, and the run stops if one is missing from its tree); the outgroup is another species, whose long branch is where false positives are likeliest, and is left unmasked. Masking happens after clone collapsing. EcoSim bins on the tree and VeryFastTree treats gaps as missing data, so a masked site counts as unknown rather than as a difference. Writes `recombination_masking.csv`, `recombination_predictions.gff` and `recombination_per_branch.tsv`. A restart reuses Gubbins's results for an identical alignment. |
 | 5 | **Tree** | Builds a maximum-likelihood tree with VeryFastTree (`-nt -gtr -gamma`) on all threads, with SH-like local support values, saved as `full_core_tree_support.nwk`. Rarefaction trees skip support (`-nosupport`). |
 | 6 | **Reroot** | Roots the tree on the outgroup with Biopython. GCA/GCF accession variants are matched automatically. Support values are dropped from the rooted tree, because rerooting leaves the ones near the root on the wrong branches. `--stop-step 6` stops here. |
@@ -484,7 +537,7 @@ ecosim_output_core_gene_alignment/
     ├── full_core_genome_results.png               # tree colored by ecotype
     ├── full_core_genome_results_itol_colors.txt
     ├── full_core_genome_results_pie.png           # genomes per ecotype
-    └── full_core_genome_results_interactive.html  # clickable tree with per-genome metadata and paper links
+    └── full_core_genome_results_interactive.html  # ecotype overview; click to zoom to every strain, with per-genome metadata and paper links
 ```
 
 To plot other replicates, or to re-plot after the run:

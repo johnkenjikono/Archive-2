@@ -1,5 +1,6 @@
 import csv
 import os
+import random
 import sys
 
 import numpy as np
@@ -146,6 +147,42 @@ def collapse_identical_sequences(input_fasta, output_fasta, clone_map_path, outg
                   f"({len(members_of[twin])} genome(s)).")
 
     return n_in, n_out
+
+
+def trim_representatives(fasta_path, clone_map_path, sample_size, outgroup_id=None, seed=42):
+    """
+    Randomly cut a collapsed FASTA down to the root plus sample_size representatives.
+
+    The root is matched as in collapse_identical_sequences. A dropped representative
+    takes its clones with it: their clone_map_path rows go too, so results never list
+    genomes that were not analysed. Both files are rewritten in place, in input order.
+    Returns (n_input, n_kept).
+    """
+    with open(fasta_path) as handle:
+        records = [(title.split(None, 1)[0], seq) for title, seq in SimpleFastaParser(handle)]
+    ids = [seq_id for seq_id, _ in records]
+    root = (_resolve_outgroup_name(outgroup_id, ids) if outgroup_id else None) or ids[0]
+    others = sorted(i for i in ids if i != root)  # sorted: a seed picks the same genomes whatever the alignment order
+    if len(others) <= sample_size:
+        print(f"{len(others)} representatives (plus root {root}) is within --sample-size {sample_size}; nothing to trim.")
+        return len(ids), len(ids)
+    kept = set(random.Random(seed).sample(others, sample_size)) | {root}
+
+    tmp_out = f"{fasta_path}.tmp"
+    with open(tmp_out, "w") as out_f:
+        for seq_id, seq in records:
+            if seq_id in kept:
+                out_f.write(f">{seq_id}\n{seq}\n")
+    os.replace(tmp_out, fasta_path)
+
+    with open(clone_map_path, newline="") as handle:
+        rows = list(csv.reader(handle))
+    with open(clone_map_path, "w", newline="") as handle:
+        csv.writer(handle).writerows(rows[:1] + [row for row in rows[1:] if row[0] in kept])
+
+    print(f"Randomly trimmed {len(ids) - len(kept)} of {len(others)} representatives down to "
+          f"--sample-size {sample_size} (seed={seed}; root {root} kept).")
+    return len(ids), len(kept)
 
 
 if __name__ == "__main__":
