@@ -83,10 +83,51 @@ def find_outgroup_species(species_name):
     return None, None
 
 
-def download_ncbi_fasta(identifier, output_dir):
+# Lives in the species folder: input/ (and outgroup.fna with it) is deleted after Bakta by default,
+# so this is the only record later steps such as plotting have of which genome the outgroup was.
+OUTGROUP_INFO = "outgroup.json"
+
+
+def _write_outgroup_info(data_path, accession, info_path):
+    """Record which genome became outgroup.fna, from the report NCBI ships inside the download.
+
+    That report uses camelCase keys (organismName) where `datasets summary` uses snake_case
+    (organism_name), so accept either. Falls back to the accession alone if it can't be read.
+    """
+    info = {"accession": accession, "organism": "", "strain": ""}
+    try:
+        with open(os.path.join(data_path, "assembly_data_report.jsonl")) as f:
+            record = json.loads(f.readline())
+        org = record.get("organism") or {}
+        names = org.get("infraspecificNames") or org.get("infraspecific_names") or {}
+        info.update(accession=record.get("accession") or accession,
+                    organism=org.get("organismName") or org.get("organism_name") or "",
+                    strain=names.get("strain") or "")
+    except (OSError, ValueError):
+        pass
+    with open(info_path, "w") as f:
+        json.dump(info, f, indent=2)
+
+
+def outgroup_label(info_path):
+    """'Listeria innocua ATCC 33090 (GCF_028596125.1)' from an outgroup.json, or None if absent."""
+    try:
+        with open(info_path) as f:
+            info = json.load(f)
+    except (OSError, ValueError):
+        return None
+    organism, strain, accession = info.get("organism", ""), info.get("strain", ""), info.get("accession", "")
+    name = organism if strain and strain in organism else " ".join(p for p in (organism, strain) if p)
+    if name and accession:
+        return f"{name} ({accession})"
+    return name or accession or None
+
+
+def download_ncbi_fasta(identifier, output_dir, info_path=None):
     """
     Download a genome FASTA from NCBI given an accession or species name.
     Returns the path to the downloaded FASTA file, or None if failed.
+    With info_path, also records which genome it was (see OUTGROUP_INFO).
     """
     os.makedirs(output_dir, exist_ok=True)
     # If identifier looks like an accession, use it directly; else treat as species name
@@ -125,6 +166,11 @@ def download_ncbi_fasta(identifier, output_dir):
                     fasta_path = os.path.join(root, file)
                     out_path = os.path.join(output_dir, "outgroup.fna")
                     os.rename(fasta_path, out_path)
+                    if info_path:
+                        try:  # a missing label must never fail the download itself
+                            _write_outgroup_info(data_path, acc_list[0], info_path)
+                        except OSError as e:
+                            print(f"Warning: could not record the outgroup's identity: {e}")
                     return out_path
         return None
     except Exception:

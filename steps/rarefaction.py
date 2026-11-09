@@ -145,7 +145,7 @@ def create_rarefaction_fastas(input_fasta,
 
             manifest.append([name, gene_count, trial,
                              sum(genes[i][2] - genes[i][1] for i in chosen),
-                             ";".join(genes[i][0] for i in chosen)])
+                             ";".join(genes[i][0] for i in chosen), len(genes)])
 
     if include_full:
         # Same sequences as the input, so step 7b can reuse the step-5 tree for it.
@@ -153,13 +153,16 @@ def create_rarefaction_fastas(input_fasta,
             for seq_id, seq in sequences:
                 f_out.write(f">{seq_id}\n{seq}\n")
         all_genes = load_gene_coordinates(gene_header)
-        manifest.append([FULL_CORE_NAME, len(all_genes), "", seq_len, "all"])
+        manifest.append([FULL_CORE_NAME, len(all_genes), "", seq_len, "all", len(all_genes)])
 
+    # sampled_from: how many genes each row's genes were drawn from. For the replicates that is
+    # the pool left after skip_absent_genes, usually well below the alignment's gene count, and
+    # the plots state it; it was otherwise only printed above.
     manifest_path = manifest_path or os.path.join(output_folder, "rarefaction_genes.csv")
     os.makedirs(os.path.dirname(os.path.abspath(manifest_path)), exist_ok=True)
     with open(manifest_path, "w", newline="") as handle:
         writer = csv.writer(handle)
-        writer.writerow(["file", "gene_count", "trial", "alignment_bp", "genes"])
+        writer.writerow(["file", "gene_count", "trial", "alignment_bp", "genes", "sampled_from"])
         writer.writerows(manifest)
 
     print(f"✅ Done. Generated {len(manifest)} FASTA files in '{output_folder}' (genes listed in {manifest_path}).")
