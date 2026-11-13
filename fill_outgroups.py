@@ -15,6 +15,7 @@ import sys
 from pathlib import Path
 
 from steps.download_outgroup import _datasets_summary, find_outgroup_species
+from steps.dotenv import load_dotenv
 
 SPECIES_COL, OUTGROUP_COL, SOURCE_COL = 0, 3, 4
 LLM_MODEL = "claude-opus-5"
@@ -168,4 +169,5 @@ def main():
 
 
 if __name__ == "__main__":
+    load_dotenv()
     main()

@@ -38,6 +38,7 @@ from steps.recombination import mask_recombinant_regions, find_presence_absence,
 from steps.visualize_ecotypes import plot_folder
 from steps.outputs import KEEP_ITEMS, DEFAULT_KEEP, resolve_keep
 from steps.niche_metadata import run_niche_analysis
+from steps.dotenv import load_dotenv
 from steps.ani import run_fastani, summarize_ani
 from steps.papers import run_paper_lookup
 from steps.interactive_tree import write_interactive_tree
@@ -1232,4 +1233,5 @@ def main():
     run_pipeline_for_species(args.species, args.outgroup, args)
 
 if __name__ == "__main__":
+    load_dotenv()
     main()
