@@ -57,3 +57,4 @@ ncbi_dataset/
 
 # Linux builds of EcoSim tools (made by tools/build_ecosim_linux.sh)
 tools/linux/
+tools/intel/

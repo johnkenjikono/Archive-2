@@ -45,9 +45,25 @@ from steps.interactive_tree import write_interactive_tree
 # Falls back to the bundled tools/ecosim.jar / tools/ dir (where bin/ lives) when env vars are unset.
 ECOSIM_JAR = _resolve_ecosim_jar()
 # tools/bin holds macOS arm64 binaries; Linux ones come from tools/build_ecosim_linux.sh.
-ECOSIM_DIR = os.environ.get("ECOSIM_DIR") or str(
-    Path(__file__).resolve().parent / "tools" / ("linux" if sys.platform.startswith("linux") else "")
-)
+# Intel Macs use tools/intel (ECOSIM_CC=gcc-15 bash tools/build_ecosim_linux.sh tools/intel).
+def _default_ecosim_dir():
+    tools = Path(__file__).resolve().parent / "tools"
+    if sys.platform.startswith("linux"):
+        return tools / "linux"
+    if sys.platform == "darwin" and (tools / "intel" / "bin").is_dir():
+        # Not platform.machine(): the osx-64 conda env reports x86_64 under Rosetta on Apple Silicon too.
+        try:
+            probe = subprocess.run(["/usr/sbin/sysctl", "-n", "hw.optional.arm64"],
+                                   capture_output=True, text=True)
+            apple_silicon = probe.stdout.strip() == "1"
+        except OSError:
+            apple_silicon = True  # can't tell: keep the bundled tools/bin
+        if not apple_silicon:
+            return tools / "intel"
+    return tools
+
+
+ECOSIM_DIR = os.environ.get("ECOSIM_DIR") or str(_default_ecosim_dir())
 
 # Default cap on genomes annotated/clustered: 200 sampled + the outgroup. Raised by --sample-size and --oversample.
 MAX_GFF_FILES = 201
