@@ -4,7 +4,6 @@ import csv
 import glob
 import hashlib
 import inspect
-import io
 import platform
 import subprocess
 import sys
@@ -405,7 +404,7 @@ def run_panaroo(gff_files: list[Path], roary_dir: Path, threads: int, error_log=
 def run_tree_pipeline(input_fasta, start_step, outgroup_id, base_dir, output_tree_name=None, threads=8, dedup=True,
                       clone_threshold=DEFAULT_CLONE_THRESHOLD,
                       keep=None, full_core=True, gene_counts=None, replicates=20, each_gene=False,
-                      stop_step=10, mask_recombination=False, shared_tree=False, sample_size=None, seed=42):
+                      stop_step=10, mask_recombination=False, sample_size=None, seed=42):
     """sample_size: after collapsing clones, randomly trim to this many representatives (None keeps them all)."""
     keep = DEFAULT_KEEP if keep is None else keep
     # Steps 8-10 only read files under base_dir; the alignment path just names them.
@@ -558,54 +557,12 @@ def run_tree_pipeline(input_fasta, start_step, outgroup_id, base_dir, output_tre
             each_gene=each_gene,
             include_full=full_core,
         )
-    if start_step <= 7 and shared_tree:
-        # The lab's Rare.sh protocol: EcoSim runs every draw against the one full core-genome tree.
-        # EcoSim bins sequences on the tree it is given, so the draws then differ only in length;
-        # per-draw trees from an earlier run are dropped so step 8 can never pick them up.
-        print("--shared-tree: each draw runs against the step-6 full core-genome tree (no per-draw trees).")
+        # EcoSim runs every draw against the one step-6 full core-genome tree (the lab's Rare.sh protocol);
+        # per-draw trees from an earlier version are dropped so they never mix into the results.
         _cleanup(temp_rare_trees, "per-draw trees from an earlier run")
         _cleanup(rarefaction_tree_dir, "per-draw trees from an earlier run")
-    elif start_step <= 7:
-        print(f"\n--- 7b. Building one tree per rarefaction replicate ---")
-        _drop_stale_trees(
-            sorted_fasta,
-            glob.glob(os.path.join(temp_rare_trees, "*.nwk")) + glob.glob(os.path.join(rarefaction_tree_dir, "*.nwk")),
-            "rarefaction tree(s)",
-        )
-        if full_core:
-            # The full core genome is the step-5 alignment, so reuse its tree instead of rebuilding it.
-            os.makedirs(temp_rare_trees, exist_ok=True)
-            shutil.copy2(unrooted_tree, os.path.join(temp_rare_trees, f"{FULL_CORE_NAME}_tree.nwk"))
-        make_trees_batch(
-            final_folder=rarefaction_out_dir,
-            tree_folder=temp_rare_trees,
-            threads=threads,
-        )
-        os.makedirs(rarefaction_tree_dir, exist_ok=True)
-        rerooted = 0
-        for fasta in sorted(glob.glob(os.path.join(rarefaction_out_dir, "*.fasta"))):
-            stem = Path(fasta).stem
-            unrooted = os.path.join(temp_rare_trees, f"{stem}_tree.nwk")
-            if not (os.path.exists(unrooted) and os.path.getsize(unrooted) > 0):
-                continue
-            # Rerooting is chatty and runs 100x; only show the log when it fails.
-            log = io.StringIO()
-            with contextlib.redirect_stdout(log):
-                ok = reroot_tree_by_first_fasta(
-                    fasta,
-                    unrooted,
-                    os.path.join(rarefaction_tree_dir, f"{stem}_tree.nwk"),
-                    outgroup_name=outgroup_id,
-                )
-            if ok:
-                rerooted += 1
-            else:
-                print(f"  {stem}: reroot failed, falling back to the full tree")
-                print(log.getvalue())
-        print(f"Rerooted {rerooted} sub-alignment trees in {rarefaction_tree_dir}")
     else:
-        print("\n--- Skipping Step 7: Using existing rarefaction FASTAs"
-              f"{'' if shared_tree else ' and trees'} ---")
+        print("\n--- Skipping Step 7: Using existing rarefaction FASTAs ---")
     if _stopped_after(7, stop_step):
         return
 
@@ -619,24 +576,15 @@ def run_tree_pipeline(input_fasta, start_step, outgroup_id, base_dir, output_tre
         if not (ECOSIM_JAR and os.path.exists(ECOSIM_JAR)):
             print("EcoSim jar not found. Set ECOSIM_JAR: export ECOSIM_JAR=~/ecosim/ecosim.jar")
             sys.exit(1)  # keep rarefaction FASTAs + tree so the run can resume with --start-step 8
-        has_draw_trees = bool(glob.glob(os.path.join(rarefaction_tree_dir, "*.nwk")))
-        if shared_tree and has_draw_trees:
-            # Left by a default step 7, so finished results may have used them: rerun every draw
-            # against the full tree instead.
-            print("Per-draw trees found; --shared-tree reruns every draw on the full core-genome tree.")
+        if glob.glob(os.path.join(rarefaction_tree_dir, "*.nwk")):
+            # Left by an earlier version that built per-draw trees, so finished results may have used them.
+            print("Per-draw trees found; rerunning every draw on the full core-genome tree.")
             for stale_xml in glob.glob(os.path.join(ecosim_out_dir, "*_results.xml")):
                 os.remove(stale_xml)
             _cleanup(rarefaction_tree_dir, "per-draw rarefaction trees")
-        elif not shared_tree and not has_draw_trees:
-            # Running every draw on the full tree would make the rarefaction vacuous (EcoSim bins on
-            # the tree it is given), so refuse rather than fall back silently.
-            print("Error: no per-draw rarefaction trees found. Start at step 7 to build them, or pass "
-                  "--shared-tree to run every draw against the full core-genome tree.", file=sys.stderr)
-            sys.exit(1)
         succeeded = run_ecosim_batch(
             fasta_dir=rarefaction_out_dir,
-            # With --shared-tree no tree folder is passed, so a stale per-draw tree is never used.
-            tree_dir=None if shared_tree else rarefaction_tree_dir,
+            tree_dir=None,
             full_tree_path=rerooted_tree,
             output_dir=ecosim_out_dir,
             ecosim_jar=ECOSIM_JAR,
@@ -649,7 +597,6 @@ def run_tree_pipeline(input_fasta, start_step, outgroup_id, base_dir, output_tre
             sys.exit(1)
         if "rarefaction" not in keep:
             _cleanup(rarefaction_out_dir, "rarefaction FASTAs")
-            _cleanup(rarefaction_tree_dir, "rarefaction trees")
         if "rerooted_tree" not in keep:
             _cleanup(rerooted_tree, "rerooted tree")
     else:
@@ -860,7 +807,7 @@ def write_run_parameters(base_dir, species_name, outgroup_name, args):
         **{k: v for k, v in vars(args).items()
            if k in ("sample_size", "seed", "start_step", "threads", "no_dedup", "clone_threshold", "no_full_core",
                     "gene_counts", "replicates", "each_gene", "outgroup_id", "db",
-                    "stop_step", "ani", "papers", "niche", "oversample", "mask_recombination", "shared_tree")},
+                    "stop_step", "ani", "papers", "niche", "oversample", "mask_recombination")},
         # The settings above do not pin the software, and the tools and the Bakta database are
         # both unpinned, so without these a result cannot be reproduced or even diagnosed later.
         "software": collect_provenance(getattr(args, "db", None)),
@@ -1032,7 +979,6 @@ def run_pipeline_for_species(species_name, outgroup_name, args):
             each_gene=args.each_gene,
             stop_step=args.stop_step,
             mask_recombination=args.mask_recombination,
-            shared_tree=args.shared_tree,
             # An alignment passed with --input-fasta is the user's chosen set of genomes, so it is not cut.
             # Trim only when this invocation oversampled in step 1; a resume keeps what the earlier run downloaded.
             sample_size=args.sample_size if args.oversample and args.start_step <= 1 and not args.input_fasta else None,
@@ -1167,11 +1113,6 @@ def main():
                              "(one EcoSim run per core gene: can be thousands)")
     parser.add_argument("--no-full-core", action="store_true",
                         help="Don't run EcoSim on the complete core genome (skips the rarefaction vs. full-core comparison)")
-    parser.add_argument("--shared-tree", action="store_true",
-                        help="Run every rarefaction replicate against the step-6 full core-genome tree instead of "
-                             "building one tree per replicate (step 7b). This is the lab's Rare.sh protocol, but EcoSim "
-                             "bins sequences on the tree it is given, so the replicates then differ only in alignment "
-                             "length; use it only to reproduce that protocol")
 
     # Output arguments
     keep_help = "; ".join(f"{name}{' (default)' if default else ''}: {desc}" for name, (default, desc) in KEEP_ITEMS.items())
