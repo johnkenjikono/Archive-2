@@ -2,105 +2,38 @@
 Fill blank outgroups in a pipeline batch CSV (column 1 = species, column 4 = outgroup).
 
 Rows that already have an outgroup are never touched, so re-running is safe.
-Each filled row records how it was chosen in column 5 ("Outgroup Source"),
-which pipeline.py ignores.
+Each blank is chosen by fastANI (steps/download_outgroup.select_outgroup) against a small
+sample of the species' NCBI genomes, downloaded to a temporary folder and then deleted.
+How it was chosen goes in column 5 ("Outgroup Source"), which pipeline.py ignores.
 
-  python fill_outgroups.py species.csv            # NCBI heuristic only (deterministic)
-  python fill_outgroups.py species.csv --llm      # Claude picks from NCBI candidates
+  python fill_outgroups.py species.csv
 """
 import argparse
 import csv
-import json
 import sys
+import tempfile
 from pathlib import Path
 
-from steps.download_outgroup import _datasets_summary, find_outgroup_species
+from pipeline import get_random_accessions
+from steps.download_outgroup import ANI_SAMPLE, download_genomes, select_outgroup
 from steps.dotenv import load_dotenv
 
 SPECIES_COL, OUTGROUP_COL, SOURCE_COL = 0, 3, 4
-LLM_MODEL = "claude-opus-5"
 
 
-def outgroup_candidates(species_name):
-    """Return {organism_name: accession} for other species in the genus, reference genomes first."""
-    genus = species_name.split()[0].lower()
-    candidates = {}
-    for reference_only in (True, False):
-        for record in _datasets_summary(genus, reference_only=reference_only):
-            org = record.get("organism", {}).get("organism_name", "")
-            acc = record.get("accession")
-            if acc and org.lower().startswith(genus + " ") and not org.lower().startswith(species_name.lower()):
-                candidates.setdefault(org, acc)
-        if candidates:
-            break  # ponytail: full-genus query only when no reference genomes exist; it is slow for big genera
-    return candidates
+def choose_outgroup(species_name):
+    """Return (accession, source). accession is '' if no candidate could be measured as suitable."""
+    with tempfile.TemporaryDirectory() as tmp:
+        try:
+            ingroup = download_genomes(get_random_accessions(species_name, ANI_SAMPLE), tmp)
+            acc, org, sel = select_outgroup(species_name, list(ingroup.values()), tmp)
+        except RuntimeError as exc:
+            return "", f"not chosen: {exc}"
+    return acc, (f"fastANI: {org}; max ANI to ingroup {sel['chosen_max_ani']} < ingroup minimum "
+                 f"{sel['ingroup_min_ani']} ({sel['ingroup_sample']} NCBI genomes sampled)")
 
 
-def pick_with_claude(species_name, candidates):
-    """Return (accession, source) chosen by Claude from *candidates*, or (None, reason) on failure."""
-    import anthropic  # only needed with --llm
-
-    names = sorted(candidates)
-    response = anthropic.Anthropic().beta.messages.create(
-        model=LLM_MODEL,
-        max_tokens=4000,
-        betas=["server-side-fallback-2026-07-01"],
-        fallbacks="default",
-        output_config={
-            "effort": "medium",
-            "format": {
-                "type": "json_schema",
-                "schema": {
-                    "type": "object",
-                    "properties": {
-                        "organism_name": {"type": "string", "enum": names},
-                        "reason": {"type": "string"},
-                    },
-                    "required": ["organism_name", "reason"],
-                    "additionalProperties": False,
-                },
-            },
-        },
-        messages=[{"role": "user", "content": (
-            f"Ingroup species: {species_name}\n"
-            "Choose the best outgroup for rooting a core-genome phylogeny of this species: "
-            "the closest relative that is clearly outside the ingroup, so core genes still align.\n"
-            "Candidates (NCBI genomes in the same genus):\n" + "\n".join(names) +
-            "\n\nGive a one-sentence reason."
-        )}],
-    )
-    if response.stop_reason != "end_turn":
-        return None, f"llm stopped: {response.stop_reason}"
-    text = next(b.text for b in response.content if b.type == "text")
-    pick = json.loads(text)
-    org = pick["organism_name"]
-    if org not in candidates:  # enum should guarantee this; never trust an unverified accession
-        return None, f"llm picked unknown organism: {org}"
-    return candidates[org], f"{response.model}: {org}: {pick['reason']}"
-
-
-def choose_outgroup(species_name, use_llm):
-    """Return (accession, source). accession is '' if nothing was found."""
-    if use_llm:
-        candidates = outgroup_candidates(species_name)
-        if candidates:
-            try:
-                acc, source = pick_with_claude(species_name, candidates)
-            except Exception as exc:  # API/network errors: fall back, but record it
-                acc, source = None, f"llm error: {exc}"
-            if acc:
-                return acc, source
-            failure = source
-        else:
-            failure = "no candidates in genus"
-        acc, org = find_outgroup_species(species_name)
-        return (acc or ""), f"heuristic ({failure}): {org}" if acc else f"not found ({failure})"
-
-    acc, org = find_outgroup_species(species_name)
-    return (acc, f"heuristic: {org}") if acc else ("", "not found")
-
-
-def fill_rows(rows, use_llm, chooser=choose_outgroup):
+def fill_rows(rows, chooser=choose_outgroup):
     """Fill blank outgroups in *rows* (header first) in place. Returns the number of rows filled."""
     header = rows[0]
     header += [""] * (SOURCE_COL + 1 - len(header))
@@ -114,7 +47,7 @@ def fill_rows(rows, use_llm, chooser=choose_outgroup):
         if row[OUTGROUP_COL].strip():
             continue
         species = row[SPECIES_COL].strip()
-        acc, source = chooser(species, use_llm)
+        acc, source = chooser(species)
         row[OUTGROUP_COL], row[SOURCE_COL] = acc, source
         print(f"{species}: {acc or '(none)'}  [{source}]")
         filled += bool(acc)
@@ -126,12 +59,12 @@ def _self_test():
             ["Bacillus subtilis", "", "", "Bacillus licheniformis"],
             ["Treponema paraluiscuniculi"],
             []]
-    fake = lambda species, use_llm: ("GCF_1", f"{'llm' if use_llm else 'heuristic'}: x")
-    assert fill_rows(rows, use_llm=True, chooser=fake) == 1
+    fake = lambda species: ("GCF_1", "fastANI: x")
+    assert fill_rows(rows, chooser=fake) == 1
     assert rows[0][4] == "Outgroup Source"
     assert rows[1][3] == "Bacillus licheniformis" and rows[1][4] == ""  # existing outgroup untouched
-    assert rows[2][3] == "GCF_1" and rows[2][4] == "llm: x"
-    assert fill_rows(rows, use_llm=False, chooser=fake) == 0  # idempotent
+    assert rows[2][3] == "GCF_1" and rows[2][4] == "fastANI: x"
+    assert fill_rows(rows, chooser=fake) == 0  # idempotent
     print("self-test passed")
 
 
@@ -139,9 +72,6 @@ def main():
     parser = argparse.ArgumentParser(description="Fill blank outgroups (column 4) in a pipeline batch CSV.")
     parser.add_argument("csv_file", nargs="?", help="Batch CSV (column 1 = species, column 4 = outgroup)")
     parser.add_argument("-o", "--output", help="Output CSV (default: <input>_outgroups.csv)")
-    parser.add_argument("--llm", action="store_true",
-                        help=f"Let Claude ({LLM_MODEL}) choose from NCBI candidates. Needs ANTHROPIC_API_KEY. "
-                             "Off by default: the NCBI heuristic is used.")
     parser.add_argument("--self-test", action="store_true", help="Run the offline self-test and exit")
     args = parser.parse_args()
 
@@ -160,11 +90,11 @@ def main():
         print(f"No species rows found in {in_path}", file=sys.stderr)
         sys.exit(1)
 
-    filled = fill_rows(rows, args.llm)
+    filled = fill_rows(rows)
 
     with open(out_path, "w", newline="", encoding="utf-8") as f:
         csv.writer(f).writerows(rows)
-    print(f"\nFilled {filled} outgroup(s) using {'Claude' if args.llm else 'NCBI heuristic'}. Wrote {out_path}")
+    print(f"\nFilled {filled} outgroup(s) measured by fastANI. Wrote {out_path}")
     print("Review the 'Outgroup Source' column, then run: python pipeline.py --csv-file", out_path)
 
 

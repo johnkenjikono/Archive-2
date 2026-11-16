@@ -57,7 +57,7 @@ Run it from the desktop window (`python ui/ui.py`) or from the terminal, one spe
 - **Core genome**: genes present in every genome analysed.
 - **Outgroup**: a related but different species, used only to anchor the root of the tree. It is never counted as part of an ecotype.
 - **Clones**: genomes with (nearly) identical core genes. The pipeline merges them so they do not inflate the tree, then gives each clone its representative's ecotype in the final tables.
-- **Replicate**: one random draw of genes. Each replicate gets its own tree and its own EcoSim run (`--shared-tree` runs them all against the full core-genome tree instead).
+- **Replicate**: one random draw of genes. Each replicate gets its own EcoSim run against the one full core-genome tree (`--per-replicate-trees` builds a tree per replicate instead).
 - **Recombination**: DNA a genome picked up from another strain. `--mask-recombination` hides it before the tree is built, because EcoSim assumes differences come from mutation alone.
 - **Terminal / command line**: the text window where you type commands. Everything below that starts with `bash`, `python`, `conda` or `source` goes there.
 
@@ -318,7 +318,7 @@ Run it with the `ecotype` environment active (`conda activate ecotype`).
 | Mode | What you provide | What it runs |
 |---|---|---|
 | **Species name** | Species, optional outgroup, sample size, random seed | NCBI download, then the full pipeline |
-| **Batch CSV** | A CSV file (column 1 = species, column 4 = optional outgroup) | One row after another, same as `--csv-file`. **Fill blank outgroups** runs `fill_outgroups.py` first (add `--llm` with **Use Claude (LLM)**) and switches the CSV field to the filled file for review |
+| **Batch CSV** | A CSV file (column 1 = species, column 4 = optional outgroup) | One row after another, same as `--csv-file`. **Fill blank outgroups** runs `fill_outgroups.py` first and switches the CSV field to the filled file for review |
 | **Local genome folder** | Species (names the results folder) and a folder of `.fna` / `.fasta` / `.fa` files | Copies those genomes into `input/` and starts at step 2 (Bakta). Sample size and seed are hidden. Start step cannot be 1 |
 
 **Options** (Browse buttons pick files and folders). Working directory, Bakta database, Start step, Stop step and Core-alignment FASTA are always on the screen; the rest, plus the **Analysis**, **Extra analyses** and **Outputs to keep** boxes, are in the window that **Advanced settings…** opens:
@@ -369,11 +369,12 @@ If one species fails, the pipeline logs the failure and moves on to the next row
 To choose outgroups once and review them before a batch run, fill the blanks ahead of time:
 
 ```bash
-python fill_outgroups.py species.csv          # NCBI heuristic (deterministic)
-python fill_outgroups.py species.csv --llm    # Claude picks from NCBI genomes in the genus
+python fill_outgroups.py species.csv
 ```
 
-This writes `species_outgroups.csv`. Rows that already have an outgroup are left alone. A new **Outgroup Source** column records how each outgroup was chosen (heuristic, or the model name and its reason), and the pipeline ignores that column. `--llm` needs `pip install anthropic` and `ANTHROPIC_API_KEY`, and costs about $0.01–0.06 per species. If the Claude call fails, the script uses the heuristic for that row and records that in the source column.
+The outgroup is measured, not guessed: the type strain of every other species in the genus is compared by FastANI to a sample of ingroup genomes, and the closest one whose ANI to every ingroup genome is below the lowest ingroup-to-ingroup ANI is chosen. If none qualifies the row is left blank with the reason. The pipeline's automatic outgroup uses the same rule. Needs `fastANI`.
+
+This writes `species_outgroups.csv`. Rows that already have an outgroup are left alone. A new **Outgroup Source** column records the measured ANI values behind each choice, and the pipeline ignores that column.
 
 ### On Modal (cloud Linux)
 
@@ -444,7 +445,7 @@ Rarefaction (steps 7-9)
   --replicates INT         Random replicates per gene count (default: 20); each one is an EcoSim run
   --each-gene              At the 1-gene level, run every core gene once instead of random replicates
   --no-full-core           Skip the EcoSim run on the complete core genome (and the comparison to it)
-  --shared-tree            Run every replicate against the full core-genome tree instead of building one tree per replicate (step 7b)
+  --per-replicate-trees    Build one tree per replicate (step 7b) instead of running every replicate against the full core-genome tree (the default)
 
 Outputs (see "Outputs")
   --keep ITEM[,ITEM]       Also keep these (repeatable; "all" keeps everything)
@@ -454,7 +455,19 @@ Optional analyses
   --ani                    FastANI all-vs-all on the genomes (step 2), then ANI within vs. between ecotypes
   --papers                 Each genome's BioProject and linked PubMed papers, with Claude summaries (ANTHROPIC_API_KEY)
   --niche                  Ecotype x host/niche/country association from BioSample metadata (ANTHROPIC_API_KEY)
+  --gene-content           Accessory genes associated with ecotype, and genes specific to one ecotype
+  --gmyc                   GMYC delimitation on the full core-genome tree (needs R, see below)
+  --med                    Minimum Entropy Decomposition on the core alignment (adapted to one row per genome; see steps/med.py)
+  --adaptml                AdaptML habitats/populations from the tree and the --niche labels (re-implementation; see steps/adaptml.py)
 ```
+
+`--gmyc` needs `Rscript` with the `ape` and `splits` packages; they are not in `environment.yml`:
+
+```bash
+Rscript -e 'install.packages(c("ape", "paran")); install.packages("splits", repos="http://R-Forge.R-project.org")'
+```
+
+To start a run from an NCBI link (taxonomy or genome page, taxid, or accession) instead of a species name: `python run_from_link.py <link> -d <bakta_db> [pipeline options]`.
 
 ---
 
@@ -563,7 +576,7 @@ python steps/post_processing.py Species_name/ecosim_output_core_gene_alignment
 | `--bakta-jobs` | Genomes annotated at the same time. Each job gets `threads / jobs` threads. Lower it if you run out of RAM, since every Bakta job loads its own database indexes. |
 | `--sample-size` | Bakta time grows linearly with genome count; Panaroo and tree building grow faster than that. |
 | `memory_gb` in `pipeline.py` | EcoSim Java heap (default 6 GB). Raise it for very large alignments. |
-| `--shared-tree` | Off by default. Skips step 7b, one VeryFastTree run per replicate, one after another: on the 200-genome *Listeria* test (2.4 Mb alignment, 16 CPUs) the 25 trees of 5 replicates × 1–100 genes took about 12 minutes, most of it the 100-gene draws, so the default 20 replicates cost roughly 45 minutes. The saving comes at the price of a rarefaction that no longer tests the genes (see step 7b). |
+| `--per-replicate-trees` | Off by default. Adds step 7b, one VeryFastTree run per replicate, one after another: on the 200-genome *Listeria* test (2.4 Mb alignment, 16 CPUs) the 25 trees of 5 replicates × 1–100 genes took about 12 minutes, most of it the 100-gene draws, so the default 20 replicates cost roughly 45 minutes. Without it the rarefaction replicates differ only in alignment length (see step 7b). |
 | `--mask-recombination` | Adds one Gubbins run in step 4. Its time grows roughly with the square of the number of genomes; the core-genome size and the number of SNPs matter too. |
 
 Steps 2 and 5 skip genomes and trees whose output already exists, so an interrupted run can be restarted without redoing that work.
@@ -637,6 +650,10 @@ steps/             One module per pipeline step, each also runnable on its own
   parsing.py                Step 9: ecotype counts
   niche_metadata.py         Optional (--niche): ecotype x host/niche/country association
   ani.py                    Optional (--ani): FastANI, ANI within vs. between ecotypes
+  gene_content.py           Optional (--gene-content): gene x ecotype association, ecotype-specific genes
+  gmyc.py, gmyc.R           Optional (--gmyc): GMYC via the R package splits
+  med.py                    Optional (--med): Minimum Entropy Decomposition
+  adaptml.py                Optional (--adaptml): AdaptML re-implementation
   papers.py                 Optional (--papers): source BioProjects, PubMed papers, Claude summaries
   interactive_tree.py       Step 10: clickable HTML tree
   post_processing.py        Optional: XML → Excel membership tables

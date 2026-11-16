@@ -24,16 +24,19 @@ except ImportError:  # run as a script: python steps/ani.py
     from niche_metadata import load_membership
 
 
-def run_fastani(genome_paths, out_tsv, threads=8):
-    """All-vs-all FastANI on genome_paths into out_tsv. Returns out_tsv, or None on failure."""
-    with tempfile.NamedTemporaryFile("w", suffix=".txt") as genome_list:
-        genome_list.write("\n".join(str(p) for p in genome_paths) + "\n")
-        genome_list.flush()
-        cmd = ["fastANI", "--ql", genome_list.name, "--rl", genome_list.name, "-t", str(threads), "-o", str(out_tsv)]
+def run_fastani(genome_paths, out_tsv, threads=8, refs=None):
+    """FastANI of genome_paths against refs (default: all-vs-all) into out_tsv. Returns out_tsv, or None on failure."""
+    with tempfile.NamedTemporaryFile("w", suffix=".txt") as genome_list, \
+            tempfile.NamedTemporaryFile("w", suffix=".txt") as ref_list:
+        for list_file, paths in ((genome_list, genome_paths), (ref_list, refs or genome_paths)):
+            list_file.write("\n".join(str(p) for p in paths) + "\n")
+            list_file.flush()
+        cmd = ["fastANI", "--ql", genome_list.name, "--rl", ref_list.name, "-t", str(threads), "-o", str(out_tsv)]
         try:
             subprocess.run(cmd, check=True, capture_output=True, text=True)
         except FileNotFoundError:
-            print("fastANI not found; install it (conda install -c bioconda fastani) or drop --ani.")
+            print("fastANI not found; install it (conda install -c bioconda fastani). "
+                  "It is needed for --ani and for the automatic outgroup choice.")
             return None
         except subprocess.CalledProcessError as e:
             print(f"fastANI failed ({e.returncode}): {(e.stderr or '')[-500:]}")
