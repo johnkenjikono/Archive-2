@@ -174,6 +174,9 @@ class ValidateFormTests(unittest.TestCase):
     def test_extra_analyses_need_the_full_run(self):
         errors = validate_form(FormValues(mode="species", species="X", start_step=8, stop_step=9, papers=True))
         self.assertTrue(any("set the stop step to 10" in e for e in errors))
+        for name in ("adaptml", "gene_content"):
+            errors = validate_form(FormValues(mode="species", species="X", start_step=8, stop_step=9, **{name: True}))
+            self.assertTrue(any("set the stop step to 10" in e for e in errors), name)
 
     def test_db_required_when_start_step_at_most_2(self):
         errors = validate_form(
@@ -363,6 +366,7 @@ class BuildCommandTests(unittest.TestCase):
         self.assertNotIn("--discard", argv)
         self.assertNotIn("--no-full-core", argv)
         self.assertNotIn("--each-gene", argv)
+        self.assertNotIn("--double-precision", argv)
         self.assertNotIn("--replicates", argv)
 
     def test_keep_and_discard_are_differences_from_defaults(self):
@@ -378,12 +382,13 @@ class BuildCommandTests(unittest.TestCase):
     def test_rarefaction_options(self):
         argv = build_command(
             FormValues(mode="species", species="X", start_step=3,
-                       full_core=False, each_gene=True, replicates=100),
+                       full_core=False, each_gene=True, replicates=100, double_precision=True),
             python_exe="python",
             pipeline_py=Path("pipeline.py"),
         )
         self.assertIn("--no-full-core", argv)
         self.assertIn("--each-gene", argv)
+        self.assertIn("--double-precision", argv)
         self.assertEqual(argv[argv.index("--replicates") + 1], "100")
 
     def test_clone_threshold_only_when_changed(self):
@@ -406,6 +411,15 @@ class BuildCommandTests(unittest.TestCase):
         argv = build_command(FormValues(mode="species", species="X", ani=True, papers=True, niche=True),
                              "python", Path("pipeline.py"))
         for flag in ("--ani", "--papers", "--niche"):
+            self.assertIn(flag, argv)
+
+    def test_pr11_analysis_flags(self):
+        flags = ("--gmyc", "--med", "--adaptml", "--gene-content")
+        default = build_command(FormValues(mode="species", species="X"), "python", Path("pipeline.py"))
+        argv = build_command(FormValues(mode="species", species="X", gmyc=True, med=True, adaptml=True,
+                                        gene_content=True), "python", Path("pipeline.py"))
+        for flag in flags:
+            self.assertNotIn(flag, default)
             self.assertIn(flag, argv)
 
 

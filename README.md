@@ -334,7 +334,7 @@ Run it with the `ecotype` environment active (`conda activate ecotype`).
 | Core-alignment FASTA | `--input-fasta` (needed when starting at step 4+ unless that file already exists in the species folder) |
 | Outgroup ID | `--outgroup-id` (force a tree leaf) |
 | Setup only | `--setup-only` (create folders and stop) |
-| **Analysis** box | Clone threshold (`--clone-threshold`), Full core genome comparison (`--no-full-core` when unchecked), every gene at the 1-gene level (`--each-gene`), replicates per gene count (`--replicates`) |
+| **Analysis** box | Clone threshold (`--clone-threshold`), Full core genome comparison (`--no-full-core` when unchecked), every gene at the 1-gene level (`--each-gene`), double-precision trees (`--double-precision`), replicates per gene count (`--replicates`) |
 | **Extra analyses** box | ANI within vs. between ecotypes (`--ani`), source papers with Claude summaries (`--papers`), ecotype x host/niche (`--niche`). These run after step 10, so they need Stop step 10; ANI also needs start step 1 or 2 (or an existing `fastani.tsv`) |
 | **Outputs to keep** box | One checkbox per `--keep` item (see [Outputs](#outputs)). Unchecking a default adds `--discard`, checking an extra one adds `--keep` |
 
@@ -444,6 +444,7 @@ Rarefaction (steps 7-9)
   --gene-counts N [N ...]  Core genes per replicate (default: 1 4 6 20 100)
   --replicates INT         Random replicates per gene count (default: 20); each one is an EcoSim run
   --each-gene              At the 1-gene level, run every core gene once instead of random replicates
+  --double-precision       Build trees with VeryFastTree -double-precision (no 0.0005 branch-length floor; slower)
   --no-full-core           Skip the EcoSim run on the complete core genome (and the comparison to it)
   --per-replicate-trees    Build one tree per replicate (step 7b) instead of running every replicate against the full core-genome tree (the default)
 

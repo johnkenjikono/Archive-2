@@ -419,7 +419,7 @@ def run_tree_pipeline(input_fasta, start_step, outgroup_id, base_dir, output_tre
                       clone_threshold=DEFAULT_CLONE_THRESHOLD,
                       keep=None, full_core=True, gene_counts=None, replicates=20, each_gene=False,
                       stop_step=10, mask_recombination=False, shared_tree=None, sample_size=None, seed=42,
-                      gmyc=False, med=False, treecluster=None, mptp=False, fastbaps=False):
+                      gmyc=False, med=False, treecluster=None, mptp=False, fastbaps=False, double_precision=False):
     """sample_size: after collapsing clones, randomly trim to this many representatives (None keeps them all)."""
     keep = DEFAULT_KEEP if keep is None else keep
     # Steps 8-10 only read files under base_dir; the alignment path just names them.
@@ -531,7 +531,7 @@ def run_tree_pipeline(input_fasta, start_step, outgroup_id, base_dir, output_tre
         else:
             print(f"\n--- 5. Building unrooted tree using FastTree ---")
             make_trees_batch(final_folder=temp_tree_rdy, tree_folder=temp_trees_final, threads=threads,
-                             support=True, max_sequences_per_run=tree_cap)
+                             support=True, max_sequences_per_run=tree_cap, double_precision=double_precision)
 
             if not os.path.exists(unrooted_tree) or os.path.getsize(unrooted_tree) == 0:
                 print("FastTree failed to produce an output tree. Exiting pipeline.")
@@ -623,6 +623,7 @@ def run_tree_pipeline(input_fasta, start_step, outgroup_id, base_dir, output_tre
             final_folder=rarefaction_out_dir,
             tree_folder=temp_rare_trees,
             threads=threads,
+            double_precision=double_precision,
         )
         os.makedirs(rarefaction_tree_dir, exist_ok=True)
         rerooted = 0
@@ -941,6 +942,7 @@ def write_run_parameters(base_dir, species_name, outgroup_name, args):
            if k in ("sample_size", "seed", "start_step", "threads", "no_dedup", "clone_threshold", "no_full_core",
                     "gene_counts", "replicates", "each_gene", "outgroup_id", "db",
                     "stop_step", "ani", "papers", "niche", "oversample", "mask_recombination", "shared_tree",
+                    "double_precision",
                     "gmyc", "med", "gene_content", "adaptml", "treecluster", "mptp", "fastbaps", "poppunk", "popcogent")},
         # The settings above do not pin the software, and the tools and the Bakta database are
         # both unpinned, so without these a result cannot be reproduced or even diagnosed later.
@@ -1136,6 +1138,7 @@ def run_pipeline_for_species(species_name, outgroup_name, args):
             stop_step=args.stop_step,
             mask_recombination=args.mask_recombination,
             shared_tree=args.shared_tree,
+            double_precision=args.double_precision,
             gmyc=args.gmyc,
             med=args.med,
             # An alignment passed with --input-fasta is the user's chosen set of genomes, so it is not cut.
@@ -1283,6 +1286,11 @@ def main():
                         help="In step 4, after collapsing clones, detect recombination with Gubbins and mask it "
                              "(as gaps) in the ingroup before the tree is built. Needs the gubbins conda env "
                              "(environment-gubbins.yml) or run_gubbins.py on PATH")
+    parser.add_argument("--double-precision", action="store_true",
+                        help="Build trees with VeryFastTree's -double-precision. Single precision floors every branch "
+                             "near 0.0005 substitutions/site, which on a long core alignment makes close relatives "
+                             "look far apart and inflates EcoSim's ecotype count. Slower and uses more memory; "
+                             "trees from an earlier run are reused, so resume at step 5 or earlier to rebuild them")
 
     # Rarefaction arguments
     parser.add_argument("--gene-counts", type=int, nargs="+", default=[1, 4, 6, 20, 100], metavar="N",

@@ -54,7 +54,7 @@ def find_fasttree_executable():
 
 def make_trees_batch(final_folder="tree_rdy_fastas", tree_folder="trees_final", 
                      stable_mode=True, fasttree_exe=None, max_retries=1,
-                     max_sequences_per_run=300, error_log=None, threads=None, support=False):
+                     max_sequences_per_run=300, error_log=None, threads=None, support=False, double_precision=False):
     """
     Build phylogenetic trees using FastTree.
     
@@ -68,6 +68,7 @@ def make_trees_batch(final_folder="tree_rdy_fastas", tree_folder="trees_final",
         error_log: Path to error log file (auto-generated if None)
         threads: Threads for tree building (default: all CPUs)
         support: Compute SH-like local support values (only the full core tree needs them)
+        double_precision: Pass VeryFastTree -double-precision (single precision floors branches near 0.0005)
     """
     os.makedirs(tree_folder, exist_ok=True)
 
@@ -108,6 +109,11 @@ def make_trees_batch(final_folder="tree_rdy_fastas", tree_folder="trees_final",
         base_flags.remove("-nosupport")
     if "veryfasttree" in os.path.basename(fasttree_exe).lower():
         base_flags += ["-threads", str(threads)]
+        if double_precision:
+            base_flags.append("-double-precision")
+    elif double_precision:
+        # Plain FastTree has no such flag: it is double precision only when compiled with -DUSE_DOUBLE.
+        print("Warning: --double-precision needs VeryFastTree; this tree builder ignores it.")
     run_env = {**os.environ, "OMP_NUM_THREADS": str(threads)}
     print(f"Using {threads} thread(s)")
 

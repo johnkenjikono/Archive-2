@@ -162,11 +162,16 @@ class FormValues:
     keep: frozenset[str] = field(default_factory=lambda: frozenset(DEFAULT_KEEP))
     full_core: bool = True
     each_gene: bool = False
+    double_precision: bool = False
     replicates: int = 20
     clone_threshold: float = 1e-5
     ani: bool = False
     papers: bool = False
     niche: bool = False
+    gene_content: bool = False
+    gmyc: bool = False
+    med: bool = False
+    adaptml: bool = False
     treecluster: bool = False
     mptp: bool = False
     fastbaps: bool = False
@@ -176,6 +181,9 @@ class FormValues:
 
 # pipeline.py's optional delimitation methods, with their checkbox labels.
 DELIMITATION = {
+    "gmyc": "GMYC on the full core-genome tree (needs R with ape and splits)",
+    "med": "Minimum Entropy Decomposition on the core alignment (needs step 4 in the run)",
+    "adaptml": "AdaptML habitats and populations (after step 10; turns on the niche analysis)",
     "treecluster": "TreeCluster on the rerooted tree (threshold 0.01)",
     "mptp": "mPTP on the rerooted tree",
     "fastbaps": "fastbaps on the core alignment (needs R)",
@@ -230,13 +238,15 @@ def build_command(values: FormValues, python_exe: str, pipeline_py: Path) -> lis
         argv.append("--no-full-core")
     if values.each_gene:
         argv.append("--each-gene")
+    if values.double_precision:
+        argv.append("--double-precision")
     if values.replicates != 20:
         argv.extend(["--replicates", str(values.replicates)])
     if values.clone_threshold != 1e-5:
         argv.extend(["--clone-threshold", f"{values.clone_threshold:g}"])
-    for flag in ("ani", "papers", "niche") + DELIMITATION_FLAGS:
+    for flag in ("ani", "papers", "niche", "gene_content") + DELIMITATION_FLAGS:
         if getattr(values, flag):
-            argv.append(f"--{flag}")
+            argv.append("--" + flag.replace("_", "-"))
     return argv
 
 
@@ -357,8 +367,10 @@ def validate_form(values: FormValues) -> list[str]:
     if values.ani and values.start_step > 2 and values.mode != "csv" \
             and not (results_dir(values) / "fastani.tsv").is_file():
         errors.append("ANI needs FastANI to run in step 2: start at step 1 or 2, or untick ANI.")
-    if (values.ani or values.papers or values.niche) and values.stop_step < LAST_STEP:
-        errors.append(f"ANI, paper and niche analyses run after step {LAST_STEP}: set the stop step to {LAST_STEP}.")
+    if (values.ani or values.papers or values.niche or values.adaptml or values.gene_content) \
+            and values.stop_step < LAST_STEP:
+        errors.append(f"ANI, paper, niche, AdaptML and gene-content analyses run after step {LAST_STEP}: "
+                      f"set the stop step to {LAST_STEP}.")
 
     if values.start_step <= 2:
         if not values.db.strip():
@@ -513,6 +525,7 @@ def main() -> None:
             self.ani_var = tk.BooleanVar(value=False)
             self.papers_var = tk.BooleanVar(value=False)
             self.niche_var = tk.BooleanVar(value=False)
+            self.gene_content_var = tk.BooleanVar(value=False)
             self.delim_vars = {name: tk.BooleanVar(value=False) for name in DELIMITATION}
             self.status_var = tk.StringVar(value="Ready.")
             self.input_fasta_var = tk.StringVar()
@@ -521,6 +534,7 @@ def main() -> None:
             self.keep_vars = {name: tk.BooleanVar(value=name in DEFAULT_KEEP) for name in KEEP_ITEMS}
             self.full_core_var = tk.BooleanVar(value=True)
             self.each_gene_var = tk.BooleanVar(value=False)
+            self.double_precision_var = tk.BooleanVar(value=False)
             self.replicates_var = tk.StringVar(value="20")
             self.clone_threshold_var = tk.StringVar(value="1e-5")
 
@@ -630,6 +644,10 @@ def main() -> None:
             ).grid(row=1, column=0, columnspan=2, sticky="w", padx=4, pady=2)
             self._row(analysis, 2, "Replicates per gene count", self.replicates_var)
             self._row(analysis, 3, "Clone threshold (divergence)", self.clone_threshold_var)
+            self._track(
+                ttk.Checkbutton(analysis, text="Double-precision trees (accurate short branches; slower, steps 5 and 7)",
+                                variable=self.double_precision_var)
+            ).grid(row=4, column=0, columnspan=2, sticky="w", padx=4, pady=2)
 
             extras = ttk.LabelFrame(self.advanced_frame, text="Extra analyses (after step 10)")
             extras.pack(fill="x", pady=6)
@@ -637,11 +655,12 @@ def main() -> None:
                 (self.ani_var, "ANI within vs. between ecotypes (FastANI runs in step 2)"),
                 (self.papers_var, "Source papers per genome, summarised by Claude (needs ANTHROPIC_API_KEY)"),
                 (self.niche_var, "Ecotype x host/niche association (needs ANTHROPIC_API_KEY)"),
+                (self.gene_content_var, "Gene content x ecotype association (needs the kept pangenome output)"),
             )):
                 self._track(ttk.Checkbutton(extras, text=text, variable=var)).grid(
                     row=i, column=0, sticky="w", padx=4, pady=1)
 
-            delim = ttk.LabelFrame(self.advanced_frame, text="Other delimitation methods (results in delimitation/)")
+            delim = ttk.LabelFrame(self.advanced_frame, text="Other delimitation methods")
             delim.pack(fill="x", pady=6)
             for i, (name, text) in enumerate(DELIMITATION.items()):
                 self._track(ttk.Checkbutton(delim, text=text, variable=self.delim_vars[name])).grid(
@@ -727,11 +746,13 @@ def main() -> None:
                 keep=frozenset(name for name, var in self.keep_vars.items() if var.get()),
                 full_core=bool(self.full_core_var.get()),
                 each_gene=bool(self.each_gene_var.get()),
+                double_precision=bool(self.double_precision_var.get()),
                 replicates=parse_number(self.replicates_var.get(), "Replicates per gene count", "20"),
                 clone_threshold=parse_number(self.clone_threshold_var.get(), "Clone threshold", "1e-5", float),
                 ani=bool(self.ani_var.get()),
                 papers=bool(self.papers_var.get()),
                 niche=bool(self.niche_var.get()),
+                gene_content=bool(self.gene_content_var.get()),
                 **{name: bool(var.get()) for name, var in self.delim_vars.items()},
             )
 
