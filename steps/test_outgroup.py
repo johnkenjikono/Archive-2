@@ -39,6 +39,17 @@ def both(a, b):
     return {**{("GCF_A", f"g{i}"): a for i in (1, 2, 3)}, **{("GCF_B", f"g{i}"): b for i in (1, 2, 3)}}
 
 
+class OutgroupLeafTest(unittest.TestCase):
+    def test_type_strain_gcf_id_resolves_to_sampled_gca_leaf(self):
+        from pipeline import _outgroup_leaf
+        with tempfile.TemporaryDirectory() as d:
+            tree = Path(d) / "t.nwk"
+            tree.write_text("((GCA_000001.1:1,GCA_000002.1:1):1,GCA_000003.2:1);")
+            self.assertEqual(_outgroup_leaf(tree, "GCF_000003.2"), "GCA_000003.2")
+            self.assertEqual(_outgroup_leaf(tree, "GCA_000001.1.fna"), "GCA_000001.1")
+            self.assertIsNone(_outgroup_leaf(tree, None))
+
+
 class SelectOutgroupTest(unittest.TestCase):
     def test_closest_passing_wins(self):
         acc, org, sel = run(both(98.5, 90.0))

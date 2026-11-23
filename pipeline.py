@@ -28,7 +28,7 @@ from steps.download_outgroup import (download_ncbi_fasta, select_outgroup, find_
 # Imports for the tree and ecosim steps
 from steps.move_largest_numeric import move_largest_numeric_to_top
 from steps.run_trees import make_trees_batch, write_error_log, find_fasttree_executable
-from steps.reroot_tree import reroot_tree_by_first_fasta
+from steps.reroot_tree import reroot_tree_by_first_fasta, _resolve_outgroup_name
 from steps.gmyc import run_gmyc
 from steps.adaptml import run_adaptml
 from steps.med import run_med
@@ -406,6 +406,14 @@ def run_panaroo(gff_files: list[Path], roary_dir: Path, threads: int, error_log=
         print(f"Error log: {error_log}")
         sys.exit(1)
 
+def _outgroup_leaf(tree_path, outgroup_id):
+    """The tip step 6 rooted on: it maps e.g. a type strain's GCF_x to the sampled GCA_x leaf, and GMYC,
+    MED and AdaptML need that exact name."""
+    if not outgroup_id:
+        return None
+    return _resolve_outgroup_name(outgroup_id, [t.name for t in Phylo.read(tree_path, "newick").get_terminals()])
+
+
 def run_tree_pipeline(input_fasta, start_step, outgroup_id, base_dir, output_tree_name=None, threads=8, dedup=True,
                       clone_threshold=DEFAULT_CLONE_THRESHOLD,
                       keep=None, full_core=True, gene_counts=None, replicates=20, each_gene=False,
@@ -663,7 +671,8 @@ def run_tree_pipeline(input_fasta, start_step, outgroup_id, base_dir, output_tre
         if gmyc:
             print("\n--- GMYC on the full core-genome tree ---")
             try:
-                run_gmyc(rerooted_tree, ecosim_out_dir, outgroup=outgroup_id, clone_map=clone_map_path)
+                run_gmyc(rerooted_tree, ecosim_out_dir, outgroup=_outgroup_leaf(rerooted_tree, outgroup_id),
+                         clone_map=clone_map_path)
             except Exception as exc:
                 print(f"Warning: GMYC failed: {exc}", file=sys.stderr)
         if med:
@@ -672,7 +681,7 @@ def run_tree_pipeline(input_fasta, start_step, outgroup_id, base_dir, output_tre
                 if not os.path.exists(sorted_fasta):
                     raise FileNotFoundError(f"{sorted_fasta} is gone; start at step 4 or earlier with --med")
                 run_med(sorted_fasta, os.path.join(base_dir, f"med_output_{species_name}"),
-                        outgroup=outgroup_id, clone_map=clone_map_path)
+                        outgroup=_outgroup_leaf(rerooted_tree, outgroup_id), clone_map=clone_map_path)
             except Exception as exc:
                 print(f"Warning: MED failed: {exc}", file=sys.stderr)
         if "rarefaction" not in keep:
@@ -1112,8 +1121,9 @@ def run_pipeline_for_species(species_name, outgroup_name, args):
             print("\n--- AdaptML habitats and populations (from the --niche labels) ---")
             try:
                 # The tree is kept for this (see main); the labels are --niche's genome_metadata.csv.
-                run_adaptml(base_dir / "rerooted_trees" / f"{species_name}.nwk", ecosim_dir / "genome_metadata.csv",
-                            ecosim_dir, outgroup=resolved_outgroup_id, clone_map=ecosim_dir / "clone_groups.csv",
+                tree = base_dir / "rerooted_trees" / f"{species_name}.nwk"
+                run_adaptml(tree, ecosim_dir / "genome_metadata.csv", ecosim_dir,
+                            outgroup=_outgroup_leaf(tree, resolved_outgroup_id), clone_map=ecosim_dir / "clone_groups.csv",
                             seed=args.seed)
             except Exception as exc:
                 print(f"Warning: AdaptML failed: {exc}", file=sys.stderr)
