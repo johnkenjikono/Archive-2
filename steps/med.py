@@ -16,23 +16,30 @@ Canonical MED (oligotyping's `decompose`, kept here):
     count toward the column size but are no class. Entropy < 1e-5 is 0.
   - A node is split on its top d columns (default 3) whose entropy exceeds m (default 0.3); every
     distinct combination of bases at those columns becomes a child node. Ties: lower column first.
-  - Splitting repeats until no column in a node exceeds m. Nodes smaller than M are removed as outliers;
-    outliers are relocated to the closest final node (decompose's optional -R).
+  - Splitting repeats until no column in a node exceeds m. Nodes smaller than M are removed as outliers.
 
-Adapted for genomes (decompose assumes millions of reads, many identical):
+Adapted for genomes (decompose assumes millions of reads, many identical), so this is a genome variant
+of MED, not MED itself:
   - Each genome is one sequence of abundance 1 (clones were collapsed upstream, as for EcoSim). Clone
     counts are not used as abundances, so outbreak oversampling does not drive the entropy.
   - M is a genome count: a node with fewer than M genomes is an outlier. decompose tests the abundance
     of the most abundant unique read instead, which is always 1 here. Default M keeps the canonical
     max(4, round(N / 5000)), i.e. 4 for any realistic genome set.
-  - A node is finalized unless its split gives at least two children of M or more genomes (the analogue
-    of decompose's "second most abundant unique read < M" rule, which would stop every split here).
+  - A node is finalized unless its split gives at least two children of M or more genomes. This rule is
+    new: decompose's "second most abundant unique read < M" stop would stop every split here, and
+    splitting anyway would peel genomes with private SNPs off one by one until all are outliers. Cost:
+    when a split leaves one child of M or more, decompose drops the small children and keeps
+    decomposing the big one, but here the whole node stays together. High-entropy columns carried by a
+    few small groups (homoplasy, recombination) can thus hide a real split ranked below the top d.
   - m is static: decompose's normalized m is scaled by the most abundant read and would hit its 0.05
-    floor for every node.
+    floor for every node. m does little here anyway: in a node of 18 genomes or fewer, one private SNP
+    has entropy > 0.3, so resolution is set by M and the tree's shape, not by m.
   - Dropped, as they measure read abundance or read error: the competing-unique-sequence-ratio and
     density stops, maximum-variation outlier removal (BLAST), and homopolymer-split merging.
-  - Outliers are relocated by Hamming distance on variable columns to each final node's consensus
-    (decompose uses BLAST to the node's most abundant read, which does not exist here).
+  - Every outlier is relocated, by Hamming distance on variable columns to each final node's consensus,
+    however far it is. decompose relocates only with -R (off by default) and only outliers within its
+    maximum variation (~1% of the read) of a node's most abundant read (BLAST); the rest stay outliers.
+    Here a divergent singleton lineage joins its nearest node and enlarges it.
   - Only variable columns are kept; invariant columns have zero entropy and never change the result.
 """
 import argparse

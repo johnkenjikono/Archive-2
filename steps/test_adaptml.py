@@ -21,8 +21,9 @@ def clade(name, rng):
     return parts[0].rsplit(":", 1)[0]
 
 
-def run(folder, labels, seed=42):
-    """Two clades on long stems plus an outgroup; labels = {tip: environment}. Returns (run json, genome rows)."""
+def run(folder, labels, seed=42, clones=None):
+    """Two clades on long stems plus an outgroup; labels = {tip: environment}; clones = {representative:
+    [collapsed genomes]}, written as clone_groups.csv. Returns (run json, genome rows, membership csv)."""
     rng = random.Random(1)
     folder = Path(folder)
     (folder / "tree.nwk").write_text(f"(({clade('a', rng)}:0.05,{clade('b', rng)}:0.05):0.1,outgroup:0);\n")
@@ -30,8 +31,12 @@ def run(folder, labels, seed=42):
         writer = csv.writer(f)
         writer.writerow(["accession", "ecotype", "host", "niche"])
         writer.writerows([tip, "1", "human", env] for tip, env in labels.items())
+    with open(folder / "clone_groups.csv", "w", newline="") as f:
+        writer = csv.writer(f)
+        writer.writerow(["representative", "member"])
+        writer.writerows([rep, m] for rep, extra in (clones or {}).items() for m in [rep] + extra)
     out = run_adaptml(folder / "tree.nwk", folder / "genome_metadata.csv", folder / "out", outgroup="outgroup",
-                      seed=seed)
+                      clone_map=folder / "clone_groups.csv", seed=seed)
     with open(folder / "out" / "adaptml_genomes.csv", newline="") as f:
         rows = {r["taxon"]: r for r in csv.DictReader(f)}
     return json.loads((folder / "out" / "adaptml_run.json").read_text()), rows, out
@@ -82,6 +87,20 @@ class AdaptMLTest(unittest.TestCase):
                                   - sum(rows[f"b{i}"]["habitat"] == h for i in range(N))) > N / 2
                               for h in {r["habitat"] for r in rows.values()})
         self.assertLessEqual(structured, 3)
+
+    def test_collapsed_clones_are_tips_with_their_own_labels(self):
+        labels = two_niches(0.0, random.Random(2))
+        clones = {"b0": [f"b0c{i}" for i in range(N)]}  # a big clone of clade b, isolated from blood
+        labels.update({m: "blood" for m in clones["b0"]})
+        with tempfile.TemporaryDirectory() as tmp:
+            info, rows, membership = run(tmp, labels, clones=clones)
+            self.assertEqual(rows["b0c0"]["environment"], "blood")  # the member's own label, not b0's
+            self.assertEqual(len(rows), 3 * N)
+            # N blood genomes inside clade b: its stretch is no longer pure skin
+            self.assertNotEqual(rows["b0c0"]["habitat"], rows["b5"]["habitat"])
+            with open(membership, newline="") as f:
+                rep = {r["taxon"]: r["representative"] for r in csv.DictReader(f)}
+            self.assertEqual(rep.get("b0c0", "b0"), "b0")
 
     def test_needs_two_environments(self):
         with tempfile.TemporaryDirectory() as tmp, self.assertRaises(ValueError):

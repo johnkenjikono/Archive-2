@@ -50,6 +50,10 @@ Interpretation (the source is unclear, approximate, or crashes there):
 
 Different on purpose:
   - the outgroup is removed before learning. The source keeps it as a tip with an arbitrary environment label.
+  - clones collapsed upstream (--clone-map) are put back as zero-length sister tips of their representative,
+    each with its own label, so every genome counts as in the paper, where every isolate is a tip (identical
+    isolates from different environments are the evidence for generalists). Zero lengths then get the shortest
+    positive length, as above. Without the map only the representative's label would be seen.
   - tips with no label (missing from the CSV, blank or "unknown") stay in the tree as missing data: they add
     nothing to E and take no part in shuffling, but still get a habitat. The source needs a label on every tip.
   - shuffles default to 1000 (source 10000); cluster_thresh default 0.95 is the source wrapper's default.
@@ -67,6 +71,7 @@ from math import exp, floor, inf, log
 from pathlib import Path
 
 from Bio import Phylo
+from Bio.Phylo.BaseTree import Clade
 
 from steps.parsing import load_clone_map
 
@@ -245,8 +250,8 @@ def run_adaptml(tree_path, habitat_csv, out_dir, outgroup=None, column="niche", 
                 init_habitats=16, collapse_thresh=0.10, converge_thresh=0.001,
                 shuffles=1000, cluster_thresh=0.95, seed=42):
     """Run AdaptML on a rooted tree. habitat_csv: first column genome, `column` its environment.
-    clone_map (dedup_clones.py's clone_groups.csv) gives collapsed genomes their representative's
-    population. Returns the adaptml_membership.csv path."""
+    clone_map (dedup_clones.py's clone_groups.csv) puts collapsed genomes back into the tree as tips with
+    their own labels. Returns the adaptml_membership.csv path."""
     with open(habitat_csv, newline="") as f:
         rows = list(csv.DictReader(f))
     if not rows or column not in rows[0]:
@@ -257,6 +262,12 @@ def run_adaptml(tree_path, habitat_csv, out_dir, outgroup=None, column="niche", 
     tree = Phylo.read(tree_path, "newick")
     if outgroup:
         tree.prune(outgroup)
+    clones = load_clone_map(clone_map)
+    representative = {m: rep for rep, members in clones.items() for m in members}
+    for tip in tree.get_terminals():
+        if len(clones.get(tip.name, [])) > 1:
+            tip.clades = [Clade(branch_length=0.0, name=m) for m in clones[tip.name]]
+            tip.name = None
     names, *rooted = _flatten(tree.root)
     envs = sorted({label[t] for t in names if t in label})
     if len(envs) < 2:
@@ -293,13 +304,12 @@ def run_adaptml(tree_path, habitat_csv, out_dir, outgroup=None, column="niche", 
         "init_habitats": init_habitats, "collapse_thresh": collapse_thresh, "converge_thresh": converge_thresh,
         "shuffles": shuffles, "cluster_thresh": cluster_thresh}, indent=2) + "\n")
 
-    clones = load_clone_map(clone_map)
     out = out_dir / "adaptml_membership.csv"
     with open(out, "w", newline="") as f:
         writer = csv.writer(f)
         writer.writerow(["file", "gene_count", "trial", "ecotype", "ecotype_size", "taxon", "representative"])
         for number, members in enumerate(populations, 1):
-            genomes = [(taxon, names[i]) for i in members for taxon in clones.get(names[i], [names[i]])]
+            genomes = [(names[i], representative.get(names[i], names[i])) for i in members]
             # gene_count left blank: load_membership int()s it when the file is not the EcoSim full-core XML
             writer.writerows(["adaptml", "", "", number, len(genomes), taxon, rep] for taxon, rep in genomes)
     print(f"Saved {out}")
