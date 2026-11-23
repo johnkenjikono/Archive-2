@@ -23,7 +23,9 @@ try:
 except ImportError:  # run as a script: python steps/gene_content.py
     from niche_metadata import load_membership, association
 
-PANAROO_FIXED_COLUMNS = 14  # Gene .. Avg group size nuc; genome columns follow
+# Gene, Non-unique Gene name, Annotation in Panaroo's own CSV. Later columns are kept only if they name a
+# membership taxon, so the _roary.csv's extra fixed columns (No. isolates, ...) are skipped too.
+PANAROO_FIXED_COLUMNS = 3
 NEARLY_ALL = 0.9  # "unique": present in >= this fraction of the ecotype and in <= 1 - this outside it
 
 
@@ -118,9 +120,9 @@ def _self_test():
         pa = Path(d) / "gene_presence_absence.csv"
         with open(pa, "w", newline="") as f:
             writer = csv.writer(f)
-            writer.writerow(["Gene", "Non-unique Gene name", "Annotation"] + ["x"] * (PANAROO_FIXED_COLUMNS - 3) + taxa + ["outgroup"])
+            writer.writerow(["Gene", "Non-unique Gene name", "Annotation"] + taxa + ["outgroup"])  # Panaroo's layout
             for g, (ann, has) in table.items():
-                writer.writerow([g, "", ann] + [""] * (PANAROO_FIXED_COLUMNS - 3) + [g if has(t) else "" for t in taxa] + [g])
+                writer.writerow([g, "", ann] + [g if has(t) else "" for t in taxa] + [g])
         with open(Path(d) / "ecotype_membership.csv", "w", newline="") as f:
             writer = csv.writer(f)
             writer.writerow(["file", "gene_count", "trial", "ecotype", "ecotype_size", "taxon", "representative"])
