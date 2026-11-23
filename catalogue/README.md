@@ -18,13 +18,14 @@ python -m catalogue.build run --budget 10 --sample 500  # pilot: 500 random open
 python -m catalogue.build run --budget 150              # every record the rules and the cache leave open
 python -m catalogue.build verify --budget 30 --sample 500  # pilot: Claude Fable 5.2 cross-checks 500 records
 python -m catalogue.build verify --budget 200 --effort high  # Fable cross-checks every model label, judges disputes
+python -m catalogue.build rejudge --budget 100 --sample 300  # Opus 5.5 judges 300 of those disputes again
 python -m catalogue.build assemble                      # the catalogue table, species summary and manifest
 python -m catalogue.build status                        # what has run and what it has cost
 ```
 
 It refuses to start if `steps/` would be loaded from a different checkout of the repository (possible
 because `steps/` has no `__init__.py`, e.g. when a worktree's code is run from the main checkout's
-folder). Only `run` and `verify` call the Claude API.
+folder). Only `run`, `verify` and `rejudge` call the Claude API.
 It reads `ANTHROPIC_API_KEY` from the environment or from a `.env` file in the current directory or the
 repository root; `.env` is gitignored. Everything is resumable: the harvest saves its page token, taxonomy
 answers and model answers are cached, and submitted batch ids are saved before the run waits on them.
@@ -110,6 +111,59 @@ time whether that answer was shown first or second.
 The pilots (`verify --sample 500`, $2.21 at low effort, $2.77 at high) agreed with these rates. High and low
 effort differ on 8% of Fable's source labels, high more often right.
 
+### A second judge (`rejudge`)
+
+The judge is also Fable, so it may favour Fable's answers. `rejudge` tests this by having Opus 5.5 (`--model`)
+judge a random sample of the settled disputes (`--sample`, default 300). Opus runs at the same effort, on the same
+prompts, with the answers in the same order, so the model is the only difference between the two judges. The
+sample leaves out records whose curated answer came from Opus, so Opus is a third party to both answers. Its
+decisions are cached apart and never change the catalogue. `reports/rejudge_*.json` gives how often the two judges
+agree: overall, per part, per curation tier, and by whether Fable was certain. `reports/rejudge_*.tsv` lists every
+part with both decisions.
+
+A Fable judge that favoured Fable would often take Fable's answer where Opus keeps the curation's, and rarely the
+reverse. An exact McNemar test compares those two counts.
+
+Run on 2026-11-23 for $1.03. Opus 5.5 at high effort judged 300 records with 331 disputed parts, sampled from the
+2,421 of 2,887 judged records that have no curated answer from Opus:
+
+| Fable's judge | Opus 5.5 | Parts |
+|---|---|---|
+| took Fable's answer | took Fable's answer | 246 |
+| kept the curation's | kept the curation's | 30 |
+| took Fable's answer | kept the curation's | 38 |
+| kept the curation's | took Fable's answer | 13 |
+| either judge chose a third answer | | 4 |
+
+The two judges made the same decision on 276 parts (83%). Opus backed 246 of the 285 changes that Fable's judge
+made toward Fable's answer (86%). Fable's judge does take Fable's answer more often than Opus does: 38 against 13
+(McNemar p = 0.0006; host 12 against 3, source 26 against 10).
+
+The difference comes entirely from answers Fable had marked as not certain:
+
+| Fable's own answer | Parts | Same decision | Only Fable's judge took Fable's answer | Only Opus took it |
+|---|---|---|---|---|
+| Certain | 112 | 96% | 2 | 2 |
+| Not certain | 219 | 77% | 36 | 11 |
+
+By curation tier, the judges agree on 87% of Haiku-settled parts and 79% of parts settled by two Sonnet runs.
+
+The 51 parts where only one judge took Fable's answer were then read by Claude Opus 5.5. That is the second
+judge's own model, so this reading is not ground truth either:
+
+- **Fable's answer better:** 16
+- **The curation's better:** 6
+- **Equally defensible:** 28
+- **Unclear:** 1
+
+The 38 parts where only Fable's judge took Fable's answer are the ones that would show self-preference. In those,
+Fable's judge was right in 11 and Opus in 6.
+
+Several of the 38 are records that give only ontology codes, such as env_medium `envo_00002262`. Fable reads the
+code, while Opus answers unknown. Checked against EBI OLS, the codes support Fable's reading in 6 of 8 such
+parts; `envo_00002262`, for example, is clay soil. So Fable's judge does lean toward Fable's answers, but its extra
+changes are more often right than wrong, and the catalogue keeps its decisions.
+
 ## Cost
 
 Measured on 2026-11-21 (vocabulary 2026.11.2): of 30,249 distinct records the rules settle 11,018 (63,883
@@ -135,6 +189,9 @@ The cross-check (`verify --effort high`, 2026-11-22) took 6 minutes and cost $77
 
 Its budget pre-check assumes 400 output tokens per record. That is three times the 131 measured per label and
 twice the 193 per judged record, so it needs `--budget 200` on a work directory that has also paid for `run`.
+
+The second judge (`rejudge`, Opus 5.5 on 300 records) cost $1.03 against a pre-check estimate of $3.14. That
+brings the work directory's spending to $96.91.
 
 ## Outputs (`catalogue_work/release/`)
 
@@ -168,9 +225,15 @@ total spend.
 - Only BioSample text is read. Genomes whose BioSample says nothing about the source (about one in ten here)
   stay `unknown`; the linked papers are not read.
 - The confidence values are tiers of the method, not measured error rates. The cross-check measures agreement
-  between independent models, not accuracy: both can make the same mistake. The judge is also Fable and may
-  favour Fable's answers. It showed no order bias, but a preference for its own answers is not ruled out. An
-  error rate needs a hand-labelled random sample.
+  between models, not accuracy, and models can share a mistake. The Fable judge showed no order bias, but it
+  takes Fable's answer more often than an Opus 5.5 judge does (38 against 13 parts in a sample of 331). The
+  extra changes looked more often right than wrong, though that check was a model's reading too. An error rate
+  needs a hand-labelled random sample.
+- 151 records (332 genomes) give only ontology codes in their source fields, such as env_medium
+  `envo_00002262`. The rules accept a bare code only when it is a vocabulary term's own id, so most of these
+  records go to the models. The curation answered unknown for 119 of them, and Fable's judge has since given
+  110 a term. Mapping each code through the ontology to its nearest vocabulary term (clay soil is a soil) would
+  settle them by rule, for free.
 - The rules take an environment field over a named host in 123 records (285 genomes), such as `env_medium`
   "seawater" on a marine sponge. Some of these are right (soil sampled around a named plant) and some are not.
 - The vocabulary has no host group for protists or algae (ciliates, dinoflagellates, diatoms, amoebae). Their

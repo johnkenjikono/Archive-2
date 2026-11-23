@@ -8,11 +8,13 @@ for every bacterial genome NCBI holds at complete-genome or chromosome level. Se
   python -m catalogue.build run --budget 150                # every record the rules and the cache leave open
   python -m catalogue.build verify --budget 30 --sample 500 # pilot: Claude Fable 5.2 cross-checks 500 records
   python -m catalogue.build verify --budget 200 --effort high  # Fable cross-checks every model label, judges disputes
+  python -m catalogue.build rejudge --budget 100 --sample 300  # Opus 5.5 judges 300 of those disputes again
   python -m catalogue.build assemble                        # catalogue table, per-species summary, report
   python -m catalogue.build status                          # what each stage has done and what it has cost
 
-Everything lives under --workdir (default ./catalogue_work). Only `run` and `verify` call the Claude API; they
-read ANTHROPIC_API_KEY from the environment or from a .env file in the current directory or the repository root.
+Everything lives under --workdir (default ./catalogue_work). Only `run`, `verify` and `rejudge` call the Claude
+API; they read ANTHROPIC_API_KEY from the environment or from a .env file in the current directory or the
+repository root.
 """
 import argparse
 import collections
@@ -29,7 +31,9 @@ import sys
 from pathlib import Path
 
 from catalogue.batch import BatchTransport, BudgetExceeded, Ledger, estimate_usd
-from catalogue.crosscheck import EFFORTS, FABLE, PARTS, CrossCheck, open_records, summarize, write_disagreements
+from catalogue.crosscheck import (EFFORTS, FABLE, JUDGE_EFFORT, PARTS, CrossCheck, compare_judges, judged_items,
+                                  open_records, summarize, summarize_judges, third_party_sample, write_disagreements,
+                                  write_judge_comparison)
 from catalogue.hosts import HostResolver
 from catalogue.ncbi import harvest, iter_assemblies, mag_accessions, resolve_taxa
 from steps.metadata_curation import (BATCH_DISCOUNT, HOST_FIELDS, PRICES, SOURCE_FIELDS, TIERS, AnswerCache,
@@ -376,6 +380,67 @@ def cmd_verify(args, paths, log):
     return report
 
 
+def cmd_rejudge(args, paths, log):
+    """A second model judges a random sample of the disputes Fable's judge settled, from the same prompts, so the
+    two judges differ only in the model: a check on Fable's judge favouring Fable's own answers. Nothing it
+    decides changes the catalogue."""
+    if args.model == FABLE or args.model not in PRICES:
+        sys.exit(f"--model must be another priced model than {FABLE}: {', '.join(m for m in PRICES if m != FABLE)}")
+    _require_harvest(paths)
+    _require_key()
+    vocab = Vocabulary()
+    resolver, _ = load_resolver(paths, vocab)
+    counts = distinct_keys(paths)
+    main = make_labeler(paths, vocab, resolver, log=lambda *_: None)
+    records, _ = open_records(main, sorted(counts))
+    first = CrossCheck(main, paths.crosscheck, lookup=tuple(reversed(EFFORTS)), log=lambda *_: None)
+    results = first.check(records, offline=True)
+    items = judged_items(results)
+    sample, eligible = third_party_sample(items, args.model, args.sample, args.seed)
+    log(f"Fable's judge settled {len(items):,} records; {eligible:,} have no curated answer from {args.model}; "
+        f"{len(sample):,} sampled for it to judge again (budget ${args.budget:.2f} for everything spent in this "
+        "work directory)")
+    import anthropic
+    client = anthropic.Anthropic()
+    label = f"{args.model}-{len(sample)}"
+    transport = BatchTransport(paths.root, args.budget, client=client, log=log, poll_seconds=args.poll,
+                               stage_prefix=f"rejudge {label} ", state_name="crosscheck_batches.json")
+    second = CrossCheck(main, paths.crosscheck, client=client, transport=transport, log=log, judge_model=args.model)
+    started = _now()
+    try:
+        decisions = second.judge(sample)
+    except BudgetExceeded as e:
+        sys.exit(f"Stopped before spending more: {e}")
+    except anthropic.BadRequestError as e:
+        sys.exit(f"The API rejected a {args.model} request: {e.message}")
+    rows = compare_judges(results, sample, decisions)
+    agreement = summarize_judges(rows)
+    report = {"run": f"rejudge {label}", "started": started, "finished": _now(), "first judge": FABLE,
+              "second judge": args.model, "effort": JUDGE_EFFORT, "seed": args.seed,
+              "records Fable's judge settled": len(items), f"records with no curated answer from {args.model}": eligible,
+              "records sampled": len(sample), "records the second judge decided": sum(ck in decisions for ck in sample),
+              "second judge answered by": dict(collections.Counter(r["second"].model for r in rows)),
+              "agreement": agreement, "stats": dict(second.stats), "usd_this_run": round(second.cost(), 4),
+              "usd_ledger_total": round(Ledger(paths.root / "spend.jsonl").total, 4)}
+    paths.reports.mkdir(parents=True, exist_ok=True)
+    stem = f"rejudge_{label}_{started.replace(':', '')}"
+    (paths.reports / f"{stem}.json").write_text(json.dumps(report, indent=1))
+    write_judge_comparison(rows, paths.reports / f"{stem}.tsv", vocab)
+    for name in ("all", *PARTS):
+        a = agreement.get(name)
+        if not a:
+            continue
+        took = (a["took Fable's, first judge"], a["took Fable's, second judge"])
+        only = (a["first took Fable's, second kept curation"], a["first kept curation, second took Fable's"])
+        log(f"  {name}: same decision on {a['same decision']:,} of {a['parts']:,} parts "
+            f"({a['same decision share']:.0%}); took Fable's answer: Fable's judge {took[0]:,}, {args.model} "
+            f"{took[1]:,}; only Fable's judge took it over the curation's {only[0]:,}, only {args.model} "
+            f"{only[1]:,} (McNemar p = {a['McNemar exact p']:.3g})")
+    log(f"  cost this run ${second.cost():.2f}; spent in this work directory ${report['usd_ledger_total']:.2f}")
+    log(f"Report: {paths.reports / stem}.json (each part in {stem}.tsv)")
+    return report
+
+
 def _lineage(taxa, tax_id):
     record = taxa.get(str(tax_id)) if tax_id else None
     if not record or "ambiguous" in record:
@@ -602,6 +667,13 @@ def main(argv=None):
     p.add_argument("--sample", type=int, help="pilot: only this many randomly chosen open records")
     p.add_argument("--seed", type=int, default=1, help="random seed for --sample (default 1)")
     p.add_argument("--poll", type=int, default=60, help="seconds between batch status checks (default 60)")
+    p = sub.add_parser("rejudge", help="a second model judges a sample of the disputes Fable's judge settled, to "
+                                       "check it for self-preference (costs money; run after `verify`)")
+    p.add_argument("--budget", type=float, required=True, help="hard cap in USD for everything spent in this workdir")
+    p.add_argument("--model", default="claude-opus-5-5", help="the second judge (default claude-opus-5-5)")
+    p.add_argument("--sample", type=int, default=300, help="records to judge again (default 300)")
+    p.add_argument("--seed", type=int, default=1, help="random seed for --sample (default 1)")
+    p.add_argument("--poll", type=int, default=60, help="seconds between batch status checks (default 60)")
     sub.add_parser("assemble", help="write the catalogue table, per-species summary and manifest")
     sub.add_parser("status", help="progress and spend")
     args = parser.parse_args(argv)
@@ -615,7 +687,7 @@ def main(argv=None):
         print(message, flush=True)
 
     commands = {"harvest": cmd_harvest, "prepare": cmd_prepare, "run": cmd_run, "verify": cmd_verify,
-                "assemble": cmd_assemble, "status": cmd_status}
+                "rejudge": cmd_rejudge, "assemble": cmd_assemble, "status": cmd_status}
     return commands[args.command](args, paths, log)
 
 

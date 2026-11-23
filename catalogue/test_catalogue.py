@@ -12,7 +12,8 @@ from types import SimpleNamespace
 
 from catalogue import build
 from catalogue.batch import BatchTransport, BudgetExceeded, Ledger, estimate_usd
-from catalogue.crosscheck import FABLE, CrossCheck, open_records, summarize, write_disagreements
+from catalogue.crosscheck import (FABLE, CrossCheck, compare_judges, judged_items, mcnemar, open_records, summarize,
+                                  summarize_judges, third_party_sample, write_disagreements)
 from catalogue.hosts import HostResolver, candidates
 from catalogue.ncbi import compact, harvest, iter_assemblies, mag_accessions, resolve_taxa
 from steps.metadata_curation import CuratedLabeler, Vocabulary, usage_cost
@@ -286,6 +287,37 @@ class CrossCheckTest(unittest.TestCase):
         high.check(self.records)
         self.assertEqual([c["output_config"]["effort"] for c in fake.calls], ["high"])  # labels only: same dispute
         self.assertEqual(high.effort_agreement(self.records, "low")["source"], {"same": 4})
+
+    def test_a_second_judge_sees_the_same_prompt_and_is_cached_apart(self):
+        xc, fake = self.fable()
+        results = xc.check(self.records)
+        fable_prompt = fake.calls[-1]["messages"][0]["content"]
+        items = judged_items(results)
+        self.assertEqual([norm["isolation_source"] for norm, _ in items.values()], ["blood of a patient on the ward"])
+        self.assertEqual(third_party_sample(items, HAIKU, 10), ({}, 0))  # Haiku gave the curated answer
+        sample, eligible = third_party_sample(items, OPUS, 10)
+        self.assertEqual((list(sample), eligible), (list(items), 1))
+        opus = RecordingFake(curated_answer)  # this judge sides with the curation
+        second = CrossCheck(self.main, self.dir / "crosscheck.json", client=opus, log=quiet, judge_model=OPUS)
+        decisions = second.judge(sample)
+        call, = opus.calls
+        self.assertEqual((call["model"], call["output_config"]["effort"]), (OPUS, "high"))
+        self.assertEqual(call["messages"][0]["content"], fable_prompt)  # the same record, id and answer order
+        rows = compare_judges(results, sample, decisions)
+        self.assertEqual([(r["part"], r["first_side"], r["second_side"], r["second"].tier) for r in rows],
+                         [("source", "Fable's", "curation", "second judge")])
+        summary = summarize_judges(rows)["all"]
+        self.assertEqual((summary["same decision"], summary["first took Fable's, second kept curation"],
+                          summary["McNemar exact p"]), (0, 1, 1.0))
+        self.assertEqual((mcnemar(0, 0), mcnemar(5, 0), mcnemar(3, 3)), (1.0, 0.0625, 1.0))
+        # Cached apart: Fable's decision still stands, and neither judge is asked again.
+        never = FakeClient(lambda *a: self.fail("cached decisions must not be asked again"))
+        fresh, _ = self.fable(client=never)
+        self.assertEqual(self.statuses(fresh.check(self.records))["blood of a patient on the ward"],
+                         ("agrees", "judge took Fable's"))
+        again = CrossCheck(self.main, self.dir / "crosscheck.json", client=never, log=quiet, judge_model=OPUS)
+        self.assertEqual(again.judge(sample)[next(iter(sample))]["source"].key, "host_sample")
+        self.assertEqual(never.calls, [])
 
     def test_not_curated_records_wait(self):
         unseen = {**self.records, **open_records(self.main, [key(isolation_source="mystery pond scum")])[0]}
