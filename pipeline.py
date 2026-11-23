@@ -586,6 +586,7 @@ def run_tree_pipeline(input_fasta, start_step, outgroup_id, base_dir, output_tre
         _cleanup(rarefaction_out_dir, "previous rarefaction FASTAs")
         for stale_xml in glob.glob(os.path.join(ecosim_out_dir, "*_results.xml")):
             os.remove(stale_xml)
+        old_manifest = Path(rarefaction_genes_path).read_text() if os.path.exists(rarefaction_genes_path) else None
         create_rarefaction_fastas(
             input_fasta=sorted_fasta,
             output_folder=rarefaction_out_dir,
@@ -605,6 +606,10 @@ def run_tree_pipeline(input_fasta, start_step, outgroup_id, base_dir, output_tre
         _cleanup(rarefaction_tree_dir, "per-draw trees from an earlier run")
     elif start_step <= 7:
         print(f"\n--- 7b. Building one tree per rarefaction replicate ---")
+        # Every draw has the same leaves, so only the manifest shows a draw now holds other genes.
+        if Path(rarefaction_genes_path).read_text() != old_manifest:
+            _cleanup(temp_rare_trees, "per-draw trees built on an earlier run's genes")
+            _cleanup(rarefaction_tree_dir, "per-draw trees built on an earlier run's genes")
         _drop_stale_trees(
             sorted_fasta,
             glob.glob(os.path.join(temp_rare_trees, "*.nwk")) + glob.glob(os.path.join(rarefaction_tree_dir, "*.nwk")),
