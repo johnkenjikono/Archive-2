@@ -106,6 +106,21 @@ def parse_number(raw: str, label: str, default: str, cast=int):
         raise ValueError(f'{label} must be {kind} (got "{raw}").') from None
 
 
+def load_levels(cpus: int) -> dict[str, int]:
+    """Dropdown label -> --threads. Bakta runs threads // 4 jobs, each with its own db in RAM, so fewer threads also means less memory."""
+    levels = {
+        "Light": max(1, cpus // 4),
+        "Balanced": max(1, cpus // 2),
+        "Heavy": max(1, cpus - 2),
+        "Maximum": cpus,
+    }
+    return {f"{name} ({n} of {cpus} cores)": n for name, n in levels.items()}
+
+
+LOAD_LEVELS = load_levels(os.cpu_count() or 4)
+DEFAULT_LOAD = next(label for label in LOAD_LEVELS if label.startswith("Balanced"))
+
+
 SETTINGS_PATH = Path.home() / ".ecotype_ui.json"
 
 
@@ -152,6 +167,22 @@ class FormValues:
     ani: bool = False
     papers: bool = False
     niche: bool = False
+    treecluster: bool = False
+    mptp: bool = False
+    fastbaps: bool = False
+    poppunk: bool = False
+    popcogent: bool = False
+
+
+# pipeline.py's optional delimitation methods, with their checkbox labels.
+DELIMITATION = {
+    "treecluster": "TreeCluster on the rerooted tree (threshold 0.01)",
+    "mptp": "mPTP on the rerooted tree",
+    "fastbaps": "fastbaps on the core alignment (needs R)",
+    "poppunk": "PopPUNK on the genomes (step 2)",
+    "popcogent": "PopCOGenT on the genomes (step 2; needs a PopCOGenT install)",
+}
+DELIMITATION_FLAGS = tuple(DELIMITATION)
 
 
 def build_command(values: FormValues, python_exe: str, pipeline_py: Path) -> list[str]:
@@ -203,7 +234,7 @@ def build_command(values: FormValues, python_exe: str, pipeline_py: Path) -> lis
         argv.extend(["--replicates", str(values.replicates)])
     if values.clone_threshold != 1e-5:
         argv.extend(["--clone-threshold", f"{values.clone_threshold:g}"])
-    for flag in ("ani", "papers", "niche"):
+    for flag in ("ani", "papers", "niche") + DELIMITATION_FLAGS:
         if getattr(values, flag):
             argv.append(f"--{flag}")
     return argv
@@ -475,13 +506,14 @@ def main() -> None:
             saved = load_settings(SETTINGS_PATH)
             self.workdir_var = tk.StringVar(value=saved.get("workdir", "."))
             self.db_var = tk.StringVar(value=saved.get("db") or next(iter(find_bakta_dbs()), ""))
-            self.threads_var = tk.StringVar(value="12")
+            self.threads_var = tk.StringVar(value=DEFAULT_LOAD)
             self.bakta_jobs_var = tk.StringVar()
             self.start_step_var = tk.StringVar(value=step_label(1))
             self.stop_step_var = tk.StringVar(value=step_label(LAST_STEP))
             self.ani_var = tk.BooleanVar(value=False)
             self.papers_var = tk.BooleanVar(value=False)
             self.niche_var = tk.BooleanVar(value=False)
+            self.delim_vars = {name: tk.BooleanVar(value=False) for name in DELIMITATION}
             self.status_var = tk.StringVar(value="Ready.")
             self.input_fasta_var = tk.StringVar()
             self.outgroup_id_var = tk.StringVar()
@@ -578,7 +610,7 @@ def main() -> None:
             self.advanced_frame.pack(fill="both", expand=True)
             advanced = ttk.LabelFrame(self.advanced_frame, text="Advanced")
             advanced.pack(fill="x", pady=6)
-            self._row(advanced, 0, "Threads", self.threads_var)
+            self._row(advanced, 0, "CPU load", self.threads_var, values=list(LOAD_LEVELS))
             self._row(advanced, 1, "Bakta parallel jobs (blank = auto)", self.bakta_jobs_var)
             self._row(advanced, 2, "Outgroup ID (blank = auto)", self.outgroup_id_var)
             setup = self._track(
@@ -607,6 +639,12 @@ def main() -> None:
                 (self.niche_var, "Ecotype x host/niche association (needs ANTHROPIC_API_KEY)"),
             )):
                 self._track(ttk.Checkbutton(extras, text=text, variable=var)).grid(
+                    row=i, column=0, sticky="w", padx=4, pady=1)
+
+            delim = ttk.LabelFrame(self.advanced_frame, text="Other delimitation methods (results in delimitation/)")
+            delim.pack(fill="x", pady=6)
+            for i, (name, text) in enumerate(DELIMITATION.items()):
+                self._track(ttk.Checkbutton(delim, text=text, variable=self.delim_vars[name])).grid(
                     row=i, column=0, sticky="w", padx=4, pady=1)
 
             outputs = ttk.LabelFrame(self.advanced_frame, text="Outputs to keep")
@@ -679,7 +717,7 @@ def main() -> None:
                 local_folder=self.local_folder_var.get().strip(),
                 workdir=resolve_workdir(self.workdir_var.get().strip() or "."),
                 db=self.db_var.get().strip(),
-                threads=parse_number(self.threads_var.get(), "Threads", "12"),
+                threads=LOAD_LEVELS[self.threads_var.get()],
                 bakta_jobs=bakta_jobs,
                 start_step=parse_step_label(self.start_step_var.get()),
                 stop_step=parse_step_label(self.stop_step_var.get()),
@@ -694,6 +732,7 @@ def main() -> None:
                 ani=bool(self.ani_var.get()),
                 papers=bool(self.papers_var.get()),
                 niche=bool(self.niche_var.get()),
+                **{name: bool(var.get()) for name, var in self.delim_vars.items()},
             )
 
         def _set_form_enabled(self, enabled: bool) -> None:

@@ -79,7 +79,7 @@ def create_rarefaction_fastas(input_fasta,
     (default: <output_folder>/rarefaction_genes.csv).
     """
     if gene_counts is None:
-        gene_counts = [1, 3, 7, 20, 100]
+        gene_counts = [1, 4, 6, 20, 100]
 
     if not gene_header or not os.path.exists(gene_header):
         raise FileNotFoundError(

@@ -4,7 +4,6 @@ import csv
 import glob
 import hashlib
 import inspect
-import io
 import platform
 import subprocess
 import sys
@@ -46,6 +45,7 @@ from steps.dotenv import load_dotenv
 from steps.ani import run_fastani, summarize_ani
 from steps.papers import run_paper_lookup
 from steps.interactive_tree import write_interactive_tree
+from steps.delimitation import run_treecluster, run_mptp, run_fastbaps, run_poppunk, run_popcogent
 
 # Falls back to the bundled tools/ecosim.jar / tools/ dir (where bin/ lives) when env vars are unset.
 ECOSIM_JAR = _resolve_ecosim_jar()
@@ -418,7 +418,7 @@ def run_tree_pipeline(input_fasta, start_step, outgroup_id, base_dir, output_tre
                       clone_threshold=DEFAULT_CLONE_THRESHOLD,
                       keep=None, full_core=True, gene_counts=None, replicates=20, each_gene=False,
                       stop_step=10, mask_recombination=False, shared_tree=None, sample_size=None, seed=42,
-                      gmyc=False, med=False):
+                      gmyc=False, med=False, treecluster=None, mptp=False, fastbaps=False)):
     """sample_size: after collapsing clones, randomly trim to this many representatives (None keeps them all)."""
     keep = DEFAULT_KEEP if keep is None else keep
     # Steps 8-10 only read files under base_dir; the alignment path just names them.
@@ -556,6 +556,24 @@ def run_tree_pipeline(input_fasta, start_step, outgroup_id, base_dir, output_tre
     else:
         print("\n--- Skipping Step 6: Using existing rerooted tree ---")
 
+    # Other delimitation methods on the same tree and alignment EcoSim gets; a failure only warns.
+    if start_step <= 6:
+        delim_dir = os.path.join(base_dir, "delimitation")
+        # Only a downloaded outgroup is dropped; a type strain root is a real ingroup genome.
+        og = outgroup_id if outgroup_id == "outgroup" else None
+        for name, wanted, run in (
+                ("TreeCluster", treecluster is not None,
+                 lambda: run_treecluster(rerooted_tree, delim_dir, treecluster, og, clone_map_path)),
+                ("mPTP", mptp, lambda: run_mptp(rerooted_tree, delim_dir, og, clone_map_path)),
+                ("fastbaps", fastbaps, lambda: run_fastbaps(sorted_fasta, delim_dir, og, clone_map_path))):
+            if wanted:
+                print(f"\n--- 6b. {name} ---")
+                try:
+                    os.makedirs(delim_dir, exist_ok=True)
+                    run()
+                except Exception as exc:
+                    print(f"Warning: {name} failed: {exc}", file=sys.stderr)
+
     if _stopped_after(6, stop_step):
         print(f"Rooted tree: {rerooted_tree}\nUnrooted tree with support values: {support_tree}")
         return
@@ -584,47 +602,8 @@ def run_tree_pipeline(input_fasta, start_step, outgroup_id, base_dir, output_tre
         print("Shared tree: each draw runs against the step-6 full core-genome tree (no per-draw trees).")
         _cleanup(temp_rare_trees, "per-draw trees from an earlier run")
         _cleanup(rarefaction_tree_dir, "per-draw trees from an earlier run")
-    elif start_step <= 7:
-        print(f"\n--- 7b. Building one tree per rarefaction replicate ---")
-        _drop_stale_trees(
-            sorted_fasta,
-            glob.glob(os.path.join(temp_rare_trees, "*.nwk")) + glob.glob(os.path.join(rarefaction_tree_dir, "*.nwk")),
-            "rarefaction tree(s)",
-        )
-        if full_core:
-            # The full core genome is the step-5 alignment, so reuse its tree instead of rebuilding it.
-            os.makedirs(temp_rare_trees, exist_ok=True)
-            shutil.copy2(unrooted_tree, os.path.join(temp_rare_trees, f"{FULL_CORE_NAME}_tree.nwk"))
-        make_trees_batch(
-            final_folder=rarefaction_out_dir,
-            tree_folder=temp_rare_trees,
-            threads=threads,
-        )
-        os.makedirs(rarefaction_tree_dir, exist_ok=True)
-        rerooted = 0
-        for fasta in sorted(glob.glob(os.path.join(rarefaction_out_dir, "*.fasta"))):
-            stem = Path(fasta).stem
-            unrooted = os.path.join(temp_rare_trees, f"{stem}_tree.nwk")
-            if not (os.path.exists(unrooted) and os.path.getsize(unrooted) > 0):
-                continue
-            # Rerooting is chatty and runs 100x; only show the log when it fails.
-            log = io.StringIO()
-            with contextlib.redirect_stdout(log):
-                ok = reroot_tree_by_first_fasta(
-                    fasta,
-                    unrooted,
-                    os.path.join(rarefaction_tree_dir, f"{stem}_tree.nwk"),
-                    outgroup_name=outgroup_id,
-                )
-            if ok:
-                rerooted += 1
-            else:
-                print(f"  {stem}: reroot failed, falling back to the full tree")
-                print(log.getvalue())
-        print(f"Rerooted {rerooted} sub-alignment trees in {rarefaction_tree_dir}")
     else:
-        print("\n--- Skipping Step 7: Using existing rarefaction FASTAs"
-              f"{'' if shared_tree else ' and trees'} ---")
+        print("\n--- Skipping Step 7: Using existing rarefaction FASTAs ---")
     if _stopped_after(7, stop_step):
         return
 
@@ -638,11 +617,9 @@ def run_tree_pipeline(input_fasta, start_step, outgroup_id, base_dir, output_tre
         if not (ECOSIM_JAR and os.path.exists(ECOSIM_JAR)):
             print("EcoSim jar not found. Set ECOSIM_JAR: export ECOSIM_JAR=~/ecosim/ecosim.jar")
             sys.exit(1)  # keep rarefaction FASTAs + tree so the run can resume with --start-step 8
-        has_draw_trees = bool(glob.glob(os.path.join(rarefaction_tree_dir, "*.nwk")))
-        if shared_tree and has_draw_trees:
-            # Left by a default step 7, so finished results may have used them: rerun every draw
-            # against the full tree instead.
-            print("Per-draw trees found; --shared-tree reruns every draw on the full core-genome tree.")
+        if glob.glob(os.path.join(rarefaction_tree_dir, "*.nwk")):
+            # Left by an earlier version that built per-draw trees, so finished results may have used them.
+            print("Per-draw trees found; rerunning every draw on the full core-genome tree.")
             for stale_xml in glob.glob(os.path.join(ecosim_out_dir, "*_results.xml")):
                 os.remove(stale_xml)
             _cleanup(rarefaction_tree_dir, "per-draw rarefaction trees")
@@ -654,8 +631,7 @@ def run_tree_pipeline(input_fasta, start_step, outgroup_id, base_dir, output_tre
             sys.exit(1)
         succeeded = run_ecosim_batch(
             fasta_dir=rarefaction_out_dir,
-            # With --shared-tree no tree folder is passed, so a stale per-draw tree is never used.
-            tree_dir=None if shared_tree else rarefaction_tree_dir,
+            tree_dir=None,
             full_tree_path=rerooted_tree,
             output_dir=ecosim_out_dir,
             ecosim_jar=ECOSIM_JAR,
@@ -686,7 +662,6 @@ def run_tree_pipeline(input_fasta, start_step, outgroup_id, base_dir, output_tre
                 print(f"Warning: MED failed: {exc}", file=sys.stderr)
         if "rarefaction" not in keep:
             _cleanup(rarefaction_out_dir, "rarefaction FASTAs")
-            _cleanup(rarefaction_tree_dir, "rarefaction trees")
         if "rerooted_tree" not in keep:
             _cleanup(rerooted_tree, "rerooted tree")
     else:
@@ -917,7 +892,7 @@ def write_run_parameters(base_dir, species_name, outgroup_name, args):
            if k in ("sample_size", "seed", "start_step", "threads", "no_dedup", "clone_threshold", "no_full_core",
                     "gene_counts", "replicates", "each_gene", "outgroup_id", "db",
                     "stop_step", "ani", "papers", "niche", "oversample", "mask_recombination", "shared_tree",
-                    "gmyc", "med", "gene_content", "adaptml")},
+                    "gmyc", "med", "gene_content", "adaptml", "treecluster", "mptp", "fastbaps", "poppunk", "popcogent")},
         # The settings above do not pin the software, and the tools and the Bakta database are
         # both unpinned, so without these a result cannot be reproduced or even diagnosed later.
         "software": collect_provenance(getattr(args, "db", None)),
@@ -1022,6 +997,14 @@ def run_pipeline_for_species(species_name, outgroup_name, args):
             print(f"\n--- FastANI all-vs-all on {len(fasta_files)} genomes ---")
             if run_fastani(fasta_files, base_dir / "fastani.tsv", args.threads):
                 print(f"Saved {base_dir / 'fastani.tsv'}")
+        # Genome-based delimitation needs the assemblies, which are deleted just below.
+        for name, wanted, run in (("PopPUNK", args.poppunk, run_poppunk), ("PopCOGenT", args.popcogent, run_popcogent)):
+            if wanted:
+                print(f"\n--- {name} on {len(fasta_files)} genomes ---")
+                try:
+                    run(fasta_files, base_dir / "delimitation", args.threads)
+                except Exception as exc:
+                    print(f"Warning: {name} failed: {exc}", file=sys.stderr)
         if "genomes" not in args.keep:
             _cleanup(input_dir, "input genomes")
     if _stopped_after(2, args.stop_step):
@@ -1110,6 +1093,9 @@ def run_pipeline_for_species(species_name, outgroup_name, args):
             # Trim only when this invocation oversampled in step 1; a resume keeps what the earlier run downloaded.
             sample_size=args.sample_size if args.oversample and args.start_step <= 1 and not args.input_fasta else None,
             seed=args.seed,
+            treecluster=args.treecluster,
+            mptp=args.mptp,
+            fastbaps=args.fastbaps,
         )
         # Steps 4-7 read the alignment, so keep it for a run that stopped before step 8.
         if args.start_step <= 3 and "panaroo" not in args.keep and args.stop_step >= 8:
@@ -1250,8 +1236,8 @@ def main():
                              "(environment-gubbins.yml) or run_gubbins.py on PATH")
 
     # Rarefaction arguments
-    parser.add_argument("--gene-counts", type=int, nargs="+", default=[1, 3, 7, 20, 100], metavar="N",
-                        help="Core genes per rarefaction replicate (default: 1 3 7 20 100)")
+    parser.add_argument("--gene-counts", type=int, nargs="+", default=[1, 4, 6, 20, 100], metavar="N",
+                        help="Core genes per rarefaction replicate (default: 1 4 6 20 100)")
     parser.add_argument("--replicates", type=int, default=20,
                         help="Random replicates per gene count (default: 20). Each one is an EcoSim run.")
     parser.add_argument("--each-gene", action="store_true",
@@ -1302,6 +1288,18 @@ def main():
     parser.add_argument("--gene-content", action="store_true",
                         help="After the run, test each accessory gene for association with ecotype and list "
                              "ecotype-specific genes (gene_ecotype_association.csv, ecotype_unique_genes.csv).")
+    parser.add_argument("--treecluster", type=float, nargs="?", const=0.01, metavar="THRESHOLD",
+                        help="After step 6, also cluster the rerooted tree with TreeCluster (max_clade): clades whose "
+                             "tips are at most THRESHOLD substitutions/site apart (default 0.01). Needs TreeCluster.py.")
+    parser.add_argument("--mptp", action="store_true",
+                        help="After step 6, also delimit with mPTP (multi-rate PTP) on the rerooted tree. Needs mptp.")
+    parser.add_argument("--fastbaps", action="store_true",
+                        help="After step 6, also cluster the core alignment with fastbaps. Needs R with fastbaps.")
+    parser.add_argument("--poppunk", action="store_true",
+                        help="In step 2, also cluster the genomes with PopPUNK (DBSCAN model). Needs poppunk.")
+    parser.add_argument("--popcogent", action="store_true",
+                        help="In step 2, also find gene-flow units with PopCOGenT. Needs a PopCOGenT checkout: set "
+                             "POPCOGENT_DIR, MUGSY_PATH, MUGSY_ENV and INFOMAP_PATH (see steps/delimitation.py).")
     parser.add_argument("--papers", action="store_true",
                         help="After the run, look up each genome's BioProject and linked PubMed papers, and have "
                              "Claude summarise what each study did (genome_sources.csv, papers.csv, and links in the "
@@ -1321,6 +1319,10 @@ def main():
         parser.error("--stop-step must not be before --start-step")
     if args.oversample < 0:
         parser.error("--oversample must not be negative")
+    if (args.poppunk or args.popcogent) and args.start_step > 2:
+        parser.error("--poppunk and --popcogent run in step 2 on the genomes: start at step 1 or 2")
+    if (args.treecluster is not None or args.mptp or args.fastbaps) and not args.start_step <= 6 <= args.stop_step:
+        parser.error("--treecluster, --mptp and --fastbaps run after step 6: include step 6 in the run")
     if args.no_dedup:  # nothing is collapsed, so extra genomes would only be downloaded to be thrown away
         args.oversample = 0
     if args.replicates < 1 or any(n < 1 for n in args.gene_counts):

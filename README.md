@@ -46,7 +46,7 @@ Run it from the desktop window (`python ui/ui.py`) or from the terminal, one spe
 | Core genes (Panaroo) | Finds the genes that **every** genome has and lines them up | Keeping only the chapters that appear in every book |
 | Tree (VeryFastTree) | Builds a family tree from differences in those shared genes | Drawing who is related to whom |
 | Reroot | Places the root of the tree at the outgroup | Deciding which end of the tree is "oldest" |
-| Rarefaction | Repeats the analysis using only 1, 3, 7, 20 or 100 random genes | Checking whether a small sample gives the same answer as the whole book |
+| Rarefaction | Repeats the analysis using only 1, 4, 6, 20 or 100 random genes | Checking whether a small sample gives the same answer as the whole book |
 | EcoSim | Cuts the tree into ecotypes using a model of how populations diversify and are purged by selection | The actual counting step |
 | Summary and plots | Writes tables and colored trees | The figures for your report |
 
@@ -171,7 +171,7 @@ Start with these:
 | `ecotype_plots/full_core_genome_results.png` | The tree with each ecotype in its own color. This is the main figure |
 | `ecotype_plots/full_core_genome_results_pie.png` | How many genomes fall in each ecotype |
 | `ecotype_summary.csv` | Ecotype count for every replicate, including the full core genome |
-| `rarefaction_by_gene_count.csv` | How the count changes with 1, 3, 7, 20, 100 genes. Stable numbers mean a trustworthy estimate |
+| `rarefaction_by_gene_count.csv` | How the count changes with 1, 4, 6, 20, 100 genes. Stable numbers mean a trustworthy estimate |
 | `ecotype_membership.csv` | Which genome belongs to which ecotype |
 
 Open the CSVs in Excel, Numbers or LibreOffice. The full list of files is under [Outputs](#outputs).
@@ -441,7 +441,7 @@ Execution
   --stop-step {1..10}      Last step to run (default: 10). At 6 or earlier the tree uses every genome (e.g. --sample-size 890 --stop-step 6)
 
 Rarefaction (steps 7-9)
-  --gene-counts N [N ...]  Core genes per replicate (default: 1 3 7 20 100)
+  --gene-counts N [N ...]  Core genes per replicate (default: 1 4 6 20 100)
   --replicates INT         Random replicates per gene count (default: 20); each one is an EcoSim run
   --each-gene              At the 1-gene level, run every core gene once instead of random replicates
   --no-full-core           Skip the EcoSim run on the complete core genome (and the comparison to it)
@@ -485,9 +485,8 @@ To start a run from an NCBI link (taxonomy or genome page, taxid, or accession) 
 | 4d | **Mask recombination** | Only with `--mask-recombination`. [Gubbins](https://github.com/nickjcroucher/gubbins) finds stretches of each branch whose SNP density marks them as imported by recombination, and they are replaced by gaps, leaving the clonal frame that EcoSim's model assumes. Gubbins reads where SNPs sit along the genome, and Panaroo concatenates core genes in file-name order, so the genes are first put back in the order they sit in one reference genome (Bakta locus tags count along the chromosome; the genome placing the most core genes is used), and Gubbins's blocks are mapped back afterwards. Only the ingroup goes to Gubbins (VeryFastTree as its tree builder, `--filter-percentage 100` so no genome is dropped, and the run stops if one is missing from its tree); the outgroup is another species, whose long branch is where false positives are likeliest, and is left unmasked. Masking happens after clone collapsing. EcoSim bins on the tree and VeryFastTree treats gaps as missing data, so a masked site counts as unknown rather than as a difference. Writes `recombination_masking.csv`, `recombination_predictions.gff` and `recombination_per_branch.tsv`. A restart reuses Gubbins's results for an identical alignment. |
 | 5 | **Tree** | Builds a maximum-likelihood tree with VeryFastTree (`-nt -gtr -gamma`) on all threads, with SH-like local support values, saved as `full_core_tree_support.nwk`. Rarefaction trees skip support (`-nosupport`). |
 | 6 | **Reroot** | Roots the tree on the outgroup with Biopython. GCA/GCF accession variants are matched automatically. Support values are dropped from the rooted tree, because rerooting leaves the ones near the root on the wrong branches. `--stop-step 6` stops here. |
-| 7 | **Rarefaction** | Creates 100 sub-alignments (change with `--gene-counts` / `--replicates`; `--each-gene` runs every core gene once at the 1-gene level) by concatenating whole core genes drawn at random without replacement: 1, 3, 7, 20 and 100 genes, 20 replicates each. Gene boundaries come from Panaroo's `core_alignment_header.embl`, which must sit next to the alignment (checked before step 4 starts). Genes that are all gaps in any genome, which is how Panaroo pads a gene a genome lacks, are not sampled. With `--mask-recombination` the draws come from the masked alignment, so a gene Gubbins masks entirely in some genome leaves the pool too (step 4d logs how many). The genes in each replicate are listed in `rarefaction_genes.csv`. This shows how the ecotype estimate changes with the number of genes. The whole core alignment is also added as one more replicate, `full_core_genome` (every core gene), so each subset can be compared with it; its tree is the step-5 tree. `--no-full-core` turns this off. |
-| 7b | **Rarefaction trees** | Builds and reroots one tree per sub-alignment. EcoSim bins sequences on the tree it is given, so reusing the full-alignment tree for every replicate would make the rarefaction flat by construction. `--shared-tree` skips this step and runs every replicate against the full core-genome tree, which is the lab's [`Rare.sh`](https://github.com/Jocelyn0830/Bacillus-Genomes/blob/main/rarefaction/Rare.sh) protocol; use it only to reproduce that protocol. It also deletes per-replicate trees left by an earlier run. |
-| 8 | **EcoSim** | Runs `ecosim.jar` (demarcation mode, no GUI, 6 GB heap) on each sub-alignment against its own rooted tree, falling back to the full rooted tree for any replicate whose tree could not be built or rerooted. EcoSim reads only the alignment's length and outgroup name from the FASTA; the binning curve it fits comes from the tree. With `--shared-tree` every replicate runs against the step-6 full core-genome tree, so replicates differ only through their sequence length; a resume at step 8 with the flag reruns any result that may have used a per-replicate tree, and a resume without the flag refuses to run when no per-replicate trees exist. |
+| 7 | **Rarefaction** | Creates 100 sub-alignments (change with `--gene-counts` / `--replicates`; `--each-gene` runs every core gene once at the 1-gene level) by concatenating whole core genes drawn at random without replacement: 1, 4, 6, 20 and 100 genes, 20 replicates each. Gene boundaries come from Panaroo's `core_alignment_header.embl`, which must sit next to the alignment (checked before step 4 starts). Genes that are all gaps in any genome, which is how Panaroo pads a gene a genome lacks, are not sampled. With `--mask-recombination` the draws come from the masked alignment, so a gene Gubbins masks entirely in some genome leaves the pool too (step 4d logs how many). The genes in each replicate are listed in `rarefaction_genes.csv`. This shows how the ecotype estimate changes with the number of genes. The whole core alignment is also added as one more replicate, `full_core_genome` (every core gene), so each subset can be compared with it; its tree is the step-5 tree. `--no-full-core` turns this off. |
+| 8 | **EcoSim** | Runs `ecosim.jar` (demarcation mode, no GUI, 6 GB heap) on each sub-alignment against the step-6 full core-genome tree, the lab's [`Rare.sh`](https://github.com/Jocelyn0830/Bacillus-Genomes/blob/main/rarefaction/Rare.sh) protocol. EcoSim reads only the alignment's length and outgroup name from the FASTA; the binning curve it fits comes from the tree, so replicates differ only through their sequence length. Per-replicate trees left by an older run are deleted, and a resume at step 8 reruns any result that may have used one. |
 | 9 | **Parse** | Counts the demarcated ecotypes in each EcoSim XML file and writes `ecotype_summary.csv`, plus `ecotype_membership.csv` listing which genome is in which ecotype for every replicate (clones expanded). It then compares every replicate with the full core genome: `rarefaction_comparison.csv` (per replicate), `rarefaction_by_gene_count.csv` (per gene count) and `ecotype_support.csv` (how often each full-core ecotype is recovered exactly at each gene count). `ecotype_summary.csv` also carries EcoSim's own confidence intervals for npop (number of ecotypes), omega and sigma, and `ecotype_tree_support.csv` gives the SH-like support of each full-core ecotype's clade. |
 | 10 | **Plot** | Draws the tree EcoSim used for the full core genome (or, with `--no-full-core`, each 100-gene replicate) with every ecotype in its own color (`ecotype_plots/*.png`), plus an iTOL `TREE_COLORS` file per tree for the [iTOL](https://itol.embl.de) viewer, and a pie chart of genomes per ecotype (`*_pie.png`) in the same colors, and an interactive tree (`*_interactive.html`, opens offline in any browser) whose tips show ecotype, clones and any `--niche` / `--papers` metadata, with links to NCBI and PubMed. |
 
@@ -507,7 +506,7 @@ Each species gets its own folder, `<workdir>/<Species_name>/`. Intermediates are
 | `core_alignment` | deleted at the end | `pangenome/core_gene_alignment.aln` + `core_alignment_header.embl`. A later `--start-step 4` finds it there |
 | `panaroo` | deleted at the end | the whole `output_roary/` folder |
 | `rerooted_tree` | **kept** | `rerooted_trees/<Species name>.nwk`, the rooted full core-genome tree |
-| `rarefaction` | deleted after EcoSim | `rarefaction_fastas_<alignment>/`, `rarefaction_trees_<alignment>/` |
+| `rarefaction` | deleted after EcoSim | `rarefaction_fastas_<alignment>/` |
 | `ecosim_xml` | **kept** | the EcoSim XML per replicate. Needed to rerun steps 9–10 |
 | `ecotypes` | **kept** | `ecotype_membership.csv` and the three full-core comparison tables |
 | `tree_plots` | **kept** | `ecotype_plots/*.png` + iTOL color files |
@@ -642,7 +641,7 @@ steps/             One module per pipeline step, each also runnable on its own
   move_largest_numeric.py   Step 4: alignment check and outgroup ordering
   recombination.py          Step 4d (--mask-recombination): Gubbins on genome-ordered core genes, masking
   test_recombination.py     Unit tests for step 4d (a fake run_gubbins.py, so Gubbins is not needed)
-  test_rarefaction_trees.py Unit tests for steps 7-8 with and without --shared-tree
+  test_rarefaction_trees.py Unit tests for steps 7-8 (shared full core-genome tree)
   run_trees.py              Step 5: VeryFastTree/FastTree wrapper
   reroot_tree.py            Step 6: outgroup rooting
   rarefaction.py            Step 7: gene-window sub-alignments
