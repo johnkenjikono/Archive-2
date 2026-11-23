@@ -167,6 +167,22 @@ class FormValues:
     ani: bool = False
     papers: bool = False
     niche: bool = False
+    treecluster: bool = False
+    mptp: bool = False
+    fastbaps: bool = False
+    poppunk: bool = False
+    popcogent: bool = False
+
+
+# pipeline.py's optional delimitation methods, with their checkbox labels.
+DELIMITATION = {
+    "treecluster": "TreeCluster on the rerooted tree (threshold 0.01)",
+    "mptp": "mPTP on the rerooted tree",
+    "fastbaps": "fastbaps on the core alignment (needs R)",
+    "poppunk": "PopPUNK on the genomes (step 2)",
+    "popcogent": "PopCOGenT on the genomes (step 2; needs a PopCOGenT install)",
+}
+DELIMITATION_FLAGS = tuple(DELIMITATION)
 
 
 def build_command(values: FormValues, python_exe: str, pipeline_py: Path) -> list[str]:
@@ -218,7 +234,7 @@ def build_command(values: FormValues, python_exe: str, pipeline_py: Path) -> lis
         argv.extend(["--replicates", str(values.replicates)])
     if values.clone_threshold != 1e-5:
         argv.extend(["--clone-threshold", f"{values.clone_threshold:g}"])
-    for flag in ("ani", "papers", "niche"):
+    for flag in ("ani", "papers", "niche") + DELIMITATION_FLAGS:
         if getattr(values, flag):
             argv.append(f"--{flag}")
     return argv
@@ -500,6 +516,7 @@ def main() -> None:
             self.ani_var = tk.BooleanVar(value=False)
             self.papers_var = tk.BooleanVar(value=False)
             self.niche_var = tk.BooleanVar(value=False)
+            self.delim_vars = {name: tk.BooleanVar(value=False) for name in DELIMITATION}
             self.status_var = tk.StringVar(value="Ready.")
             self.input_fasta_var = tk.StringVar()
             self.outgroup_id_var = tk.StringVar()
@@ -631,6 +648,12 @@ def main() -> None:
                 self._track(ttk.Checkbutton(extras, text=text, variable=var)).grid(
                     row=i, column=0, sticky="w", padx=4, pady=1)
 
+            delim = ttk.LabelFrame(self.advanced_frame, text="Other delimitation methods (results in delimitation/)")
+            delim.pack(fill="x", pady=6)
+            for i, (name, text) in enumerate(DELIMITATION.items()):
+                self._track(ttk.Checkbutton(delim, text=text, variable=self.delim_vars[name])).grid(
+                    row=i, column=0, sticky="w", padx=4, pady=1)
+
             outputs = ttk.LabelFrame(self.advanced_frame, text="Outputs to keep")
             outputs.pack(fill="x", pady=6)
             for i, (name, (_, desc)) in enumerate(KEEP_ITEMS.items()):
@@ -716,6 +739,7 @@ def main() -> None:
                 ani=bool(self.ani_var.get()),
                 papers=bool(self.papers_var.get()),
                 niche=bool(self.niche_var.get()),
+                **{name: bool(var.get()) for name, var in self.delim_vars.items()},
             )
 
         def _set_form_enabled(self, enabled: bool) -> None:
