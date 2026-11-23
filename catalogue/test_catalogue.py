@@ -15,6 +15,7 @@ from catalogue.batch import BatchTransport, BudgetExceeded, Ledger, estimate_usd
 from catalogue.crosscheck import (FABLE, CrossCheck, compare_judges, judged_items, mcnemar, open_records, summarize,
                                   summarize_judges, third_party_sample, write_disagreements)
 from catalogue.hosts import HostResolver, candidates
+from catalogue.ontology import OntologyResolver, codes_to_resolve, parse_codes, relation, resolve_codes
 from catalogue.ncbi import compact, harvest, iter_assemblies, mag_accessions, resolve_taxa
 from steps.metadata_curation import CuratedLabeler, Vocabulary, usage_cost
 from steps.test_metadata_curation import HAIKU, OPUS, SONNET, FakeClient, key, label
@@ -466,6 +467,173 @@ class HostResolverTest(unittest.TestCase):
         host = labeler.rule_host(fields, labeler.rule_source(fields))
         self.assertEqual((host.key, host.tier), ("tick", "rule"))
         self.assertIsNone(CuratedLabeler(log=quiet).rule_host(fields, None))  # without it the models decide
+
+
+def node(label, *parents, synonyms=()):
+    """parents: CURIEs, or (CURIE, label) pairs where the label matters."""
+    return {"label": label, "synonyms": list(synonyms),
+            "parents": [list(p) if isinstance(p, tuple) else [p, ""] for p in parents]}
+
+
+# A made-up fragment of the ontologies. Vocabulary terms by id: soil (ENVO:00001998), sediment (ENVO:00002007),
+# vagina (UBERON:0000996), house (ENVO:01000417), and the broad "water, type not stated" (ENVO:00002006) and
+# "environmental sample, type not stated" (ENVO:00010483). "ocean water" is one of seawater's synonyms.
+ONTOLOGY = {
+    "ENVO:00002262": node("clay soil", "ENVO:00001998"),
+    "UBERON:0004983": node("mucosa of vagina", "UBERON:0000996", "UBERON:0019042"),
+    "ENVO:00002149": node("ocean water", "ENVO:00002010"),  # its parent leads only to water, type not stated
+    "ENVO:00002010": node("saline water", "ENVO:00002006"),
+    "ENVO:01000321": node("sea water environment", ("ENVO:00002149", "ocean water")),
+    "ENVO:00002160": node("estuarine mud", "ENVO:01000001"),
+    "ENVO:01000001": node("mud", "ENVO:00010483"),
+    "ENVO:00003041": node("cow shed", "ENVO:00003040"),
+    "ENVO:00003040": node("animal house", "ENVO:01000417"),
+    "ENVO:90000001": node("muddy ground", "ENVO:00001998", "ENVO:00002007"),  # soil and sediment, one step each
+    "ENVO:90000002": node("far below soil", "ENVO:90000003"),
+    "ENVO:90000003": node("one up", "ENVO:90000004"),
+    "ENVO:90000004": node("two up", "ENVO:90000005"),
+    "ENVO:90000005": node("three up", "ENVO:00001998"),  # soil is four steps above ENVO:90000002
+    "ENVO:99999999": None,  # an id OLS does not know
+}
+for _curie, _node in ONTOLOGY.items():  # as ols_node fetched them: ENVO is_a, UBERON is_a and part_of
+    if _node:
+        _node["relation"] = relation(_curie)
+
+
+class OntologyTest(unittest.TestCase):
+    def setUp(self):
+        self.vocab = Vocabulary()
+        self.resolver = OntologyResolver(self.vocab, ONTOLOGY)
+
+    def test_parse_codes(self):
+        self.assertEqual(parse_codes("ENVO:00002262"), [("ENVO:00002262", "")])
+        self.assertEqual(parse_codes("envo_00002262"), [("ENVO:00002262", "")])
+        self.assertEqual(parse_codes("clay soil [ENVO:00002262]"), [("ENVO:00002262", "clay soil")])
+        self.assertEqual(parse_codes("ENVO_00005750 (grassland soil)"), [("ENVO:00005750", "grassland soil")])
+        self.assertEqual(parse_codes("soil_[ENVO:00001402]"), [("ENVO:00001402", "soil")])
+        self.assertEqual(parse_codes("http://purl.obolibrary.org/obo/ENVO_00002121"), [("ENVO:00002121", "")])
+        self.assertEqual(parse_codes("a [ENVO:00000001]| b [UBERON:0000002]"),
+                         [("ENVO:00000001", "a"), ("UBERON:0000002", "b")])
+        for value in ("fresh water [ENVO:00002011]|BG-11", "ENVO_01001110;BFO_0000040", "Bos taurus [NCBITaxon:9913]",
+                      "isolated from soil", "ENVO_01000253?"):
+            self.assertEqual(parse_codes(value), [], value)
+
+    def test_nearest_vocabulary_term(self):
+        key = self.resolver.vocab_key
+        self.assertEqual((key("ENVO:00002262"), key("UBERON:0004983")), ("soil", "vagina"))
+        self.assertEqual(key("ENVO:00002149"), "seawater")  # its own label is a vocabulary synonym
+        self.assertEqual(key("ENVO:01000321"), "seawater")  # an ancestor's label is
+        self.assertEqual(key("ENVO:00002006"), "water")  # a code may be a broad term itself ...
+        self.assertIsNone(key("ENVO:00002010"))  # ... but never climbs to one (saline water)
+        self.assertIsNone(key("ENVO:00002160"))  # estuarine mud: not "environmental sample, type not stated"
+        self.assertIsNone(key("ENVO:00003041"))  # cow shed: ENVO's house is wider than the vocabulary's
+        self.assertIn("house", self.vocab.not_placed_by_descent)
+        self.assertIsNone(key("ENVO:90000001"))  # soil and sediment tie: the models decide
+        self.assertIsNone(key("ENVO:90000002"))  # soil is beyond MAX_STEPS
+        self.assertEqual(OntologyResolver(self.vocab, ONTOLOGY, max_steps=4).vocab_key("ENVO:90000002"), "soil")
+        self.assertIsNone(key("ENVO:99999999"))
+
+    def test_values_labels_and_several_codes(self):
+        value = self.resolver.key_for_value
+        self.assertEqual(value("clay soil [ENVO:00002262]"), "soil")
+        self.assertEqual(value("salt water [ENVO:00002149]"), None)  # not the code's label or synonym
+        renamed = dict(node("ocean water", "ENVO:00002010", synonyms=["salt water"]), relation="parents")
+        self.resolver.graph = {**ONTOLOGY, "ENVO:00002149": renamed}
+        self.assertEqual(value("salt water [ENVO:00002149]"), "seawater")  # an ontology synonym is accepted
+        self.assertIsNone(value("sediment [ENVO:00002262]"))  # a label that is not the code's: the id may be wrong
+        self.assertEqual(value("ENVO:00002262|clay soil [ENVO:00002262]"), "soil")
+        self.assertIsNone(value("ENVO:00002262|UBERON:0004983"))  # two terms: the models decide
+        self.assertIsNone(value("ENVO:99999999"))
+        self.assertIsNone(value("rich black soil"))
+
+    def test_the_rules_place_codes_only_in_the_deciding_field(self):
+        labeler = CuratedLabeler(log=quiet, term_resolver=self.resolver)
+        fields = {"env_medium": "ENVO:00002262"}
+        source = labeler.rule_source(fields)
+        self.assertEqual((source.key, source.field, source.quote, source.tier),
+                         ("soil", "env_medium", "ENVO:00002262", "rule"))
+        self.assertEqual(labeler.rule_host(fields, source).key, "no_host")  # soil: no living host
+        self.assertIsNone(CuratedLabeler(log=quiet).rule_source(fields))  # without the resolver the models decide
+        # isolation_source comes first and decides; a code further down does not overrule it
+        self.assertIsNone(labeler.rule_source({"isolation_source": "scrapings from a yard", **fields}))
+        # Climbing is used only where the other source fields are codes too; free text goes to the models ...
+        self.assertEqual(labeler.rule_source({**fields, "env_local_scale": "soil [ENVO:00001998]"}).key, "soil")
+        self.assertIsNone(labeler.rule_source({**fields, "sample_type": "leaf scrapings"}))
+        # ... while a code that names a term itself counts like any synonym
+        self.assertEqual(labeler.rule_source({"env_medium": "ENVO:00002149", "sample_type": "leaf"}).key, "seawater")
+
+    def test_lookups_climb_to_the_vocabulary_and_are_cached(self):
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        path = Path(tmp.name) / "ontology_cache.json"
+        asked, broken = [], {"UBERON:0004983"}
+
+        def fetch(curie):
+            asked.append(curie)
+            if curie in broken:
+                raise OSError("connection reset")
+            return ONTOLOGY.get(curie)
+
+        codes = {"ENVO:00002262", "ENVO:90000002", "ENVO:99999999", "UBERON:0004983"}
+        graph = resolve_codes(codes, path, self.vocab, log=quiet, fetch=fetch)
+        # Soil is a vocabulary term, so it is not looked up; three steps above ENVO:90000002 are enough. A code
+        # stops climbing at the step where it reaches the vocabulary (vagina), so its other parents are not asked.
+        self.assertEqual(sorted(asked), sorted(codes | {"ENVO:90000003", "ENVO:90000004"}))
+        self.assertNotIn("UBERON:0004983", graph)  # a failed lookup is not cached
+        self.assertIsNone(graph["ENVO:99999999"])  # an unknown id is
+        broken.clear()
+        asked.clear()
+        graph = resolve_codes(codes, path, self.vocab, log=quiet, fetch=fetch)
+        self.assertEqual(asked, ["UBERON:0004983"])  # only what was missing
+        self.assertEqual(OntologyResolver(self.vocab, graph).vocab_key("UBERON:0004983"), "vagina")
+        labeler = CuratedLabeler(log=quiet)
+        keys = [key(env_medium="clay soil [ENVO:00002262]"), key(isolation_source="pond", env_medium="ENVO:00000001"),
+                key(env_medium="ENVO:00001998")]  # pond decides its record; soil's id is the vocabulary's own
+        self.assertEqual(codes_to_resolve(labeler, keys), {"ENVO:00002262"})
+
+    def test_an_id_ols_does_not_know_is_unknown_not_a_failure(self):
+        import urllib.error
+        from catalogue import ontology
+
+        def answer(code):
+            def get(url, timeout):
+                raise urllib.error.HTTPError(url, code, "", {}, None)
+            return get
+
+        with unittest.mock.patch.object(ontology, "_get", answer(404)):
+            self.assertIsNone(ontology.ols_node("ENVO:0100024"))
+        with unittest.mock.patch.object(ontology, "_get", answer(503)), self.assertRaises(urllib.error.HTTPError):
+            ontology.ols_node("ENVO:00002262")  # an outage is a failure: not cached, tried again next run
+
+    def test_envo_climbs_is_a_and_anatomy_also_part_of_inside_the_four_ontologies(self):
+        from catalogue import ontology
+        requested = []
+
+        def get(url, timeout):
+            requested.append(url.rsplit("/", 1)[-1])
+            if "obo_id" in url:
+                return {"_embedded": {"terms": [{"label": "x", "synonyms": [], "is_defining_ontology": True, "_links": {
+                    "parents": {"href": "https://ols/parents"},
+                    "hierarchicalParents": {"href": "https://ols/hierarchicalParents"}}}]}}
+            return {"_embedded": {"terms": [{"obo_id": "ENVO:00001998", "label": "soil"},
+                                            {"obo_id": "NCBITaxon:1", "label": "root"}]}}  # out of bounds
+
+        with unittest.mock.patch.object(ontology, "_get", get):
+            envo, uberon = ontology.ols_node("ENVO:00002262"), ontology.ols_node("UBERON:0004983")
+        self.assertEqual(requested[1::2], ["parents", "hierarchicalParents"])
+        self.assertEqual((envo["relation"], uberon["relation"]), ("parents", "hierarchicalParents"))
+        self.assertEqual(envo["parents"], [["ENVO:00001998", "soil"]])
+        # A term cached with other links (an older cache) is not used, and is looked up again.
+        stale = {**ONTOLOGY, "ENVO:00002262": node("clay soil", "ENVO:00001998")}
+        self.assertIsNone(OntologyResolver(self.vocab, stale).vocab_key("ENVO:00002262"))
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        path = Path(tmp.name) / "ontology_cache.json"
+        path.write_text(json.dumps(stale))
+        asked = []
+        resolve_codes({"ENVO:00002262"}, path, self.vocab, log=quiet,
+                      fetch=lambda c: asked.append(c) or ONTOLOGY.get(c))
+        self.assertEqual(asked, ["ENVO:00002262"])
 
 
 class CheckoutTest(unittest.TestCase):

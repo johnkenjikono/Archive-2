@@ -3,7 +3,7 @@ Isolate metadata catalogue: curated host and isolation-source labels, each tied 
 for every bacterial genome NCBI holds at complete-genome or chromosome level. See catalogue/README.md.
 
   python -m catalogue.build harvest                         # NCBI assembly reports + BioSample attributes (free)
-  python -m catalogue.build prepare                         # taxonomy lookups, distinct records, rules, cost (free)
+  python -m catalogue.build prepare                         # taxonomy + ontology lookups, records, rules, cost (free)
   python -m catalogue.build run --budget 10 --sample 500    # pilot: the model tiers on 500 records (Batch API)
   python -m catalogue.build run --budget 150                # every record the rules and the cache leave open
   python -m catalogue.build verify --budget 30 --sample 500 # pilot: Claude Fable 5.2 cross-checks 500 records
@@ -35,6 +35,7 @@ from catalogue.crosscheck import (EFFORTS, FABLE, JUDGE_EFFORT, PARTS, CrossChec
                                   open_records, summarize, summarize_judges, third_party_sample, write_disagreements,
                                   write_judge_comparison)
 from catalogue.hosts import HostResolver
+from catalogue.ontology import OntologyResolver, codes_to_resolve, resolve_codes
 from catalogue.ncbi import harvest, iter_assemblies, mag_accessions, resolve_taxa
 from steps.metadata_curation import (BATCH_DISCOUNT, HOST_FIELDS, PRICES, SOURCE_FIELDS, TIERS, AnswerCache,
                                      CuratedLabeler, Vocabulary, normalize)
@@ -92,6 +93,7 @@ class Paths:
         self.root = Path(workdir).resolve()
         self.ncbi = self.root / "ncbi"
         self.taxa = self.root / "taxa_cache.json"
+        self.ontology = self.root / "ontology_cache.json"
         self.cache = self.root / "curation_cache.json"
         self.crosscheck = self.root / "crosscheck_cache.json"
         self.reports = self.root / "reports"
@@ -126,7 +128,13 @@ def _require_key():
 def make_labeler(paths, vocab, resolver, client=None, transport=None, log=print):
     return CuratedLabeler(vocab=vocab, client=client, cache_path=paths.cache, fields=CATALOGUE_FIELDS, log=log,
                           host_resolver=resolver, transport=transport, source_fields=SOURCE_PRIORITY,
-                          host_fields=HOST_PRIORITY, source_from_host=True)
+                          host_fields=HOST_PRIORITY, source_from_host=True,
+                          term_resolver=load_ontology(paths, vocab))
+
+
+def load_ontology(paths, vocab):
+    """The ontology codes `prepare` placed (an empty resolver before it has run)."""
+    return OntologyResolver(vocab, json.loads(paths.ontology.read_text()) if paths.ontology.exists() else {})
 
 
 def resolve_all(paths, vocab, log=print, fetch=None):
@@ -207,7 +215,10 @@ def cmd_prepare(args, paths, log):
     vocab = Vocabulary()
     resolver, taxa = resolve_all(paths, vocab, log=log)
     counts = distinct_keys(paths)
-    labeler = make_labeler(paths, vocab, resolver, log=lambda *_: None)
+    codes = codes_to_resolve(make_labeler(paths, vocab, resolver, log=lambda *_: None), counts)
+    resolve_codes(codes, paths.ontology, vocab, log=log)
+    labeler = make_labeler(paths, vocab, resolver, log=lambda *_: None)  # with the codes just placed
+    placed = sum(1 for c in codes if labeler.term_resolver.vocab_key(c))
     settled, pending, cached = split_by_rules(labeler, list(counts))
     genomes_settled = sum(counts[k] for k in settled)
     no_info = sum(n for k, n in counts.items() if not any(vocab.informative(v) for _, v in k))
@@ -235,6 +246,7 @@ def cmd_prepare(args, paths, log):
         "open_records": len(pending), "open_records_already_cached": len(cached),
         "genomes_in_open_records": sum(open_genomes.values()),
         "taxonomy_lookups": len(taxa), "taxonomy_resolved": hosts_resolved,
+        "ontology_codes": len(codes), "ontology_codes_placed_in_vocabulary": placed,
         "cost_usd_list": {name: {k: round(v, 2) for k, v in s.items()} for name, s in scenarios.items()},
         "cost_usd_batch": {name: round(s["total"] * BATCH_DISCOUNT, 2) for name, s in scenarios.items()},
         "harvest": {k: state.get(k) for k in ("records", "finished", "query")},
@@ -248,6 +260,8 @@ def cmd_prepare(args, paths, log):
              f"(of which {no_info:,} genomes have no source or host field at all, so they are unknown by rule)",
              f"- Open for the models: {len(pending):,} records covering {summary['genomes_in_open_records']:,} genomes"
              f" ({len(cached):,} more already answered in the cache)",
+             f"- Ontology codes in the deciding source field: {len(codes):,}, of which {placed:,} lead to a vocabulary "
+             f"term within {labeler.term_resolver.max_steps} steps up ENVO, UBERON, FoodOn or PO",
              "", "| Scenario | Haiku | Sonnet x2 | Opus | Total, list | Total, Batch API |", "|---|---|---|---|---|---|"]
     for name, s in scenarios.items():
         lines.append(f"| {name} | ${s['haiku']:.2f} | ${s['sonnet x2']:.2f} | ${s['opus']:.2f} | ${s['total']:.2f} "
@@ -614,6 +628,8 @@ def cmd_status(args, paths, log):
         + (f" ({state.get('finished')})" if state.get("done") else ""))
     if paths.taxa.exists():
         log(f"Taxonomy cache: {len(json.loads(paths.taxa.read_text())):,} lookups")
+    if paths.ontology.exists():
+        log(f"Ontology cache: {len(json.loads(paths.ontology.read_text())):,} ENVO/UBERON/FoodOn/PO terms")
     cache = AnswerCache(paths.cache)
     log(f"Model answers cached: {len(cache.entries):,} distinct records")
     if paths.crosscheck.exists():
@@ -652,7 +668,8 @@ def main(argv=None):
     p.add_argument("--taxon", default="2", help="NCBI taxon (default 2, Bacteria)")
     p.add_argument("--levels", default="complete_genome,chromosome", help="assembly levels, comma-separated")
     p.add_argument("--restart", action="store_true", help="start the harvest over")
-    sub.add_parser("prepare", help="taxonomy lookups, distinct records, rules tier and cost estimate (free)")
+    sub.add_parser("prepare", help="taxonomy and ontology lookups, distinct records, rules tier and cost estimate "
+                                   "(free)")
     p = sub.add_parser("run", help="send the records the rules leave open to the model tiers (costs money)")
     p.add_argument("--budget", type=float, required=True, help="hard cap in USD for everything spent in this workdir")
     p.add_argument("--sample", type=int, help="pilot: only this many randomly chosen open records")

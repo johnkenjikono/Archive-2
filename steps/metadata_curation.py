@@ -100,6 +100,8 @@ class Vocabulary:
         self.data = data
         self.version = data["version"]  # the answer space; cached model answers are keyed on it
         self.rules_revision = data.get("rules_revision", 0)  # synonyms and skip lists only
+        # Terms an ontology code may name but not reach by climbing its ontology (catalogue.ontology), with why.
+        self.not_placed_by_descent = data.get("not_placed_by_descent", {})
         self.terms = {t["key"]: t for t in data["terms"]}
         self.hosts = {h["key"]: h for h in data["hosts"]}
         self.niches = data["niches"]
@@ -146,6 +148,7 @@ class Vocabulary:
                         out.append(f"{kind} name {s!r} maps to both {seen[normalize(s)]} and {key}")
         ids = Counter(t["id"] for t in self.terms.values() if t["id"])
         out += [f"id {i} used by {n} terms" for i, n in ids.items() if n > 1]
+        out += [f"not_placed_by_descent: unknown term {k}" for k in self.not_placed_by_descent if k not in self.terms]
         return out
 
     def informative(self, value):
@@ -287,7 +290,7 @@ class CuratedLabeler:
 
     def __init__(self, vocab=None, client=None, cache_path=None, tiers=None, fields=LLM_FIELDS, log=print,
                  host_resolver=None, transport=None, source_fields=SOURCE_FIELDS, host_fields=HOST_FIELDS,
-                 source_from_host=False):
+                 source_from_host=False, term_resolver=None):
         self.vocab = vocab or Vocabulary()
         self.client = client
         self.tiers = tiers or TIERS
@@ -300,6 +303,9 @@ class CuratedLabeler:
         self.cache = AnswerCache(cache_path)
         self.log = log
         self.host_resolver = host_resolver
+        # Ontology codes the vocabulary does not list ("ENVO:00002262"), placed through the ontology
+        # (catalogue.ontology.OntologyResolver); without one, such codes go to the models.
+        self.term_resolver = term_resolver
         self.transport = transport
         self.details = {}
         self.usage = Counter()
@@ -318,6 +324,9 @@ class CuratedLabeler:
             if not self.vocab.informative(value):
                 continue
             key = self.vocab.match_term(value)
+            if key is None and self.term_resolver is not None:  # "clay soil [ENVO:00002262]" -> soil
+                others = [fields[g] for g in self.source_fields if g != f and self.vocab.informative(fields.get(g, ""))]
+                key = self.term_resolver.key_for_value(value, others)
             if key:
                 return Answer(key, f, value.strip(), "rule")
             host = self.vocab.match_host(value)  # e.g. isolation_source "human": a host, site not stated

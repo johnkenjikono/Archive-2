@@ -13,7 +13,7 @@ From the repository root (the work directory is created as `./catalogue_work`, g
 
 ```bash
 python -m catalogue.build harvest                       # NCBI assembly reports + BioSample attributes (free, ~2 min)
-python -m catalogue.build prepare                       # taxonomy, distinct records, rules, cost estimate (free)
+python -m catalogue.build prepare                       # taxonomy + ontology lookups, rules, cost estimate (free)
 python -m catalogue.build run --budget 10 --sample 500  # pilot: 500 random open records through the Batch API
 python -m catalogue.build run --budget 150              # every record the rules and the cache leave open
 python -m catalogue.build verify --budget 30 --sample 500  # pilot: Claude Fable 5.2 cross-checks 500 records
@@ -35,7 +35,7 @@ answers and model answers are cached, and submitted batch ids are saved before t
 | Stage | What happens | Cost |
 |---|---|---|
 | `harvest` | Pages through the NCBI Datasets v2 genome reports for taxon 2 (Bacteria), GenBank, complete genome + chromosome, keeping the accession, organism, assembly facts, CheckM, NCBI's taxonomy check and every BioSample attribute (`ncbi/pages/*.jsonl.gz`). Then lists the metagenome-assembled genomes among them | free |
-| `prepare` | Looks up every host name, host taxid and organism taxid in NCBI Taxonomy (about 30,000 lookups the first time, cached in `taxa_cache.json`), groups genomes into distinct BioSample records, applies the rules tier and estimates what the models would cost (`reports/prepare_report.md`) | free |
+| `prepare` | Looks up every host name, host taxid and organism taxid in NCBI Taxonomy (about 30,000 lookups the first time, cached in `taxa_cache.json`). Looks up the ontology codes that decide a record's source on EBI OLS4 (about 400 terms, cached in `ontology_cache.json`; see "Ontology codes"). Then groups genomes into distinct BioSample records, applies the rules tier and estimates what the models would cost (`reports/prepare_report.md`) | free |
 | `run` | Sends the records the rules leave open through the model tiers using the Message Batches API at half price. A hard `--budget` (USD, for everything spent in the work directory) is checked before each batch, against a deliberately high estimate. Actual spend from each response's usage goes to `spend.jsonl`. Refused, errored or cut-off chunks are retried on the synchronous path, which has server-side refusal fallbacks | see below |
 | `verify` | Claude Fable 5.2 labels the same records independently and a Fable judge settles disagreements (see "Cross-check" below). Same budget, ledger and resume rules as `run`; its batches are tracked in `crosscheck_batches.json` | see below |
 | `assemble` | Labels every genome from the rules, the cached model answers and the cross-check's corrections, without calling any model (records no model has seen yet come out as `not curated`), and writes the release files | free |
@@ -52,6 +52,46 @@ names for the MIxS environment fields ("local environmental context", "environme
 "broad-scale environmental context") count as `env_local_scale`, `env_medium` and `env_broad_scale`.
 A genome's distinct record is the combination of these fields' values; genomes sharing a record share its
 labels, so the models see each combination once.
+
+### Ontology codes
+
+Some BioSamples give the sample only as an ontology code, alone or with its label: env_medium `ENVO:00002262`,
+"clay soil [ENVO:00002262]". The vocabulary lists one id per term, so a code that is not a term's own id used to
+go to the models. Now the rules place it through the ontology (`catalogue/ontology.py`). The code's terms are
+looked up on EBI OLS4 during `prepare`, then:
+
+1. If the code's own label or one of its synonyms is a vocabulary synonym, that is its term (ocean water,
+   `ENVO:00002149`, is seawater).
+2. Otherwise the code climbs to the nearest specific term within three steps (clay soil is a soil). ENVO and
+   FoodOn codes climb is_a links only. In ENVO, a part_of link joins a material to where it lies, so estuarine
+   mud is part of an estuary, not estuarine water. UBERON and PO codes also climb part_of links (mucosa of
+   vagina is part of the vagina).
+
+Climbing is held back in three cases, and the models then read the record as before:
+
+- It never reaches a broad "type not stated" term. Estuarine mud is a kind of environmental material, but a
+  model reading it says sediment.
+- It never reaches a term listed under `not_placed_by_descent` in the vocabulary. ENVO's house includes cow
+  sheds.
+- It is not used when another source field of the record holds free text. In one record, env_medium codes
+  "orchard" while plant_body_site says "leaf".
+
+A code is also left to the models when its label is not the code's own (a wrong id), when the nearest terms
+tie, or when the codes in one field disagree.
+
+Measured on 2026-11-23, 214 distinct codes decide a record's source, and 60 of them lead to a term. The rule now
+settles 82 records (167 genomes) that the models had answered:
+
+| Compared with the earlier answer (curation, or the Fable judge's) | Records |
+|---|---|
+| Same term | 54 |
+| Same niche | 8 |
+| Earlier answer unknown | 8 |
+| Different niche | 12 |
+
+Of the 12 that change niche, about 3 are better (clam food product: shellfish rather than food), 2 or 3 are
+worse ("food material" rather than fermented food), and the rest are debatable. The debatable ones are mostly
+records whose medium is soil or seawater, where the models had preferred a host sample because a host is named.
 
 ### Hosts
 
@@ -229,11 +269,12 @@ total spend.
   takes Fable's answer more often than an Opus 5.5 judge does (38 against 13 parts in a sample of 331). The
   extra changes looked more often right than wrong, though that check was a model's reading too. An error rate
   needs a hand-labelled random sample.
-- 151 records (332 genomes) give only ontology codes in their source fields, such as env_medium
-  `envo_00002262`. The rules accept a bare code only when it is a vocabulary term's own id, so most of these
-  records go to the models. The curation answered unknown for 119 of them, and Fable's judge has since given
-  110 a term. Mapping each code through the ontology to its nearest vocabulary term (clay soil is a soil) would
-  settle them by rule, for free.
+- 154 of the 214 ontology codes that decide a record's source are not placed, and those records keep the
+  models' answers:
+  - 116 reach no vocabulary term within three steps. Most are places and biomes such as ocean, stream,
+    wetland area or agricultural field.
+  - 31 reach only a broad or excluded term, such as rock, beach sand, estuarine mud or cow shed.
+  - 7 are malformed or retired ids that OLS does not know.
 - The rules take an environment field over a named host in 123 records (285 genomes), such as `env_medium`
   "seawater" on a marine sponge. Some of these are right (soil sampled around a named plant) and some are not.
 - The vocabulary has no host group for protists or algae (ciliates, dinoflagellates, diatoms, amoebae). Their

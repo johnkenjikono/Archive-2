@@ -1,8 +1,11 @@
 {
   "version": "2026.11.2",
-  "rules_revision": 1,
-  "about": "Fixed vocabulary for isolate source metadata, shared by every species. Specific terms carry ontology ids (ENVO environments and materials, UBERON body sites, PO plant parts, FoodOn foods, NCBITaxon hosts); every id and its ontology_label were checked against EBI OLS4 on verified_on (python steps/metadata_curation.py --verify-vocabulary re-checks them). A term's niche and source category are fixed groupings of terms, so labels mean the same thing in every species. Body-site terms take their source category from the host (human, animal, plant or not stated). Bump version whenever a term, host, label or grouping changes, i.e. anything the models are shown: cached model answers are keyed on it. Bump rules_revision instead when only synonyms or the missing / uninformative value lists change: those decide which records the rules settle and which fields the models see, and cached answers stay valid because they are keyed on the exact fields each model was shown.",
+  "rules_revision": 2,
+  "about": "Fixed vocabulary for isolate source metadata, shared by every species. Specific terms carry ontology ids (ENVO environments and materials, UBERON body sites, PO plant parts, FoodOn foods, NCBITaxon hosts); every id and its ontology_label were checked against EBI OLS4 on verified_on (python steps/metadata_curation.py --verify-vocabulary re-checks them). A term's niche and source category are fixed groupings of terms, so labels mean the same thing in every species. Body-site terms take their source category from the host (human, animal, plant or not stated). Bump version whenever a term, host, label or grouping changes, i.e. anything the models are shown: cached model answers are keyed on it. Bump rules_revision instead when only synonyms, the missing / uninformative value lists or not_placed_by_descent change: those decide which records the rules settle and which fields the models see, and cached answers stay valid because they are keyed on the exact fields each model was shown.",
   "verified_on": "2026-11-08",
+  "not_placed_by_descent": {
+    "house": "ENVO's house includes animal houses and cow sheds; here a house is a household, and a cow shed belongs under farm"
+  },
   "source_categories": {
     "human_associated": {"label": "human-associated", "mixs_extensions": ["HumanAssociated", "HumanGut", "HumanOral", "HumanSkin", "HumanVaginal"]},
     "animal_associated": {"label": "animal-associated", "mixs_extensions": ["HostAssociated"]},
