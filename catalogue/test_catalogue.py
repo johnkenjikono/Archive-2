@@ -667,6 +667,15 @@ class PapersTest(unittest.TestCase):
         self.assertEqual(order, sorted(order))
         self.assertEqual(text.count("bovine feces"), 1)  # the table is not repeated inside its section
         self.assertIsNone(papers.jats_text(b"<article><front><article-meta/></front></article>"))  # no body
+        narrow = papers.jats_text(JATS, methods_only=True)
+        self.assertTrue(narrow.startswith("Materials and methods All isolates came from raw milk cheese"))
+        self.assertIn("LM1 | bovine feces", narrow)
+        for absent in ("Listeria in cheese", "We sequenced", "Background text", "Tree of the isolates"):
+            self.assertNotIn(absent, narrow)
+        paper = {"kind": "full text", "pmcid": "PMC1", "text": self.text}
+        self.assertEqual(papers.narrow_text(paper, fetch_article=lambda pmcid: JATS)["kind"], "methods and tables")
+        abstract = {"kind": "abstract", "text": "Title: x\n\nAbstract: y"}
+        self.assertIs(papers.narrow_text(abstract), abstract)
 
     def test_a_genome_gets_its_own_facts_over_the_studys_and_unquoted_facts_are_dropped(self):
         answer = paper_answer(host="cattle", host_quote="bovine feces", source="feces", source_quote="bovine  FECES",
@@ -732,6 +741,14 @@ class PapersTest(unittest.TestCase):
         self.assertIn("(and 5 more genomes", params["messages"][0]["content"])
         schema = params["output_config"]["format"]["schema"]
         self.assertEqual(schema["properties"]["genomes"]["items"]["properties"]["accession"]["enum"], ["GCA_1.1"])
+        narrow = papers.build_request(self.vocab, "123", {"kind": "abstract", "text": "x"}, genomes,
+                                      facts=papers.NARROW_FACTS, max_tokens=papers.NARROW_MAX_TOKENS)
+        study = narrow["output_config"]["format"]["schema"]["properties"]["study"]["properties"]
+        self.assertEqual(sorted(study), sorted([*papers.CORE, *(f"{f}_quote" for f in papers.CORE)]))
+        prompt = narrow["system"][0]["text"]
+        self.assertIn("- collection_year:", prompt)
+        self.assertNotIn("phenotype", prompt.split("Hosts:")[0])
+        self.assertEqual(narrow["max_tokens"], papers.NARROW_MAX_TOKENS)
         price_out = PRICES[papers.MODEL][1]
         self.assertGreater(papers.worst_case_usd([{"params": params}]), papers.MAX_TOKENS * price_out / 1e6 * 0.5)
         message = SimpleNamespace(stop_reason="end_turn", content=[SimpleNamespace(type="text", text='{"a": 1}')])

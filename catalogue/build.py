@@ -494,12 +494,13 @@ def cmd_papers_pilot(args, paths, log):
         listed[pmid] = (first + others)[:max(papers.MAX_GENOMES, len(first))]
         more[pmid] = len(first) + len(others) - len(listed[pmid])
     rows = papers.catalogue_rows(release, {g for gs in listed.values() for g in gs})
-    requests = {}
+    requests, genome_lists = {}, {}
     for pmid in sorted(chosen):
         if texts[pmid]["kind"] == "none":
             continue
-        genomes = [{"accession": g, "organism": rows[g]["organism_name"], "strain": rows[g]["strain"],
-                    "isolate": rows[g]["isolate"]} for g in listed[pmid] if g in rows]
+        genome_lists[pmid] = genomes = [{"accession": g, "organism": rows[g]["organism_name"],
+                                         "strain": rows[g]["strain"], "isolate": rows[g]["isolate"]}
+                                        for g in listed[pmid] if g in rows]
         requests[pmid] = {"custom_id": f"pmid{pmid}",
                           "params": papers.build_request(vocab, pmid, texts[pmid], genomes, more[pmid])}
     worst = papers.worst_case_usd(list(requests.values()))
@@ -528,7 +529,11 @@ def cmd_papers_pilot(args, paths, log):
         return [p for p in sorted(requests) if args.retry_model and p in saved and saved[p]["answer"] is None
                 and saved[p]["reason"] in ("refusal", "max_tokens") and "first_reason" not in saved[p]]
 
-    if any(p not in saved for p in requests) or retryable():
+    def refused():  # still refused after any retry, and not yet asked the narrow way
+        return [p for p in sorted(requests) if args.narrow_refused and p in saved and saved[p]["answer"] is None
+                and saved[p]["reason"] == "refusal" and "narrow_reason" not in saved[p]]
+
+    if any(p not in saved for p in requests) or retryable() or refused():
         _require_key()
         import anthropic
         client = anthropic.Anthropic()
@@ -580,6 +585,29 @@ def cmd_papers_pilot(args, paths, log):
                     saved[p] = {**saved[p], "first_reason": saved[p]["reason"], "answer": answer, "reason": reason,
                                 "usd": saved[p]["usd"] + cost, "how": f"retried with {args.retry_model}"}
                     (answers_dir / f"{p}.json").write_text(json.dumps(saved[p]))
+            # Papers still refused, asked the narrow way: the catalogue's own facts from the methods and tables.
+            narrow = refused()
+            texts_narrow = {p: papers.narrow_text(texts[p]) for p in narrow}
+            for p in narrow:
+                if texts_narrow[p] is None:  # a full text with neither methods-like sections nor tables
+                    saved[p] = {**saved[p], "narrow_reason": "no methods or tables"}
+                    (answers_dir / f"{p}.json").write_text(json.dumps(saved[p]))
+            todo = [p for p in narrow if texts_narrow[p] is not None]
+            for start in range(0, len(todo), papers.NARROW_WAVE):
+                wave = todo[start:start + papers.NARROW_WAVE]
+                again = [{"custom_id": f"pmid{p}", "params": papers.build_request(
+                    vocab, p, texts_narrow[p], genome_lists[p], more[p], facts=papers.NARROW_FACTS,
+                    max_tokens=papers.NARROW_MAX_TOKENS)} for p in wave]
+                got = transport.run_requests(f"narrow {start // papers.NARROW_WAVE + 1}", again, recorder,
+                                             estimate=papers.worst_case_usd(again))
+                for p in wave:
+                    kind, message = got.get(f"pmid{p}", ("missing", None))
+                    ok = kind == "succeeded" and message is not None
+                    answer, reason = papers.parse_message(message) if ok else (None, kind)
+                    cost = usage_cost(papers.MODEL, message.usage, batch=True) if ok else 0.0
+                    saved[p] = {**saved[p], "narrow_reason": reason, "answer": answer, "reason": reason,
+                                "usd": saved[p]["usd"] + cost, "how": "narrow request"}
+                    (answers_dir / f"{p}.json").write_text(json.dumps(saved[p]))
         except BudgetExceeded as e:
             log(f"Stopped before spending more: {e}")
     spent_now = Ledger(paths.root / "spend.jsonl").total - ledger_before
@@ -618,6 +646,10 @@ def cmd_papers_pilot(args, paths, log):
               "sampled genomes": papers.summarize(out_rows),
               "sampled genomes, papers answered after a retry": papers.summarize(
                   [r for r in out_rows if r["answered_by"].startswith("retried")]),
+              "narrow request": dict(collections.Counter(s["narrow_reason"] for s in saved.values()
+                                                         if "narrow_reason" in s)),
+              "sampled genomes, papers answered by the narrow request": papers.summarize(
+                  [r for r in out_rows if r["answered_by"] == "narrow request"]),
               "sampled genomes, full text": papers.summarize([r for r in out_rows if r["kind"] == "full text"]),
               "sampled genomes, abstract only": papers.summarize([r for r in out_rows if r["kind"] == "abstract"]),
               "all listed genomes": papers.summarize(out_rows, weight_key=None),
@@ -885,6 +917,9 @@ def main(argv=None):
     p.add_argument("--sample", type=int, default=200, help="distinct papers to read (default 200)")
     p.add_argument("--seed", type=int, default=1, help="random seed for the genome order (default 1)")
     p.add_argument("--poll", type=int, default=60, help="seconds between batch status checks (default 60)")
+    p.add_argument("--narrow-refused", action="store_true",
+                   help="ask the papers still refused once more, for host, source, country and year only, from their "
+                        "methods sections and tables")
     p.add_argument("--retry-model", help="send the papers Fable refused or cut off once more with this model "
                                           "(e.g. claude-opus-5-5)")
     p.add_argument("--dry-run", action="store_true",

@@ -124,10 +124,11 @@ def _text(element):
     return re.sub(r"\s+", " ", " ".join(element.itertext())).strip() if element is not None else ""
 
 
-def jats_text(xml):
+def jats_text(xml, methods_only=False):
     """Plain text of a PMC article (JATS XML): title, abstract, methods-like sections, tables, the other
     sections, figure captions. None without a body: outside its open-access subset PMC serves only the front
-    matter."""
+    matter. methods_only: only the methods-like sections and the tables, where a paper says where its isolates
+    came from (None when it has neither)."""
     root = ET.fromstring(xml)
     article = root if root.tag == "article" else root.find(".//article")
     body = article.find("body") if article is not None else None
@@ -145,6 +146,8 @@ def jats_text(xml):
     sections = [(sec.findtext("title") or "", _text(sec)) for sec in body.findall("sec")] or [("", _text(body))]
     first = [text for title, text in sections if METHODS.search(title)]
     rest = [text for title, text in sections if not METHODS.search(title)]
+    if methods_only:
+        return "\n\n".join(p for p in (*first, *tables) if p.strip()) or None
     title = _text(article.find(".//article-meta//article-title"))
     abstract = " ".join(_text(a) for a in article.findall(".//article-meta/abstract"))
     parts = [f"Title: {title}", f"Abstract: {abstract}", *first, *tables, *rest, *figures]
@@ -181,7 +184,21 @@ def paper_texts(pmids, folder, pmc_lookup=pmc_ids, fetch_article=None, fetch_abs
 
 
 # --- requests ------------------------------------------------------------------------------------------
-def system_prompt(vocab):
+FIELD_HELP = {
+    "host": "- host: the host the isolate was taken from, as a key from the host list below.\n",
+    "source": "- source: the material or body site sampled, as a key from the source list below.\n",
+    "country": "- country: the country of collection, as an INSDC country name (USA, United Kingdom, China, ...).\n",
+    "collection_year": "- collection_year: the year the isolate was collected, not published; a range such as "
+                       "2010-2012 is fine.\n",
+    "disease": "- disease: the disease or clinical condition of the host the isolate came from.\n",
+    "isolation_method": "- isolation_method: how the isolate was obtained, such as an enrichment or a selective "
+                        "medium.\n",
+    "outbreak": "- outbreak: the outbreak, investigation or named strain collection the isolate belongs to.\n",
+    "phenotype": "- phenotype: traits the paper reports for the isolate, such as antimicrobial resistance or "
+                 "virulence.\n"}
+
+
+def system_prompt(vocab, facts=FACTS):
     return (
         "You read a published paper about bacteria and report what it says about where the isolates behind the "
         "listed genomes came from. NCBI links these genomes to the paper through their BioProject. The paper may "
@@ -194,24 +211,16 @@ def system_prompt(vocab):
         "isolate name or by accession, with what the paper states about that isolate. Leave out the others.\n"
         "- describes: whether the paper describes the listed genomes individually, collectively, both, or not at "
         "all.\n\n"
-        "Fields:\n"
-        "- host: the host the isolate was taken from, as a key from the host list below.\n"
-        "- source: the material or body site sampled, as a key from the source list below.\n"
-        "- country: the country of collection, as an INSDC country name (USA, United Kingdom, China, ...).\n"
-        "- collection_year: the year the isolate was collected, not published; a range such as 2010-2012 is fine.\n"
-        "- disease: the disease or clinical condition of the host the isolate came from.\n"
-        "- isolation_method: how the isolate was obtained, such as an enrichment or a selective medium.\n"
-        "- outbreak: the outbreak, investigation or named strain collection the isolate belongs to.\n"
-        "- phenotype: traits the paper reports for the isolate, such as antimicrobial resistance or virulence.\n"
+        "Fields:\n" + "".join(FIELD_HELP[f] for f in facts) +
         "Each field has a quote: the exact words from the paper that support it, copied verbatim (at most about "
         "20 words; quotes are checked against the text). Leave both empty when the paper does not say. Answer "
         "from the paper only: what the species usually does, or what a strain name suggests, is not evidence.\n\n"
         + vocab.prompt_listing())
 
 
-def answer_schema(vocab, accessions):
+def answer_schema(vocab, accessions, facts=FACTS):
     fact = {}
-    for f in FACTS:
+    for f in facts:
         enum = {"host": sorted(vocab.hosts), "source": sorted(vocab.terms)}.get(f)
         fact[f] = {"type": "string", "enum": enum} if enum else {"type": "string"}
         fact[f"{f}_quote"] = {"type": "string"}
@@ -228,18 +237,38 @@ def answer_schema(vocab, accessions):
                            "certain": {"type": "boolean"}}}
 
 
-def build_request(vocab, pmid, paper, genomes, more=0):
-    """Messages API parameters for one paper; genomes: [{"accession", "organism", "strain", "isolate"}]."""
+def build_request(vocab, pmid, paper, genomes, more=0, facts=FACTS, max_tokens=MAX_TOKENS):
+    """Messages API parameters for one paper; genomes: [{"accession", "organism", "strain", "isolate"}].
+    facts: the facts to ask for (NARROW_FACTS for the narrow request)."""
     lines = [f"- {g['accession']}: {g['organism']}; strain {g['strain'] or '-'}; isolate {g['isolate'] or '-'}"
              for g in genomes]
     user = (f"Paper (PMID {pmid}, {paper['kind']}):\n{paper['text']}\n\n"
             "Genomes NCBI links to this paper (accession: organism; strain; isolate):\n" + "\n".join(lines)
             + (f"\n(and {more:,} more genomes from the same BioProject, not listed)" if more else ""))
-    return {"model": MODEL, "max_tokens": MAX_TOKENS,
-            "system": [{"type": "text", "text": system_prompt(vocab), "cache_control": {"type": "ephemeral", "ttl": "1h"}}],
+    schema = answer_schema(vocab, [g["accession"] for g in genomes], facts)
+    return {"model": MODEL, "max_tokens": max_tokens,
+            "system": [{"type": "text", "text": system_prompt(vocab, facts),
+                        "cache_control": {"type": "ephemeral", "ttl": "1h"}}],
             "messages": [{"role": "user", "content": user}],
-            "output_config": {"effort": EFFORT, "format": {"type": "json_schema",
-                                                           "schema": answer_schema(vocab, [g["accession"] for g in genomes])}}}
+            "output_config": {"effort": EFFORT, "format": {"type": "json_schema", "schema": schema}}}
+
+
+# The narrow request, for papers both models refused (pathogen and toxin papers): only the catalogue's own
+# facts, from the methods sections and tables, without the results and discussion about toxins and virulence.
+NARROW_FACTS = CORE
+NARROW_MAX_TOKENS = 6_000
+NARROW_WAVE = 12  # small waves: each is checked against the budget at its worst case after the last one's spend
+
+
+def narrow_text(paper, fetch_article=None):
+    """{"kind", "text"} for the narrow request: a full text's methods-like sections and tables (fetched again
+    from PMC), an abstract as it is; None when a full text has neither."""
+    if paper["kind"] != "full text":
+        return paper
+    fetch_article = fetch_article or (lambda pmcid: _eutils("efetch", db="pmc", id=pmcid.replace("PMC", ""),
+                                                            retmode="xml"))
+    text = jats_text(fetch_article(paper["pmcid"]), methods_only=True)
+    return {"kind": "methods and tables", "pmcid": paper["pmcid"], "text": text[:MAX_CHARS]} if text else None
 
 
 def worst_case_usd(requests):

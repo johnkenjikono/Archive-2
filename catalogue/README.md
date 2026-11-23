@@ -228,18 +228,26 @@ before anyone pays to read all of them (`catalogue/papers.py`).
    - `same`, or `same niche` for a source.
    - `differs`: the paper and the catalogue disagree.
 
-Pilot run on 2026-11-23 (seed 1, $30.45 including a test request and the retries). Of 1,185 random genomes,
+Pilot run on 2026-11-23 (seed 1; $34.52 in all, with a test request, the retries and the narrow request). Of
+1,185 random genomes,
 287 (24%) had a linked paper, which gave 200 distinct papers:
 
 - **Texts:** 121 full texts, 77 abstracts, and 2 with neither.
 - **Answers:** Fable 5.2 answered 158 of the 198 papers. It refused 39 and ran out of room on 1.
 - **Refusals:** the refused papers are about pathogens and toxins (botulinum neurotoxin, superantigens, Shiga
   toxin, *Brucella*, *B. pseudomallei*, *B. anthracis*, cholera toxin phage, *M. tuberculosis*,
-  *C. difficile*). `--retry-model claude-opus-5-5` got answers for only 4 of those 40, so 36 papers (18%)
-  stay unread.
+  *C. difficile*). `--retry-model claude-opus-5-5` got answers for only 4 of those 40.
+- **Narrow request:** `--narrow-refused` then asked the remaining 36 for host, source, country and year only,
+  from just the methods sections and tables. This cost $4.06, and 16 papers were answered: *Brucella* from 57
+  patients, *B. pseudomallei*, multidrug-resistant *M. tuberculosis*, a Shiga toxin phage and streptococcal
+  superantigens among them. Twenty papers (10% of the sample) are still refused. They include botulinum
+  neurotoxin, *B. anthracis*, papers on genetic methods (knockout minicircles, resistant *Chlamydia*
+  recombinants) and some ordinary population studies (*H. pylori*, *B. pertussis*). So the narrow request
+  lifts the answered share from 82% to 90%.
 - **Quotes:** every fact but one was found verbatim in its paper.
 
-What the 223 sampled genomes on answered papers gained:
+What the 223 sampled genomes on papers answered before the narrow request gained (the narrow request added 20
+genomes; 3 of them gained a host, source, country or year):
 
 | Gain over the catalogue | All | Full text | Abstract only |
 |---|---|---|---|
