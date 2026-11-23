@@ -1104,8 +1104,8 @@ def main():
                              "(environment-gubbins.yml) or run_gubbins.py on PATH")
 
     # Rarefaction arguments
-    parser.add_argument("--gene-counts", type=int, nargs="+", default=[1, 3, 7, 20, 100], metavar="N",
-                        help="Core genes per rarefaction replicate (default: 1 3 7 20 100)")
+    parser.add_argument("--gene-counts", type=int, nargs="+", default=[1, 4, 6, 20, 100], metavar="N",
+                        help="Core genes per rarefaction replicate (default: 1 4 6 20 100)")
     parser.add_argument("--replicates", type=int, default=20,
                         help="Random replicates per gene count (default: 20). Each one is an EcoSim run.")
     parser.add_argument("--each-gene", action="store_true",
