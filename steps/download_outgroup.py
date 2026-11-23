@@ -62,7 +62,10 @@ def outgroup_candidates(species_name):
     Uses NCBI's type-material tag; only if the genus has no tagged genome at all does it fall
     back to RefSeq reference genomes as the type-strain proxy. Subspecies count as their species.
     """
-    genus, species = species_name.lower().split()[:2]
+    words = species_name.lower().split()
+    if len(words) < 2:
+        raise RuntimeError(f"'{species_name}' is not a 'Genus species' name")
+    genus, species = words[:2]
     records = list(_datasets_summary(genus, from_type=True))
     if not records:
         records = [r for r in _datasets_summary(genus, reference_only=True)

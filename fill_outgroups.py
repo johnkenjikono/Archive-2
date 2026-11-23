@@ -90,10 +90,11 @@ def main():
         print(f"No species rows found in {in_path}", file=sys.stderr)
         sys.exit(1)
 
-    filled = fill_rows(rows)
-
-    with open(out_path, "w", newline="", encoding="utf-8") as f:
-        csv.writer(f).writerows(rows)
+    try:
+        filled = fill_rows(rows)
+    finally:  # keep rows already filled (fastANI is slow) if a later row fails
+        with open(out_path, "w", newline="", encoding="utf-8") as f:
+            csv.writer(f).writerows(rows)
     print(f"\nFilled {filled} outgroup(s) measured by fastANI. Wrote {out_path}")
     print("Review the 'Outgroup Source' column, then run: python pipeline.py --csv-file", out_path)
 
