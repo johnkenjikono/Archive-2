@@ -50,6 +50,31 @@ class OutgroupLeafTest(unittest.TestCase):
             self.assertIsNone(_outgroup_leaf(tree, None))
 
 
+class AnnotatedOutgroupTest(unittest.TestCase):
+    """Folders from before outgroup.json: is the 'outgroup' genome already in the run's data?"""
+    def check(self, files, input_fasta=None):
+        from pipeline import _annotated_outgroup
+        with tempfile.TemporaryDirectory() as d:
+            for rel, text in files.items():
+                (Path(d) / rel).parent.mkdir(parents=True, exist_ok=True)
+                (Path(d) / rel).write_text(text)
+            return _annotated_outgroup(d, input_fasta and Path(d) / input_fasta)
+
+    def test_bakta_folder(self):
+        self.assertTrue(self.check({"intermediate_bakta/outgroup/outgroup.gff3": ""}))
+
+    def test_gene_table_header(self):
+        self.assertTrue(self.check({"pangenome/gene_presence_absence.csv": "Gene,Non-unique Gene name,Annotation,g1,outgroup\n"}))
+        self.assertFalse(self.check({"pangenome/gene_presence_absence.csv": "Gene,Non-unique Gene name,Annotation,g1,g2\n"}))
+
+    def test_alignment_record(self):
+        self.assertTrue(self.check({"my.aln": ">g1\nAC\n>outgroup\nAC\n"}, "my.aln"))
+        self.assertFalse(self.check({"output_roary/results/core_gene_alignment.aln": ">g1\nAC\n>outgroup_x\nAC\n"}))
+
+    def test_nothing_on_disk(self):
+        self.assertFalse(self.check({}))
+
+
 class SelectOutgroupTest(unittest.TestCase):
     def test_closest_passing_wins(self):
         acc, org, sel = run(both(98.5, 90.0))

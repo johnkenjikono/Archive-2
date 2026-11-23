@@ -759,6 +759,25 @@ def run_tree_pipeline(input_fasta, start_step, outgroup_id, base_dir, output_tre
         except Exception as e:
             print(f"Warning: Could not clean up temporary directory pipeline_temp_{species_name}: {e}")
 
+def _annotated_outgroup(base_dir, input_fasta=None):
+    """For folders from before outgroup.json: True if an earlier run annotated a downloaded genome
+    named outgroup (Bakta folder, Panaroo's gene table header, or a core alignment record)."""
+    base_dir = Path(base_dir)
+    if (base_dir / "intermediate_bakta" / "outgroup").is_dir():
+        return True
+    results = [base_dir / "output_roary" / "results", base_dir / "pangenome"]
+    for table in (d / "gene_presence_absence.csv" for d in results):
+        if table.is_file():
+            with open(table, newline="") as f:
+                return "outgroup" in next(csv.reader(f), [])
+    alignments = ([Path(input_fasta)] if input_fasta else []) + [d / "core_gene_alignment.aln" for d in results]
+    for aln in alignments:
+        if aln.is_file():
+            with open(aln) as f:
+                return any(line.startswith(">") and line[1:].split()[0] == "outgroup" for line in f)
+    return False
+
+
 def load_species_outgroups_from_csv(csv_path):
     """Load species and outgroup pairs from the summary CSV, starting at row 2."""
     rows = []
@@ -941,7 +960,11 @@ def run_pipeline_for_species(species_name, outgroup_name, args):
         if args.start_step > 2:
             # Genomes were annotated in an earlier run; its outgroup.json says whether an outgroup was among them.
             info = base_dir / OUTGROUP_INFO
-            outgroup_name = json.loads(info.read_text()).get("accession") if info.exists() else None
+            if info.exists():
+                outgroup_name = json.loads(info.read_text()).get("accession")
+            elif _annotated_outgroup(base_dir, args.input_fasta):
+                outgroup_name = "outgroup"  # unknown accession; only its presence matters from here on
+                print("No outgroup.json, but this folder's data has an 'outgroup' genome; rooting on it.")
         else:
             print(f"\n--- Choosing outgroup for {species_name} by fastANI ---")
             try:
