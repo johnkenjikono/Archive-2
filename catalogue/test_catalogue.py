@@ -10,14 +10,14 @@ import unittest.mock
 from pathlib import Path
 from types import SimpleNamespace
 
-from catalogue import build
+from catalogue import build, papers
 from catalogue.batch import BatchTransport, BudgetExceeded, Ledger, estimate_usd
 from catalogue.crosscheck import (FABLE, CrossCheck, compare_judges, judged_items, mcnemar, open_records, summarize,
                                   summarize_judges, third_party_sample, write_disagreements)
 from catalogue.hosts import HostResolver, candidates
 from catalogue.ontology import OntologyResolver, codes_to_resolve, parse_codes, relation, resolve_codes
 from catalogue.ncbi import compact, harvest, iter_assemblies, mag_accessions, resolve_taxa
-from steps.metadata_curation import CuratedLabeler, Vocabulary, usage_cost
+from steps.metadata_curation import PRICES, CuratedLabeler, Vocabulary, usage_cost
 from steps.test_metadata_curation import HAIKU, OPUS, SONNET, FakeClient, key, label
 
 
@@ -634,6 +634,110 @@ class OntologyTest(unittest.TestCase):
         resolve_codes({"ENVO:00002262"}, path, self.vocab, log=quiet,
                       fetch=lambda c: asked.append(c) or ONTOLOGY.get(c))
         self.assertEqual(asked, ["ENVO:00002262"])
+
+
+JATS = b"""<pmc-articleset><article><front><article-meta><title-group><article-title>Listeria in cheese</article-title>
+</title-group><abstract><p>We sequenced isolates.</p></abstract></article-meta></front><body>
+<sec><title>Introduction</title><p>Background text.</p></sec>
+<sec><title>Materials and methods</title><p>All isolates came from raw milk cheese in France in 2015.</p>
+<table-wrap><caption><p>Table 1. Strains</p></caption><table><tr><td>Strain</td><td>Source</td></tr>
+<tr><td>LM1</td><td>bovine feces</td></tr></table></table-wrap></sec>
+<fig><caption><p>Tree of the isolates.</p></caption></fig></body></article></pmc-articleset>"""
+
+
+def paper_answer(**genome):
+    blank = {f: "" for f in papers.FACTS} | {f"{f}_quote": "" for f in papers.FACTS}
+    study = {**blank, "host": "unknown", "source": "cheese", "source_quote": "raw milk cheese",
+             "country": "France", "country_quote": "in France", "collection_year": "2015",
+             "collection_year_quote": "in 2015"}
+    entry = {**blank, "host": "unknown", "source": "unknown", "accession": "GCA_1.1", "name_in_paper": "LM1", **genome}
+    return {"describes": "both", "certain": True, "study": study, "genomes": [entry]}
+
+
+class PapersTest(unittest.TestCase):
+    def setUp(self):
+        self.vocab = Vocabulary()
+        self.text = papers.jats_text(JATS)
+
+    def test_full_text_puts_methods_and_tables_first(self):
+        text = self.text
+        self.assertTrue(text.startswith("Title: Listeria in cheese\n\nAbstract: We sequenced isolates."))
+        self.assertIn("Table. Table 1. Strains\nStrain | Source\nLM1 | bovine feces", text)
+        order = [text.index(s) for s in ("raw milk cheese", "Table. Table 1", "Background text", "Figure. Tree")]
+        self.assertEqual(order, sorted(order))
+        self.assertEqual(text.count("bovine feces"), 1)  # the table is not repeated inside its section
+        self.assertIsNone(papers.jats_text(b"<article><front><article-meta/></front></article>"))  # no body
+
+    def test_a_genome_gets_its_own_facts_over_the_studys_and_unquoted_facts_are_dropped(self):
+        answer = paper_answer(host="cattle", host_quote="bovine feces", source="feces", source_quote="bovine  FECES",
+                              phenotype="ampicillin resistant", phenotype_quote="resistant to ampicillin")
+        facts, origin, failed = papers.facts_for(answer, "GCA_1.1", self.text)
+        facts = {f: v for f, (v, _) in facts.items()}
+        self.assertEqual((origin, failed), ("genome", 1))  # the phenotype's quote is not in the paper
+        self.assertEqual(facts, {"host": "cattle", "source": "feces", "country": "France", "collection_year": "2015"})
+        facts, origin, _ = papers.facts_for(answer, "GCA_2.1", self.text)
+        self.assertEqual((origin, facts["source"]), ("study", ("cheese", "raw milk cheese")))
+
+    def test_comparison_with_the_catalogue_row(self):
+        facts = {"host": "cattle", "source": "cheese", "country": "France", "collection_year": "2015-2016",
+                 "disease": "mastitis", "outbreak": "2015 cheese outbreak"}
+        empty = {"host": "unknown", "source_term": "unknown", "niche": "unknown", "country": "unknown",
+                 "collection_year": "", "raw_host_disease": ""}
+        self.assertEqual(papers.compare(empty, facts, self.vocab),
+                         {"host": "new", "source": "new", "country": "new", "collection_year": "new", "disease": "new",
+                          "isolation_method": "none", "outbreak": "new", "phenotype": "none"})
+        dairy = self.vocab.terms["cheese"]["niche"]
+        other = next(k for k, t in self.vocab.terms.items() if t["niche"] == dairy and k != "cheese")
+        known = {"host": self.vocab.hosts["cattle"]["label"], "source_term": self.vocab.terms[other]["label"],
+                 "niche": self.vocab.niches[dairy], "country": "france", "collection_year": "2016",
+                 "raw_host_disease": "bovine mastitis"}
+        outcome = papers.compare(known, facts, self.vocab)
+        self.assertEqual([outcome[f] for f in ("host", "source", "country", "collection_year", "disease")],
+                         ["same", "same niche", "same", "within range", "in BioSample"])
+        czech = papers.compare({**known, "collection_year": "2015", "country": "Czechia"},
+                               {"collection_year": "2015", "country": "Czech Republic"}, self.vocab)
+        self.assertEqual((czech["collection_year"], czech["country"]), ("same", "same"))
+        self.assertEqual(papers.compare({**known, "collection_year": "1999"}, {"collection_year": "2010-2012"},
+                                        self.vocab)["collection_year"], "differs")
+        rows = [{"sampled": True, "origin": "genome", **outcome}, {"sampled": False, "origin": "study",
+                                                                  **papers.compare(empty, facts, self.vocab)}]
+        self.assertEqual(papers.summarize(rows)["any gain"], {"genomes": 1, "share": 1.0})  # the outbreak
+        self.assertEqual(papers.summarize(rows)["gain in host, source, country or year"]["genomes"], 0)
+        self.assertEqual(papers.summarize(rows, weight_key=None)["genomes"], 2)
+
+    def test_the_sample_is_over_genomes_and_links_are_cached(self):
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        path = Path(tmp.name) / "links.json"
+        table = {"PRJ0": ["100"], "PRJ1": ["101", "102"]}
+        asked = []
+
+        def fetch(chunk):
+            asked.extend(chunk)
+            return {p: ("", table[p]) for p in chunk if p in table}
+
+        genome_project = {f"GCA_{i}.1": f"PRJ{i % 5}" for i in range(50)}
+        chosen, links, tried, with_paper = papers.sample_papers(genome_project, path, 2, fetch=fetch)
+        self.assertEqual(len(chosen), 2)
+        self.assertTrue(set(chosen) <= {"100", "101", "102"} and 0 < with_paper <= tried <= 50)
+        self.assertEqual(links["PRJ3"], [])  # a project without a paper is cached too
+        asked.clear()
+        again = papers.sample_papers(genome_project, path, 2, fetch=fetch)
+        self.assertEqual((again[0], asked), (chosen, []))
+
+    def test_requests_answers_and_the_worst_case(self):
+        genomes = [{"accession": "GCA_1.1", "organism": "Listeria monocytogenes", "strain": "LM1", "isolate": ""}]
+        params = papers.build_request(self.vocab, "123", {"kind": "full text", "text": self.text}, genomes, more=5)
+        self.assertIn("- GCA_1.1: Listeria monocytogenes; strain LM1; isolate -", params["messages"][0]["content"])
+        self.assertIn("(and 5 more genomes", params["messages"][0]["content"])
+        schema = params["output_config"]["format"]["schema"]
+        self.assertEqual(schema["properties"]["genomes"]["items"]["properties"]["accession"]["enum"], ["GCA_1.1"])
+        price_out = PRICES[papers.MODEL][1]
+        self.assertGreater(papers.worst_case_usd([{"params": params}]), papers.MAX_TOKENS * price_out / 1e6 * 0.5)
+        message = SimpleNamespace(stop_reason="end_turn", content=[SimpleNamespace(type="text", text='{"a": 1}')])
+        self.assertEqual(papers.parse_message(message), ({"a": 1}, "ok"))
+        self.assertEqual(papers.parse_message(SimpleNamespace(stop_reason="max_tokens", content=[])),
+                         (None, "max_tokens"))
 
 
 class CheckoutTest(unittest.TestCase):

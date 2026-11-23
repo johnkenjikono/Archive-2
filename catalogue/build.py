@@ -9,12 +9,13 @@ for every bacterial genome NCBI holds at complete-genome or chromosome level. Se
   python -m catalogue.build verify --budget 30 --sample 500 # pilot: Claude Fable 5.2 cross-checks 500 records
   python -m catalogue.build verify --budget 200 --effort high  # Fable cross-checks every model label, judges disputes
   python -m catalogue.build rejudge --budget 100 --sample 300  # Opus 5.5 judges 300 of those disputes again
+  python -m catalogue.build papers-pilot --budget 146 --sample 200  # Fable reads 200 linked papers: what they add
   python -m catalogue.build assemble                        # catalogue table, per-species summary, report
   python -m catalogue.build status                          # what each stage has done and what it has cost
 
-Everything lives under --workdir (default ./catalogue_work). Only `run`, `verify` and `rejudge` call the Claude
-API; they read ANTHROPIC_API_KEY from the environment or from a .env file in the current directory or the
-repository root.
+Everything lives under --workdir (default ./catalogue_work). Only `run`, `verify`, `rejudge` and `papers-pilot`
+call the Claude API; they read ANTHROPIC_API_KEY from the environment or from a .env file in the current
+directory or the repository root.
 """
 import argparse
 import collections
@@ -34,11 +35,12 @@ from catalogue.batch import BatchTransport, BudgetExceeded, Ledger, estimate_usd
 from catalogue.crosscheck import (EFFORTS, FABLE, JUDGE_EFFORT, PARTS, CrossCheck, compare_judges, judged_items,
                                   open_records, summarize, summarize_judges, third_party_sample, write_disagreements,
                                   write_judge_comparison)
+from catalogue import papers
 from catalogue.hosts import HostResolver
 from catalogue.ontology import OntologyResolver, codes_to_resolve, resolve_codes
 from catalogue.ncbi import harvest, iter_assemblies, mag_accessions, resolve_taxa
 from steps.metadata_curation import (BATCH_DISCOUNT, HOST_FIELDS, PRICES, SOURCE_FIELDS, TIERS, AnswerCache,
-                                     CuratedLabeler, Vocabulary, normalize)
+                                     CuratedLabeler, Vocabulary, normalize, usage_cost)
 from steps.niche_metadata import LLM_FIELDS, country_and_year
 
 
@@ -455,6 +457,192 @@ def cmd_rejudge(args, paths, log):
     return report
 
 
+def cmd_papers_pilot(args, paths, log):
+    """Read a sample of the papers NCBI links to the catalogue's genomes and measure what they add (see
+    catalogue/papers.py). Needs `assemble` first: genomes are compared with the release table."""
+    _require_harvest(paths)
+    release = paths.release / "isolate_catalogue.tsv.gz"
+    if not release.exists():
+        sys.exit("No catalogue yet: run `python -m catalogue.build assemble` first.")
+    vocab = Vocabulary()
+    folder = paths.root / "papers"
+    genome_project, project_genomes = {}, collections.defaultdict(list)
+    for a in iter_assemblies(paths.ncbi):
+        if a.get("bioproject"):
+            genome_project[a["accession"]] = a["bioproject"]
+            project_genomes[a["bioproject"]].append(a["accession"])
+    log(f"Sampling genomes until {args.sample} distinct linked papers (budget ${args.budget:.2f} for everything "
+        "spent in this work directory)")
+    chosen, links, tried, with_paper = papers.sample_papers(genome_project, folder / "links.json", args.sample,
+                                                            args.seed)
+    log(f"  {tried:,} genomes tried, {with_paper:,} with a linked paper ({with_paper / tried:.0%}); "
+        f"{len(chosen):,} distinct papers")
+    texts = papers.paper_texts(sorted(chosen), folder / "texts")
+    kinds = collections.Counter(t["kind"] for t in texts.values())
+    log("  texts: " + ", ".join(f"{k} {v:,}" for k, v in kinds.most_common()))
+    pmid_projects = collections.defaultdict(set)
+    for project, pmids in links.items():
+        for pmid in pmids:
+            if pmid in chosen:
+                pmid_projects[pmid].add(project)
+    rng = random.Random(args.seed)
+    listed, more = {}, {}
+    for pmid, sampled in chosen.items():
+        first = list(dict.fromkeys(sampled))
+        others = sorted({g for p in pmid_projects[pmid] for g in project_genomes[p]} - set(first))
+        rng.shuffle(others)
+        listed[pmid] = (first + others)[:max(papers.MAX_GENOMES, len(first))]
+        more[pmid] = len(first) + len(others) - len(listed[pmid])
+    rows = papers.catalogue_rows(release, {g for gs in listed.values() for g in gs})
+    requests = {}
+    for pmid in sorted(chosen):
+        if texts[pmid]["kind"] == "none":
+            continue
+        genomes = [{"accession": g, "organism": rows[g]["organism_name"], "strain": rows[g]["strain"],
+                    "isolate": rows[g]["isolate"]} for g in listed[pmid] if g in rows]
+        requests[pmid] = {"custom_id": f"pmid{pmid}",
+                          "params": papers.build_request(vocab, pmid, texts[pmid], genomes, more[pmid])}
+    worst = papers.worst_case_usd(list(requests.values()))
+    sampled = sum(len(set(s)) for s in chosen.values())
+    log(f"  {len(requests):,} papers to read, {sampled:,} sampled genomes, "
+        f"{sum(len(listed[p]) for p in requests):,} genomes listed; worst case ${worst:.2f} at Batch prices "
+        "(every request using all of max_tokens)")
+    if args.dry_run:
+        return {"papers": len(requests), "texts": dict(kinds), "worst_case_usd": round(worst, 2)}
+    # Each paper's answer is kept in papers/answers/, so a rerun (or a new report) pays nothing for it again. The
+    # waves are always the same papers in the same order, so their batches resume instead of being sent again.
+    answers_dir = folder / "answers"
+    answers_dir.mkdir(parents=True, exist_ok=True)
+    saved = {p: json.loads((answers_dir / f"{p}.json").read_text())
+             for p in requests if (answers_dir / f"{p}.json").exists()}
+
+    def keep(pmid, answer, reason, usd, how):
+        saved[pmid] = {"answer": answer, "reason": reason, "usd": usd, "how": how}
+        (answers_dir / f"{pmid}.json").write_text(json.dumps(saved[pmid]))
+
+    smoke = next(iter(sorted(requests, key=lambda p: len(texts[p]["text"]))), None)
+    rest = [p for p in sorted(requests) if p != smoke]
+    ledger_before = Ledger(paths.root / "spend.jsonl").total  # resumed batches are not charged twice
+
+    def retryable():
+        return [p for p in sorted(requests) if args.retry_model and p in saved and saved[p]["answer"] is None
+                and saved[p]["reason"] in ("refusal", "max_tokens") and "first_reason" not in saved[p]]
+
+    if any(p not in saved for p in requests) or retryable():
+        _require_key()
+        import anthropic
+        client = anthropic.Anthropic()
+        ledger = Ledger(paths.root / "spend.jsonl")
+        # One paper synchronously first, at full price, so a request the API rejects stops before a batch.
+        if smoke not in saved:
+            worst = papers.worst_case_usd([requests[smoke]]) / BATCH_DISCOUNT
+            if ledger.total + worst > args.budget:
+                sys.exit(f"Stopped before spending more: one paper could cost ${worst:.2f}; ${ledger.total:.2f} of "
+                         f"the ${args.budget:.2f} budget is already spent.")
+            try:
+                message = client.messages.create(**requests[smoke]["params"])
+            except anthropic.BadRequestError as e:
+                sys.exit(f"The API rejected the paper request: {e.message}")
+            cost = usage_cost(papers.MODEL, message.usage)
+            ledger.add(stage="papers pilot first paper", kind="sync", model=papers.MODEL, usd=round(cost, 9),
+                       requests=1)
+            keep(smoke, *papers.parse_message(message), cost, "sync")
+            log(f"  first paper (PMID {smoke}) answered synchronously for ${cost:.3f}")
+        transport = BatchTransport(paths.root, args.budget, client=client, log=log, poll_seconds=args.poll,
+                                   stage_prefix="papers pilot ", state_name="papers_batches.json")
+        recorder = CuratedLabeler(vocab=vocab, log=lambda *_: None)
+        try:
+            for start in range(0, len(rest), papers.WAVE):
+                wave = rest[start:start + papers.WAVE]
+                if all(p in saved for p in wave):
+                    continue
+                got = transport.run_requests(f"wave {start // papers.WAVE + 1}", [requests[p] for p in wave],
+                                             recorder, estimate=papers.worst_case_usd([requests[p] for p in wave]))
+                for pmid in wave:
+                    kind, message = got.get(f"pmid{pmid}", ("missing", None))
+                    ok = kind == "succeeded" and message is not None
+                    answer, reason = papers.parse_message(message) if ok else (None, kind)
+                    keep(pmid, answer, reason, usage_cost(papers.MODEL, message.usage, batch=True) if ok else 0.0,
+                         "batch")
+            # Papers Fable refused (its safety screening declines some pathogen and toxin papers) or cut off,
+            # once more with another model and more room. Batches have no server-side refusal fallback.
+            retry = retryable()
+            if retry:
+                again = [{"custom_id": f"pmid{p}", "params": {**requests[p]["params"], "model": args.retry_model,
+                                                              "max_tokens": papers.RETRY_MAX_TOKENS}} for p in retry]
+                got = transport.run_requests(f"retry {args.retry_model}", again, recorder,
+                                             estimate=papers.worst_case_usd(again))
+                for p in retry:
+                    kind, message = got.get(f"pmid{p}", ("missing", None))
+                    ok = kind == "succeeded" and message is not None
+                    answer, reason = papers.parse_message(message) if ok else (None, kind)
+                    cost = usage_cost(args.retry_model, message.usage, batch=True) if ok else 0.0
+                    saved[p] = {**saved[p], "first_reason": saved[p]["reason"], "answer": answer, "reason": reason,
+                                "usd": saved[p]["usd"] + cost, "how": f"retried with {args.retry_model}"}
+                    (answers_dir / f"{p}.json").write_text(json.dumps(saved[p]))
+        except BudgetExceeded as e:
+            log(f"Stopped before spending more: {e}")
+    spent_now = Ledger(paths.root / "spend.jsonl").total - ledger_before
+    usd = {p: s["usd"] for p, s in saved.items()}
+    out_rows, failures, describes, quote_failures = [], collections.Counter(), collections.Counter(), 0
+    for pmid in sorted(requests):
+        answer, reason = (saved[pmid]["answer"], saved[pmid]["reason"]) if pmid in saved else (None, "not sent")
+        if answer is None:
+            failures[reason] += 1
+            continue
+        describes[answer.get("describes", "")] += 1
+        for g in listed[pmid]:
+            if g not in rows:
+                continue
+            facts, origin, failed = papers.facts_for(answer, g, texts[pmid]["text"])
+            quote_failures += failed
+            outcome = papers.compare(rows[g], facts, vocab)
+            out_rows.append({"pmid": pmid, "kind": texts[pmid]["kind"], "accession": g, "sampled": g in chosen[pmid],
+                             "answered_by": saved[pmid]["how"], "origin": origin, **outcome,
+                             **{f"{f}_value": facts[f][0] if f in facts else "" for f in papers.FACTS},
+                             **{f"{f}_quote": facts[f][1] if f in facts else "" for f in papers.FACTS},
+                             **{f"catalogue_{c}": rows[g][c] for c in ("host", "source_term", "country",
+                                                                         "collection_year")}})
+    answered = len(requests) - sum(failures.values())
+    per_kind = collections.defaultdict(list)
+    for pmid, cost in usd.items():
+        per_kind[texts[pmid]["kind"]].append(cost)
+    report = {"run": "papers pilot", "finished": _now(), "model": papers.MODEL, "effort": papers.EFFORT,
+              "seed": args.seed, "genomes tried": tried, "genomes with a linked paper": with_paper,
+              "share of genomes with a linked paper": round(with_paper / tried, 3),
+              "papers": len(chosen), "texts": dict(kinds), "papers answered": answered,
+              "papers without an answer": dict(failures), "how papers describe their genomes": dict(describes),
+              "Fable's first answer": dict(collections.Counter(s.get("first_reason", s["reason"]) for s in saved.values())),
+              "answered by": dict(collections.Counter(s["how"] for s in saved.values() if s["answer"] is not None)),
+              "quotes not found in the paper (facts dropped)": quote_failures,
+              "sampled genomes": papers.summarize(out_rows),
+              "sampled genomes, papers answered after a retry": papers.summarize(
+                  [r for r in out_rows if r["answered_by"].startswith("retried")]),
+              "sampled genomes, full text": papers.summarize([r for r in out_rows if r["kind"] == "full text"]),
+              "sampled genomes, abstract only": papers.summarize([r for r in out_rows if r["kind"] == "abstract"]),
+              "all listed genomes": papers.summarize(out_rows, weight_key=None),
+              "usd_this_run": round(spent_now, 4), "usd_these_papers": round(sum(usd.values()), 4),
+              "usd per paper": {k: round(sum(v) / len(v), 4) for k, v in per_kind.items()},
+              "usd_ledger_total": round(Ledger(paths.root / "spend.jsonl").total, 4)}
+    paths.reports.mkdir(parents=True, exist_ok=True)
+    stem = f"papers_pilot_{_now().replace(':', '')}"
+    (paths.reports / f"{stem}.json").write_text(json.dumps(report, indent=1))
+    if out_rows:
+        with open(paths.reports / f"{stem}.tsv", "w", encoding="utf-8", newline="") as f:
+            writer = csv.DictWriter(f, fieldnames=list(out_rows[0]), delimiter="\t", lineterminator="\n")
+            writer.writeheader()
+            writer.writerows(out_rows)
+    s = report["sampled genomes"]
+    if s.get("genomes"):
+        log(f"  sampled genomes compared: {s['genomes']:,}; any gain {s['any gain']['share']:.0%}; in host, source, "
+            f"country or year {s['gain in host, source, country or year']['share']:.0%}; in disease, method, "
+            f"outbreak or phenotype {s['gain in disease, method, outbreak or phenotype']['share']:.0%}")
+    log(f"  papers answered {answered:,} of {len(requests):,}; cost of these papers ${report['usd_these_papers']:.2f} "
+        f"(${report['usd_this_run']:.2f} this run); spent in this work directory ${report['usd_ledger_total']:.2f}")
+    log(f"Report: {paths.reports / stem}.json (each genome in {stem}.tsv)")
+    return report
+
+
 def _lineage(taxa, tax_id):
     record = taxa.get(str(tax_id)) if tax_id else None
     if not record or "ambiguous" in record:
@@ -691,6 +879,16 @@ def main(argv=None):
     p.add_argument("--sample", type=int, default=300, help="records to judge again (default 300)")
     p.add_argument("--seed", type=int, default=1, help="random seed for --sample (default 1)")
     p.add_argument("--poll", type=int, default=60, help="seconds between batch status checks (default 60)")
+    p = sub.add_parser("papers-pilot", help="read a sample of the papers linked to the genomes with Claude Fable 5.2 "
+                                            "and measure what they add (costs money; run after `assemble`)")
+    p.add_argument("--budget", type=float, required=True, help="hard cap in USD for everything spent in this workdir")
+    p.add_argument("--sample", type=int, default=200, help="distinct papers to read (default 200)")
+    p.add_argument("--seed", type=int, default=1, help="random seed for the genome order (default 1)")
+    p.add_argument("--poll", type=int, default=60, help="seconds between batch status checks (default 60)")
+    p.add_argument("--retry-model", help="send the papers Fable refused or cut off once more with this model "
+                                          "(e.g. claude-opus-5-5)")
+    p.add_argument("--dry-run", action="store_true",
+                   help="sample, fetch the texts and price the requests without calling the Claude API (free)")
     sub.add_parser("assemble", help="write the catalogue table, per-species summary and manifest")
     sub.add_parser("status", help="progress and spend")
     args = parser.parse_args(argv)
@@ -704,7 +902,8 @@ def main(argv=None):
         print(message, flush=True)
 
     commands = {"harvest": cmd_harvest, "prepare": cmd_prepare, "run": cmd_run, "verify": cmd_verify,
-                "rejudge": cmd_rejudge, "assemble": cmd_assemble, "status": cmd_status}
+                "rejudge": cmd_rejudge, "papers-pilot": cmd_papers_pilot, "assemble": cmd_assemble,
+                "status": cmd_status}
     return commands[args.command](args, paths, log)
 
 

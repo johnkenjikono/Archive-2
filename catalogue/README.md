@@ -25,7 +25,7 @@ python -m catalogue.build status                        # what has run and what 
 
 It refuses to start if `steps/` would be loaded from a different checkout of the repository (possible
 because `steps/` has no `__init__.py`, e.g. when a worktree's code is run from the main checkout's
-folder). Only `run`, `verify` and `rejudge` call the Claude API.
+folder). Only `run`, `verify`, `rejudge` and `papers-pilot` call the Claude API.
 It reads `ANTHROPIC_API_KEY` from the environment or from a `.env` file in the current directory or the
 repository root; `.env` is gitignored. Everything is resumable: the harvest saves its page token, taxonomy
 answers and model answers are cached, and submitted batch ids are saved before the run waits on them.
@@ -203,6 +203,73 @@ Several of the 38 are records that give only ontology codes, such as env_medium 
 code, while Opus answers unknown. Checked against EBI OLS, the codes support Fable's reading in 6 of 8 such
 parts; `envo_00002262`, for example, is clay soil. So Fable's judge does lean toward Fable's answers, but its extra
 changes are more often right than wrong, and the catalogue keeps its decisions.
+
+## Papers pilot (`papers-pilot`)
+
+NCBI links many genomes' BioProjects to PubMed papers. The pilot measures what reading those papers would add,
+before anyone pays to read all of them (`catalogue/papers.py`).
+
+1. **Sample.** Genomes are drawn in random order. Each one whose BioProject links a paper adds one of its
+   papers, until there are 200 distinct papers. Because the sample is over genomes, its gain rate is a rate
+   over genomes.
+2. **Texts.** The pilot uses the PubMed Central full text where NCBI serves it. Methods-like sections and the
+   tables come first, then the other sections and the figure captions. Otherwise it uses the PubMed title and
+   abstract.
+3. **Read.** Claude Fable 5.2 reads each paper at high effort, one Batch API request per paper. It gets the
+   text and up to 30 of the genomes NCBI links to the paper (accession, strain and isolate names); the
+   sampled genomes are always among them. For the study as a whole, and for each genome the paper names
+   individually, it reports eight facts: host, source, country, collection year, disease, isolation method,
+   outbreak and phenotype.
+   - Host and source must come from the catalogue vocabulary.
+   - Every value needs a verbatim quote from the paper, and a value whose quote is not in the text is dropped.
+4. **Compare.** Each genome's facts (its own where the paper names it, else the study's) are compared with
+   its catalogue row:
+   - `new`: the catalogue lacks the fact.
+   - `same`, or `same niche` for a source.
+   - `differs`: the paper and the catalogue disagree.
+
+Pilot run on 2026-11-23 (seed 1, $30.45 including a test request and the retries). Of 1,185 random genomes,
+287 (24%) had a linked paper, which gave 200 distinct papers:
+
+- **Texts:** 121 full texts, 77 abstracts, and 2 with neither.
+- **Answers:** Fable 5.2 answered 158 of the 198 papers. It refused 39 and ran out of room on 1.
+- **Refusals:** the refused papers are about pathogens and toxins (botulinum neurotoxin, superantigens, Shiga
+  toxin, *Brucella*, *B. pseudomallei*, *B. anthracis*, cholera toxin phage, *M. tuberculosis*,
+  *C. difficile*). `--retry-model claude-opus-5-5` got answers for only 4 of those 40, so 36 papers (18%)
+  stay unread.
+- **Quotes:** every fact but one was found verbatim in its paper.
+
+What the 223 sampled genomes on answered papers gained:
+
+| Gain over the catalogue | All | Full text | Abstract only |
+|---|---|---|---|
+| Any new fact | 74% | 83% | 62% |
+| A host, source, country or year the catalogue lacked | 12% | 17% | 6% |
+| Disease, isolation method, outbreak or phenotype | 71% | 80% | 60% |
+
+By fact, the paper added a host for 18 of the 223 genomes, a source for 19, a country for 9 and a year for 7.
+It added a phenotype for 90, an isolation method for 61, an outbreak or study context for 54, and a disease
+for 15. Only 31% of these genomes are named individually in their paper; the rest get the paper's study-wide
+facts. Those are often coarser than the genome's own BioSample: "bullfrog farms" against "feces".
+
+Disagreements with the catalogue:
+
+- **Source:** 42 genomes (19%). These are mixed: sometimes the paper is more specific (a bloodstream-infection
+  cohort, where the catalogue says host sample), sometimes the BioSample is.
+- **Host:** 5 genomes, including real BioSample errors. One paper's isolates are "clinical samples collected
+  in 2021 from dogs", where BioSample says human; another's come from hospital sewage.
+- **Year:** 9 genomes. Another 26 are a study period that contains the catalogue's year.
+
+At these rates, reading every linked paper (about 9,850; 24% of genomes have one) would give about 2,500
+genomes (2.3% of the catalogue) a host, source, country or year, and about 14,500 genomes free-text context.
+At the pilot's $0.15 a paper, that is about $1,500 with Fable at high effort. Full texts carry most of the
+core gain, for $0.19 a paper against $0.10 for an abstract.
+
+`--dry-run` samples, fetches the texts and prices the requests without calling the API. The requests go out
+in waves of 100. Each wave is checked against the budget at its worst case, every request using all of
+`max_tokens`, so the budget holds even though a batch cannot be stopped part-way. Links, texts and batch ids
+are cached in `papers/` and `papers_batches.json`. The report is `reports/papers_pilot_*.json`, and
+`reports/papers_pilot_*.tsv` has one row per linked genome.
 
 ## Cost
 

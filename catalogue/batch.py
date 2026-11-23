@@ -220,13 +220,19 @@ class BatchTransport:
         if group:
             yield group
 
-    def _run_stage(self, name, requests, labeler):
+    def run_requests(self, name, requests, labeler, estimate=None):
+        """One stage of ready-made requests ({"custom_id", "params"}), with the same budget check, ledger and
+        resume as the labelling stages; returns {custom_id: (type, message)}. estimate: the stage's upper-end
+        USD when estimate_usd's per-record output allowance does not fit these requests (a whole paper)."""
+        return self._run_stage(self.stage_prefix + name, requests, labeler, estimate)
+
+    def _run_stage(self, name, requests, labeler, estimate=None):
         """Submit (or resume) the batches for these exact requests; returns {custom_id: (type, message)}."""
         key = hashlib.sha256(json.dumps(requests, sort_keys=True).encode()).hexdigest()[:24]
         groups = list(self._groups(requests))
         stage = self.state.get(key)
         if stage is None:
-            estimate = estimate_usd(requests)
+            estimate = estimate_usd(requests) if estimate is None else estimate
             self._check_budget(estimate, f"{name} ({len(requests)} requests)")
             stage = self.state[key] = {"name": name, "batches": [], "groups": len(groups), "requests": len(requests),
                                        "estimate_usd": round(estimate, 4), "submitted": _now(), "accounted": []}
