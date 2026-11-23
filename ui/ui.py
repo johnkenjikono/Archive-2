@@ -240,11 +240,8 @@ def build_command(values: FormValues, python_exe: str, pipeline_py: Path) -> lis
     return argv
 
 
-def build_fill_command(csv_path: str, use_llm: bool, python_exe: str, fill_py: Path) -> list[str]:
-    argv = [python_exe, str(fill_py), csv_path]
-    if use_llm:
-        argv.append("--llm")
-    return argv
+def build_fill_command(csv_path: str, python_exe: str, fill_py: Path) -> list[str]:
+    return [python_exe, str(fill_py), csv_path]
 
 
 def filled_csv_path(csv_path: str) -> Path:
@@ -521,7 +518,6 @@ def main() -> None:
             self.input_fasta_var = tk.StringVar()
             self.outgroup_id_var = tk.StringVar()
             self.setup_only_var = tk.BooleanVar(value=False)
-            self.use_llm_var = tk.BooleanVar(value=False)
             self.keep_vars = {name: tk.BooleanVar(value=name in DEFAULT_KEEP) for name in KEEP_ITEMS}
             self.full_core_var = tk.BooleanVar(value=True)
             self.each_gene_var = tk.BooleanVar(value=False)
@@ -563,9 +559,6 @@ def main() -> None:
             self._row(self.csv_frame, 2, "Random seed", self.seed_var)
             fill = ttk.Frame(self.csv_frame)
             fill.grid(row=3, column=1, sticky="w", padx=4, pady=2)
-            self._track(
-                ttk.Checkbutton(fill, text="Use Claude (LLM)", variable=self.use_llm_var)
-            ).pack(side="left")
             self._track(
                 ttk.Button(fill, text="Fill blank outgroups", command=self._on_fill_outgroups)
             ).pack(side="left", padx=8)
@@ -870,9 +863,7 @@ def main() -> None:
                 messagebox.showerror("Cannot fill outgroups", "Choose an existing CSV file.")
                 return
             csv_path = str(Path(csv_path).resolve())  # the script runs with cwd=REPO_ROOT
-            argv = build_fill_command(
-                csv_path, bool(self.use_llm_var.get()), sys.executable, FILL_OUTGROUPS_PY
-            )
+            argv = build_fill_command(csv_path, sys.executable, FILL_OUTGROUPS_PY)
             self._pending_fill_csv = filled_csv_path(csv_path)
             self._log(quote_command(argv))
             self._begin("Filling blank outgroups…")
