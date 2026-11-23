@@ -26,6 +26,7 @@ from ui import (
     validate_form,
     format_elapsed,
     is_progress_tick,
+    load_levels,
     load_settings,
     parse_number,
     progress_total,
@@ -90,6 +91,13 @@ class ProgressTests(unittest.TestCase):
         self.assertTrue(is_progress_tick("✅ EcoSim output saved: x.xml"))
         self.assertTrue(is_progress_tick("❌ EcoSim error for a.fasta: boom"))
         self.assertFalse(is_progress_tick("Running Bakta on GCF_1.fna..."))
+
+
+class LoadLevelsTests(unittest.TestCase):
+    def test_scales_with_cores_and_never_zero(self):
+        self.assertEqual(list(load_levels(12).values()), [3, 6, 10, 12])
+        self.assertEqual(list(load_levels(1).values()), [1, 1, 1, 1])
+        self.assertEqual(len(load_levels(1)), 4)  # labels stay unique even when counts tie
 
 
 class ParseNumberTests(unittest.TestCase):

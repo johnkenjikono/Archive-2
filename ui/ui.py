@@ -106,6 +106,21 @@ def parse_number(raw: str, label: str, default: str, cast=int):
         raise ValueError(f'{label} must be {kind} (got "{raw}").') from None
 
 
+def load_levels(cpus: int) -> dict[str, int]:
+    """Dropdown label -> --threads. Bakta runs threads // 4 jobs, each with its own db in RAM, so fewer threads also means less memory."""
+    levels = {
+        "Light": max(1, cpus // 4),
+        "Balanced": max(1, cpus // 2),
+        "Heavy": max(1, cpus - 2),
+        "Maximum": cpus,
+    }
+    return {f"{name} ({n} of {cpus} cores)": n for name, n in levels.items()}
+
+
+LOAD_LEVELS = load_levels(os.cpu_count() or 4)
+DEFAULT_LOAD = next(label for label in LOAD_LEVELS if label.startswith("Balanced"))
+
+
 SETTINGS_PATH = Path.home() / ".ecotype_ui.json"
 
 
@@ -478,7 +493,7 @@ def main() -> None:
             saved = load_settings(SETTINGS_PATH)
             self.workdir_var = tk.StringVar(value=saved.get("workdir", "."))
             self.db_var = tk.StringVar(value=saved.get("db") or next(iter(find_bakta_dbs()), ""))
-            self.threads_var = tk.StringVar(value="12")
+            self.threads_var = tk.StringVar(value=DEFAULT_LOAD)
             self.bakta_jobs_var = tk.StringVar()
             self.start_step_var = tk.StringVar(value=step_label(1))
             self.stop_step_var = tk.StringVar(value=step_label(LAST_STEP))
@@ -585,7 +600,7 @@ def main() -> None:
             self.advanced_frame.pack(fill="both", expand=True)
             advanced = ttk.LabelFrame(self.advanced_frame, text="Advanced")
             advanced.pack(fill="x", pady=6)
-            self._row(advanced, 0, "Threads", self.threads_var)
+            self._row(advanced, 0, "CPU load", self.threads_var, values=list(LOAD_LEVELS))
             self._row(advanced, 1, "Bakta parallel jobs (blank = auto)", self.bakta_jobs_var)
             self._row(advanced, 2, "Outgroup ID (blank = auto)", self.outgroup_id_var)
             setup = self._track(
@@ -686,7 +701,7 @@ def main() -> None:
                 local_folder=self.local_folder_var.get().strip(),
                 workdir=resolve_workdir(self.workdir_var.get().strip() or "."),
                 db=self.db_var.get().strip(),
-                threads=parse_number(self.threads_var.get(), "Threads", "12"),
+                threads=LOAD_LEVELS[self.threads_var.get()],
                 bakta_jobs=bakta_jobs,
                 start_step=parse_step_label(self.start_step_var.get()),
                 stop_step=parse_step_label(self.stop_step_var.get()),
