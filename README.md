@@ -459,7 +459,33 @@ Optional analyses
   --gmyc                   GMYC delimitation on the full core-genome tree (needs R, see below)
   --med                    Minimum Entropy Decomposition on the core alignment (adapted to one row per genome; see steps/med.py)
   --adaptml                AdaptML habitats/populations from the tree and the --niche labels (re-implementation; see steps/adaptml.py)
+
+Other delimitation methods, beside EcoSim (steps/delimitation.py; output in <species>/delimitation/)
+  --treecluster [T ...]    TreeCluster max_clade on the rerooted tree, one clustering per threshold T
+                           (substitutions/site); without values the ladder 0.001 0.003 0.01 0.03
+  --fastbaps               fastbaps (BAPS) populations from the core alignment (needs R with fastbaps)
+  --mptp                   mPTP on the rerooted tree (needs mptp)
+  --poppunk                PopPUNK strain clusters from the assemblies, in step 2 (needs poppunk)
+  --popcogent              PopCOGenT gene-flow units from the assemblies, in step 2 (needs a PopCOGenT checkout)
 ```
+
+Each method writes `<method>_membership.csv` in `ecotype_membership.csv`'s columns. TreeCluster writes one
+file per threshold (`treecluster_t0.01_membership.csv`). With `--niche`, every method's clusters are tested
+against host, niche and country beside EcoSim's ecotypes; the same goes for GMYC's and MED's.
+The tests are in `method_niche_association.csv` and the counts behind them in `method_niche_crosstab.csv`,
+both in the EcoSim output folder. The genome methods (PopPUNK, PopCOGenT) run on the ingroup only, since an
+outgroup's distances would set their thresholds. The tools are not in `environment.yml`; they need their own
+conda environments, added to the end of `PATH` so they don't hide the pipeline's own Python:
+
+```bash
+mamba create -n delimitation -c conda-forge -c bioconda poppunk treecluster "setuptools<81"   # PopPUNK 2.7 imports pkg_resources
+mamba create -n fastbaps -c conda-forge -c bioconda r-fastbaps
+export PATH="$PATH:$HOME/miniforge3/envs/delimitation/bin:$HOME/miniforge3/envs/fastbaps/bin"
+```
+
+The `delimitation` environment takes about 2.6 GB. Bioconda has no Apple Silicon (osx-arm64) build of
+r-fastbaps; on those Macs, put `CONDA_SUBDIR=osx-64` before the second command to install the Intel build,
+which runs under Rosetta.
 
 `--gmyc` needs `Rscript` with the `ape` and `splits` packages; they are not in `environment.yml`:
 

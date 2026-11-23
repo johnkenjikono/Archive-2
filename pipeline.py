@@ -46,7 +46,8 @@ from steps.dotenv import load_dotenv
 from steps.ani import run_fastani, summarize_ani
 from steps.papers import run_paper_lookup
 from steps.interactive_tree import write_interactive_tree
-from steps.delimitation import run_treecluster, run_mptp, run_fastbaps, run_poppunk, run_popcogent
+from steps.delimitation import (run_treecluster, run_mptp, run_fastbaps, run_poppunk, run_popcogent,
+                                treecluster_thresholds, find_memberships, clear_treecluster)
 
 # Falls back to the bundled tools/ecosim.jar / tools/ dir (where bin/ lives) when env vars are unset.
 ECOSIM_JAR = _resolve_ecosim_jar()
@@ -562,9 +563,12 @@ def run_tree_pipeline(input_fasta, start_step, outgroup_id, base_dir, output_tre
         delim_dir = os.path.join(base_dir, "delimitation")
         # Only a downloaded outgroup is dropped; a type strain root is a real ingroup genome.
         og = outgroup_id if outgroup_id == "outgroup" else None
+        thresholds = treecluster_thresholds(treecluster) if treecluster is not None else []
+        if thresholds and os.path.isdir(delim_dir):
+            clear_treecluster(delim_dir)  # an earlier run's thresholds may not be this run's
         for name, wanted, run in (
-                ("TreeCluster", treecluster is not None,
-                 lambda: run_treecluster(rerooted_tree, delim_dir, treecluster, og, clone_map_path)),
+                *((f"TreeCluster (threshold {t:g})", True,
+                   lambda t=t: run_treecluster(rerooted_tree, delim_dir, t, og, clone_map_path)) for t in thresholds),
                 ("mPTP", mptp, lambda: run_mptp(rerooted_tree, delim_dir, og, clone_map_path)),
                 ("fastbaps", fastbaps, lambda: run_fastbaps(sorted_fasta, delim_dir, og, clone_map_path))):
             if wanted:
@@ -1171,7 +1175,12 @@ def run_pipeline_for_species(species_name, outgroup_name, args):
         if args.niche:
             print("\n--- Ecotype x niche association (Claude-labelled BioSample metadata) ---")
             try:
-                run_niche_analysis(ecosim_dir, species_name)
+                # The other delimitations this run asked for are tested against the same labels.
+                families = {name for name, on in (
+                    ("treecluster", args.treecluster is not None), ("mptp", args.mptp), ("fastbaps", args.fastbaps),
+                    ("poppunk", args.poppunk), ("popcogent", args.popcogent), ("gmyc", args.gmyc), ("med", args.med)) if on}
+                run_niche_analysis(ecosim_dir, species_name,
+                                   memberships=find_memberships(base_dir, ecosim_dir, families) if families else None)
             except Exception as exc:
                 print(f"Warning: niche analysis failed: {exc}", file=sys.stderr)
 
@@ -1337,9 +1346,10 @@ def main():
     parser.add_argument("--gene-content", action="store_true",
                         help="After the run, test each accessory gene for association with ecotype and list "
                              "ecotype-specific genes (gene_ecotype_association.csv, ecotype_unique_genes.csv).")
-    parser.add_argument("--treecluster", type=float, nargs="?", const=0.01, metavar="THRESHOLD",
+    parser.add_argument("--treecluster", type=float, nargs="*", metavar="THRESHOLD",
                         help="After step 6, also cluster the rerooted tree with TreeCluster (max_clade): clades whose "
-                             "tips are at most THRESHOLD substitutions/site apart (default 0.01). Needs TreeCluster.py.")
+                             "tips are at most THRESHOLD substitutions/site apart, one membership file per threshold. "
+                             "Without values, the ladder 0.001 0.003 0.01 0.03. Needs TreeCluster.py.")
     parser.add_argument("--mptp", action="store_true",
                         help="After step 6, also delimit with mPTP (multi-rate PTP) on the rerooted tree. Needs mptp.")
     parser.add_argument("--fastbaps", action="store_true",

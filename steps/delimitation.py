@@ -5,9 +5,11 @@ Tree/alignment methods (after step 6, on the deduplicated core alignment and rer
 Genome methods (in step 2, on the assemblies, which are deleted after Bakta by default):
     PopPUNK (Lees et al. 2019), PopCOGenT (Arevalo et al. 2019)
 
-Each writes <workdir>/delimitation/<method>_membership.csv in ecotype_membership.csv's columns,
-so load_membership() and the niche/ANI summaries can read it, plus the tool's raw output in
-<workdir>/delimitation/<method>/.
+Each writes <workdir>/delimitation/<method>_membership.csv in ecotype_membership.csv's columns, plus
+the tool's raw output in <workdir>/delimitation/<method>/. TreeCluster writes one per threshold
+(treecluster_t0.01_membership.csv, ...). find_memberships() lists these files together with GMYC's and
+MED's; --niche then tests each method's clusters against host, niche and country, beside EcoSim's
+ecotypes (method_niche_association.csv).
 """
 import csv
 import glob
@@ -19,6 +21,9 @@ from pathlib import Path
 from steps.parsing import load_clone_map
 
 OUTGROUP_STEM = "outgroup"  # download_outgroup.py saves the outgroup genome as outgroup.fna
+# max_clade thresholds (substitutions/site) for --treecluster without values: no single cut suits every
+# species, so a ladder from near-clonal lineages (0.001) to deep within-species splits (0.03).
+TREECLUSTER_LADDER = (0.001, 0.003, 0.01, 0.03)
 
 FASTBAPS_R = """
 args <- commandArgs(trailingOnly = TRUE)
@@ -56,18 +61,64 @@ def _run(cmd, **kwargs):
     return run
 
 
+def treecluster_thresholds(values):
+    """--treecluster's thresholds: the values given, or TREECLUSTER_LADDER when the flag has none."""
+    return sorted(set(values)) if values else list(TREECLUSTER_LADDER)
+
+
 def run_treecluster(tree, out_dir, threshold, outgroup=None, clone_map=None):
-    """TreeCluster max_clade: clades whose max pairwise tip distance is <= threshold (subs/site)."""
+    """TreeCluster max_clade: clades whose max pairwise tip distance is <= threshold (subs/site).
+    Written as method treecluster_t<threshold>, so several thresholds sit side by side."""
     raw = Path(out_dir) / "treecluster"
     raw.mkdir(parents=True, exist_ok=True)
+    method = f"treecluster_t{threshold:g}"
+    membership = _fresh(out_dir, method)
     out = raw / f"clusters_t{threshold:g}.tsv"
     _run(["TreeCluster.py", "-i", str(tree), "-o", str(out), "-t", str(threshold), "-m", "max_clade"])
     with open(out) as f:
         rows = list(csv.reader(f, delimiter="\t"))[1:]
     # -1 marks a singleton: give each its own cluster id
     cluster_of = {name: c if c != "-1" else f"singleton_{name}" for name, c in rows}
-    return write_membership(Path(out_dir) / "treecluster_membership.csv", "treecluster", cluster_of,
-                            clone_map, outgroup)
+    return write_membership(membership, method, cluster_of, clone_map, outgroup)
+
+
+def _family(method):
+    """treecluster_t0.01 -> treecluster; med_<species> -> med; others are their own family."""
+    return "treecluster" if method.startswith("treecluster_t") else "med" if method.startswith("med") else method
+
+
+def find_memberships(base_dir, ecosim_out_dir, families=None):
+    """{method: membership csv} for every delimitation besides EcoSim that a run wrote: delimitation/,
+    GMYC's (in the EcoSim folder) and MED's (med_output_<species>/). families: only these methods
+    ("treecluster", "fastbaps", "gmyc", ...), e.g. the ones this run asked for, so files an earlier run
+    left in the folder are not tested again."""
+    base_dir, ecosim_out_dir = Path(base_dir), Path(ecosim_out_dir)
+    found = {p.name[:-len("_membership.csv")]: p for p in sorted((base_dir / "delimitation").glob("*_membership.csv"))}
+    if (ecosim_out_dir / "gmyc_membership.csv").exists():
+        found["gmyc"] = ecosim_out_dir / "gmyc_membership.csv"
+    for med in sorted(base_dir.glob("med_output_*/ecotype_membership.csv")):
+        found["med" if "med" not in found else f"med_{med.parent.name[len('med_output_'):]}"] = med
+    return {m: p for m, p in found.items() if families is None or _family(m) in families}
+
+
+def clear_treecluster(out_dir):
+    """Remove the TreeCluster memberships of an earlier run, whose thresholds may differ from this one's."""
+    for old in Path(out_dir).glob("treecluster_t*_membership.csv"):
+        old.unlink()
+
+
+def _fresh(out_dir, method):
+    """The membership path for method, with any earlier run's file removed, so a failure leaves none behind."""
+    path = Path(out_dir) / f"{method}_membership.csv"
+    path.unlink(missing_ok=True)
+    return path
+
+
+def _ingroup(genomes):
+    """The assemblies without the downloaded outgroup: the genome methods model one species, and another
+    species' distances would set their thresholds (PopPUNK split 24 C. trachomatis into 10 clusters with
+    C. muridarum in its fit, 3 without)."""
+    return [g for g in genomes if Path(g).stem != OUTGROUP_STEM]
 
 
 def parse_mptp(txt):
@@ -86,29 +137,32 @@ def run_mptp(tree, out_dir, outgroup=None, clone_map=None):
     """mPTP maximum-likelihood delimitation, rooted on and cropping the outgroup."""
     raw = Path(out_dir) / "mptp"
     raw.mkdir(parents=True, exist_ok=True)
+    membership = _fresh(out_dir, "mptp")
     cmd = ["mptp", "--ml", "--multi", "--tree_file", str(tree), "--output_file", str(raw / "mptp")]
     if outgroup:
         cmd += ["--outgroup", outgroup, "--outgroup_crop"]
     _run(cmd)
-    return write_membership(Path(out_dir) / "mptp_membership.csv", "mptp", parse_mptp(raw / "mptp.txt"),
-                            clone_map, outgroup)
+    return write_membership(membership, "mptp", parse_mptp(raw / "mptp.txt"), clone_map, outgroup)
 
 
 def run_fastbaps(fasta, out_dir, outgroup=None, clone_map=None):
     """fastbaps (R) best BAPS partition of the core alignment."""
     raw = Path(out_dir) / "fastbaps"
     raw.mkdir(parents=True, exist_ok=True)
+    membership = _fresh(out_dir, "fastbaps")
     out = raw / "fastbaps_clusters.csv"
     _run(["Rscript", "-e", FASTBAPS_R, str(fasta), str(out)])
     with open(out, newline="") as f:
         cluster_of = {r["genome"]: r["cluster"] for r in csv.DictReader(f)}
-    return write_membership(Path(out_dir) / "fastbaps_membership.csv", "fastbaps", cluster_of, clone_map, outgroup)
+    return write_membership(membership, "fastbaps", cluster_of, clone_map, outgroup)
 
 
 def run_poppunk(genomes, out_dir, threads=8):
     """PopPUNK database + DBSCAN model fit on the assemblies; clusters named by genome file stem."""
     raw = Path(out_dir) / "poppunk"
     raw.mkdir(parents=True, exist_ok=True)
+    membership = _fresh(out_dir, "poppunk")
+    genomes = _ingroup(genomes)
     rfile = raw / "rfiles.txt"
     # PopPUNK rewrites '.' and other characters in names, so it gets g0, g1, ... and they are mapped back.
     stem_of = {f"g{i}": Path(g).stem for i, g in enumerate(genomes)}
@@ -120,8 +174,7 @@ def run_poppunk(genomes, out_dir, threads=8):
           "--overwrite"])
     with open(db / "db_clusters.csv", newline="") as f:
         cluster_of = {stem_of[r["Taxon"]]: r["Cluster"] for r in csv.DictReader(f)}
-    return write_membership(Path(out_dir) / "poppunk_membership.csv", "poppunk", cluster_of,
-                            outgroup=OUTGROUP_STEM)
+    return write_membership(membership, "poppunk", cluster_of, outgroup=OUTGROUP_STEM)
 
 
 def run_popcogent(genomes, out_dir, threads=8):
@@ -131,6 +184,7 @@ def run_popcogent(genomes, out_dir, threads=8):
     POPCOGENT_DIR (the src/PopCOGenT folder), MUGSY_PATH, MUGSY_ENV (mugsyenv.sh), INFOMAP_PATH,
     and POPCOGENT_ENV if its conda env is not named PopCOGenT.
     """
+    membership = _fresh(out_dir, "popcogent")
     env = {k: os.environ.get(k) for k in ("POPCOGENT_DIR", "MUGSY_PATH", "MUGSY_ENV", "INFOMAP_PATH")}
     missing = [k for k, v in env.items() if not v]
     if missing:
@@ -140,7 +194,7 @@ def run_popcogent(genomes, out_dir, threads=8):
     for d in (genome_dir, align_dir):
         d.mkdir(parents=True, exist_ok=True)
     # PopCOGenT globs one extension and names strains by file stem, so link every genome in as <stem>.fasta.
-    for g in genomes:
+    for g in _ingroup(genomes):
         link = genome_dir / f"{Path(g).stem}.fasta"
         link.unlink(missing_ok=True)
         link.symlink_to(Path(g).resolve())
@@ -159,5 +213,4 @@ def run_popcogent(genomes, out_dir, threads=8):
         raise RuntimeError(f"PopCOGenT wrote no cluster table in {raw}")
     with open(tab[0], newline="") as f:
         cluster_of = {r["Strain"]: r["Main_cluster"] for r in csv.DictReader(f, delimiter="\t")}
-    return write_membership(Path(out_dir) / "popcogent_membership.csv", "popcogent", cluster_of,
-                            outgroup=OUTGROUP_STEM)
+    return write_membership(membership, "popcogent", cluster_of, outgroup=OUTGROUP_STEM)
