@@ -62,8 +62,8 @@ class RarefactionTreeModeTest(unittest.TestCase):
                               gene_counts=[1], replicates=2, keep={"rarefaction", "rerooted_tree"}, **kwargs)
         return make_trees, ecosim
 
-    def test_default_builds_one_tree_per_draw(self):
-        make_trees, ecosim = self.run_steps()
+    def test_per_replicate_trees_builds_one_tree_per_draw(self):
+        make_trees, ecosim = self.run_steps(shared_tree=False)
         make_trees.assert_called_once()
         kwargs = ecosim.call_args.kwargs
         self.assertEqual(kwargs["tree_dir"], str(self.draw_trees))
@@ -72,8 +72,8 @@ class RarefactionTreeModeTest(unittest.TestCase):
                          ["full_core_genome_tree.nwk", "sim_species_g1_t1_tree.nwk", "sim_species_g1_t2_tree.nwk"])
         self.assertEqual(len(list((self.base / "rarefaction_fastas_core_gene_alignment").glob("*.fasta"))), 3)
 
-    def test_shared_tree_runs_every_draw_against_the_full_tree(self):
-        make_trees, ecosim = self.run_steps(shared_tree=True)
+    def test_default_runs_every_draw_against_the_full_tree(self):
+        make_trees, ecosim = self.run_steps()
         make_trees.assert_not_called()
         kwargs = ecosim.call_args.kwargs
         self.assertIsNone(kwargs["tree_dir"])
@@ -81,12 +81,12 @@ class RarefactionTreeModeTest(unittest.TestCase):
         self.assertFalse(self.draw_trees.exists())
 
     def test_shared_tree_step_7_removes_per_draw_trees_from_an_earlier_run(self):
-        self.run_steps()
+        self.run_steps(shared_tree=False)
         self.run_steps(shared_tree=True)
         self.assertFalse(self.draw_trees.exists())
 
     def test_shared_tree_resume_at_step_8_reruns_results_made_on_per_draw_trees(self):
-        self.run_steps()
+        self.run_steps(shared_tree=False)
         self.out.mkdir(exist_ok=True)
         stale = self.out / "sim_species_g1_t1_results.xml"
         stale.write_text("<xml/>")
@@ -95,16 +95,26 @@ class RarefactionTreeModeTest(unittest.TestCase):
         self.assertFalse(stale.exists())
         self.assertFalse(self.draw_trees.exists())
 
-    def test_default_resume_at_step_8_without_per_draw_trees_refuses(self):
+    def test_per_replicate_trees_resume_at_step_8_without_per_draw_trees_refuses(self):
         # Falling back to the full tree for every draw would make the rarefaction vacuous.
-        self.run_steps(shared_tree=True)
+        self.run_steps()
         with self.assertRaises(SystemExit):
-            self.run_steps(start_step=8)
+            self.run_steps(start_step=8, shared_tree=False)
 
-    def test_default_resume_at_step_8_with_per_draw_trees_uses_them(self):
+    def test_default_resume_at_step_8_without_per_draw_trees_uses_the_full_tree(self):
         self.run_steps()
         _, ecosim = self.run_steps(start_step=8)
+        self.assertIsNone(ecosim.call_args.kwargs["tree_dir"])
+
+    def test_default_resume_at_step_8_keeps_an_earlier_per_draw_run(self):
+        # A run from when per-draw trees were the default must not lose its finished results.
+        self.run_steps(shared_tree=False)
+        self.out.mkdir(exist_ok=True)
+        done = self.out / "sim_species_g1_t1_results.xml"
+        done.write_text("<xml/>")
+        _, ecosim = self.run_steps(start_step=8)
         self.assertEqual(ecosim.call_args.kwargs["tree_dir"], str(self.draw_trees))
+        self.assertTrue(done.exists())
 
 
 if __name__ == "__main__":

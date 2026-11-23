@@ -409,7 +409,7 @@ def run_panaroo(gff_files: list[Path], roary_dir: Path, threads: int, error_log=
 def run_tree_pipeline(input_fasta, start_step, outgroup_id, base_dir, output_tree_name=None, threads=8, dedup=True,
                       clone_threshold=DEFAULT_CLONE_THRESHOLD,
                       keep=None, full_core=True, gene_counts=None, replicates=20, each_gene=False,
-                      stop_step=10, mask_recombination=False, shared_tree=False, sample_size=None, seed=42,
+                      stop_step=10, mask_recombination=False, shared_tree=None, sample_size=None, seed=42,
                       gmyc=False, med=False):
     """sample_size: after collapsing clones, randomly trim to this many representatives (None keeps them all)."""
     keep = DEFAULT_KEEP if keep is None else keep
@@ -442,6 +442,12 @@ def run_tree_pipeline(input_fasta, start_step, outgroup_id, base_dir, output_tre
     final_rerooted_dir = os.path.join(base_dir, "rerooted_trees")
     rarefaction_out_dir = os.path.join(base_dir, f"rarefaction_fastas_{species_name}")
     rarefaction_tree_dir = os.path.join(base_dir, f"rarefaction_trees_{species_name}")
+    if shared_tree is None:
+        # Neither flag given: a new step 7 uses the shared tree, but a resume keeps the per-draw trees an
+        # earlier run built (the old default) instead of deleting its finished EcoSim results.
+        shared_tree = start_step <= 7 or not glob.glob(os.path.join(rarefaction_tree_dir, "*.nwk"))
+        if not shared_tree:
+            print("Per-draw trees from an earlier run found; using them (pass --shared-tree to rerun on the full tree).")
     temp_rare_trees = os.path.join(base_dir, f"pipeline_temp_{species_name}", "rarefaction_trees_unrooted")
     ecosim_out_dir = os.path.join(base_dir, f"ecosim_output_{species_name}")
     # Kept with the EcoSim results: rarefaction/tree intermediates are deleted after step 8.
@@ -1220,10 +1226,11 @@ def main():
                              "(one EcoSim run per core gene: can be thousands)")
     parser.add_argument("--no-full-core", action="store_true",
                         help="Don't run EcoSim on the complete core genome (skips the rarefaction vs. full-core comparison)")
-    parser.add_argument("--shared-tree", action="store_true", default=True,
-                        help="Default, kept so old commands still work: every rarefaction replicate runs against the "
-                             "step-6 full core-genome tree (the lab's Rare.sh protocol)")
-    parser.add_argument("--per-replicate-trees", dest="shared_tree", action="store_false",
+    parser.add_argument("--shared-tree", action="store_true", default=None,
+                        help="Every rarefaction replicate runs against the step-6 full core-genome tree (the lab's "
+                             "Rare.sh protocol). The default for a new step 7; a run resumed at step 8 keeps the "
+                             "per-draw trees an earlier run built unless this is given")
+    parser.add_argument("--per-replicate-trees", dest="shared_tree", action="store_false", default=None,
                         help="Build one tree per rarefaction replicate (step 7b) instead of reusing the full "
                              "core-genome tree. EcoSim bins sequences on the tree it is given, so with the shared "
                              "tree the replicates differ only in alignment length")
