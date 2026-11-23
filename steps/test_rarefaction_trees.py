@@ -1,4 +1,5 @@
 """Run from the repo root: python -m unittest steps.test_rarefaction_trees"""
+import shutil
 import tempfile
 import unittest
 from pathlib import Path
@@ -16,6 +17,11 @@ def fake_make_trees(final_folder, tree_folder, **_):
     Path(tree_folder).mkdir(parents=True, exist_ok=True)
     for fasta in Path(final_folder).glob("*.fasta"):
         (Path(tree_folder) / f"{fasta.stem}_tree.nwk").write_text(TREE)
+
+
+def fake_reroot(fasta, unrooted, rooted, outgroup_name=None):
+    shutil.copy(unrooted, rooted)
+    return True
 
 
 class RarefactionTreeModeTest(unittest.TestCase):
@@ -47,10 +53,11 @@ class RarefactionTreeModeTest(unittest.TestCase):
         jar.write_text("")
         self.patches = [mock.patch.object(pipeline, "ECOSIM_JAR", str(jar)),
                         mock.patch.object(pipeline, "make_trees_batch", side_effect=fake_make_trees),
+                        mock.patch.object(pipeline, "reroot_tree_by_first_fasta", side_effect=fake_reroot),
                         mock.patch.object(pipeline, "run_ecosim_batch", return_value=1)]
 
     def run_steps(self, start_step=7, **kwargs):
-        with self.patches[0], self.patches[1] as make_trees, self.patches[2] as ecosim:
+        with self.patches[0], self.patches[1] as make_trees, self.patches[2], self.patches[3] as ecosim:
             run_tree_pipeline(str(self.alignment), start_step, "outgroup", str(self.base), threads=1, stop_step=8,
                               gene_counts=[1], replicates=2, keep={"rarefaction", "rerooted_tree"}, **kwargs)
         return make_trees, ecosim
@@ -84,7 +91,7 @@ class RarefactionTreeModeTest(unittest.TestCase):
         self.out.mkdir(exist_ok=True)
         stale = self.out / "sim_species_g1_t1_results.xml"
         stale.write_text("<xml/>")
-        _, ecosim = self.run_steps(start_step=8)
+        _, ecosim = self.run_steps(start_step=8, shared_tree=True)
         self.assertIsNone(ecosim.call_args.kwargs["tree_dir"])
         self.assertFalse(stale.exists())
         self.assertFalse(self.draw_trees.exists())

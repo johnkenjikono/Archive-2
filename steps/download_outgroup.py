@@ -9,7 +9,10 @@ import zipfile
 from itertools import combinations
 from pathlib import Path
 
-from steps.ani import load_ani, run_fastani
+try:
+    from steps.ani import load_ani, run_fastani
+except ImportError:  # run as a script from steps/
+    from ani import load_ani, run_fastani
 
 
 def _datasets_summary(taxon, reference_only=False, from_type=False):
