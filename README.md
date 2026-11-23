@@ -25,6 +25,7 @@ Run it from the desktop window (`python ui/ui.py`) or from the terminal, one spe
   - [On Modal (cloud Linux)](#on-modal-cloud-linux)
 - [How the pipeline works](#how-the-pipeline-works)
 - [Outputs](#outputs)
+  - [Isolate metadata](#isolate-metadata---niche---curated-metadata)
 - [Performance tuning](#performance-tuning)
 - [Running steps on their own](#running-steps-on-their-own)
 - [Repository layout](#repository-layout)
@@ -453,6 +454,7 @@ Optional analyses
   --ani                    FastANI all-vs-all on the genomes (step 2), then ANI within vs. between ecotypes
   --papers                 Each genome's BioProject and linked PubMed papers, with Claude summaries (ANTHROPIC_API_KEY)
   --niche                  Ecotype x host/niche/country association from BioSample metadata (ANTHROPIC_API_KEY)
+  --curated-metadata       --niche with the tiered, evidence-linked curation (see "Isolate metadata")
 ```
 
 ---
@@ -521,6 +523,9 @@ ecosim_output_core_gene_alignment/
 ├── full_core_tree_support.nwk        # step-5 tree (unrooted) with support values
 ├── ecotype_ani.csv                   # --ani: ANI within vs. between ecotypes (+ to the outgroup)
 ├── genome_sources.csv, papers.csv    # --papers: BioProject, submitter, linked papers + Claude summaries
+├── genome_metadata.csv               # --niche: host, niche, country, year per genome (+ evidence with --curated-metadata)
+├── ecotype_niche_association.csv     # --niche: chi-squared, Cramer's V and permutation p per variable
+├── ecotype_x_<variable>.csv          # --niche: ecotype x category counts
 ├── rarefaction_comparison.csv        # per replicate vs. full core: count difference, adjusted Rand index, ecotypes recovered
 ├── rarefaction_by_gene_count.csv     # the same, averaged per gene count
 ├── ecotype_support.csv               # per full-core ecotype: share of replicates that recover it exactly, per gene count
@@ -550,6 +555,25 @@ python steps/visualize_ecotypes.py Species_name/ecosim_output_core_gene_alignmen
 python steps/post_processing.py Species_name/ecosim_output_core_gene_alignment
 # → .../parsed_results/*.xlsx
 ```
+
+### Isolate metadata (`--niche`, `--curated-metadata`)
+
+`--niche` fetches each genome's NCBI BioSample record, labels where it came from, and tests whether ecotypes differ in host, niche and country. By default one Claude pass invents about 10 niche labels per species. `--curated-metadata` (which turns on `--niche`) replaces that pass with a tiered curation adapted from the Olm lab's Microbiome Repo, so labels are comparable across species and every value can be checked:
+
+| Tier | What it does | Confidence column |
+|---|---|---|
+| Rules (no model) | Drops missing values, parses country and year, and maps a field straight to the vocabulary when it equals a known synonym ("blood", "CSF", "soil") or names a vocabulary ontology id whose label agrees ("rhizosphere [ENVO:00005801]"; "soil [ENVO:00002007]" is rejected, because that id is sediment). The first informative field decides the source | high |
+| Haiku (`claude-haiku-5-5`) | Maps each remaining distinct record to the vocabulary and quotes the words it used. Kept only if it says it is certain and the quote is found in the field it names | medium |
+| Two Sonnet runs (`claude-sonnet-5-5`) | Run on whatever Haiku could not settle, independently (records in opposite orders). A host or source is kept when both runs agree and both quotes check out | medium |
+| Opus (`claude-opus-5-5`) | Settles the Sonnet disagreements from the record text. Anything it cannot back with a quote is withheld as `unknown` rather than guessed | low |
+
+The confidence values are tiers of the method, not measured probabilities. Answers are limited to the vocabulary by the request's JSON schema, models see only the record text (not the species, so the same string gets the same answer in every species), and model answers are cached per distinct record in `<workdir>/metadata_curation_cache.json`, keyed on the normalized record, the vocabulary version and the models. A string such as "blood" is classified once across all species; failed requests are not cached. The models for each tier are set in `TIERS` at the top of `steps/metadata_curation.py`.
+
+**Vocabulary** (`steps/metadata_vocabulary.json`, versioned): about 45 hosts with NCBI Taxonomy ids (species, plus groups such as birds or plants, `no host` and `unknown`) and about 160 source terms with ENVO, UBERON, PO or FoodOn ids, all checked against EBI OLS (`--verify-vocabulary`). Every term belongs to one of 41 fixed niches (blood, gastrointestinal tract, meat and poultry, food processing environment, soil, wastewater …) and to a source category built from the 24 MIxS extensions (human-associated, food, soil, water …). A body site's category follows the host: feces from a human is human-associated (MIxS human-gut), from a cow animal-associated. Countries are checked against the INSDC country list.
+
+**Outputs:** `genome_metadata.csv` keeps its columns (`host` and `niche` now come from the vocabulary) and gains `source_category`, `mixs_extension`, `source_term`, `source_term_id`, `body_site` / `food` / `environment`, `host_taxid`, `country_insdc`, `vocabulary_version`, and for both host and source the evidence field, quote, tier, model and confidence. `ecotype_niche_association.csv` gains a `source_category` row. The interactive tree reads the same `host` / `niche` / `country` / `year` columns as before.
+
+**Cost:** on 200-genome samples of *Listeria*, *B. subtilis* and *P. putida* the rules alone settle 53–80% of genomes (counting records that say nothing about the source, which need no model), leaving 33–82 distinct records for the models. At list prices that is an estimated $0.06–0.11 per species if 30% of those records escalate past Haiku, and at most about $0.40 if every one does; less as the cache fills. `python steps/metadata_curation.py --dry-run summary.jsonl` gives the numbers for any species without calling the API, and a real run prints its measured token use and cost.
 
 ---
 
@@ -599,6 +623,13 @@ python steps/post_processing.py ecosim_results # per-ecotype membership spreadsh
 # needs ANTHROPIC_API_KEY. Same as `pipeline.py --niche`.)
 python steps/niche_metadata.py Species_name/ecosim_output_core_gene_alignment "Species name"
 
+# The same with the tiered curation (same as `pipeline.py --curated-metadata`). --dry-run applies only the
+# rules to `datasets summary genome ... --as-json-lines` output and estimates the API cost (no API calls);
+# --verify-vocabulary checks every vocabulary id against EBI OLS.
+python steps/metadata_curation.py Species_name/ecosim_output_core_gene_alignment "Species name"
+python steps/metadata_curation.py --dry-run summary.jsonl
+python steps/metadata_curation.py --verify-vocabulary
+
 # Source BioProjects and papers (same as `pipeline.py --papers`; --no-summaries skips Claude).
 # NCBI requests retry on throttling and dropped connections; an optional NCBI_API_KEY
 # raises NCBI's limit from 3 to 10 requests a second.
@@ -633,6 +664,8 @@ steps/             One module per pipeline step, each also runnable on its own
   run_ecosim.py             Step 8: EcoSim batch runner
   parsing.py                Step 9: ecotype counts
   niche_metadata.py         Optional (--niche): ecotype x host/niche/country association
+  metadata_curation.py      Optional (--curated-metadata): tiered, evidence-linked labelling for --niche
+  metadata_vocabulary.json  Its fixed host / source vocabulary (ENVO, UBERON, PO, FoodOn, NCBI Taxonomy ids)
   ani.py                    Optional (--ani): FastANI, ANI within vs. between ecotypes
   papers.py                 Optional (--papers): source BioProjects, PubMed papers, Claude summaries
   interactive_tree.py       Step 10: clickable HTML tree
@@ -641,6 +674,15 @@ steps/             One module per pipeline step, each also runnable on its own
 ui/                Desktop window
   ui.py                     Same options as pipeline.py, live log, Start/Stop
   test_ui.py                Unit tests for the window's validation and commands
+
+catalogue/         Isolate metadata catalogue: the --curated-metadata labelling for every bacterial genome
+                   on NCBI at complete or chromosome level (python -m catalogue.build; see catalogue/README.md)
+  build.py                  Commands: harvest, prepare, run, verify, assemble, status
+  crosscheck.py             verify: Claude Fable 5.2 relabels every model-decided record; a Fable judge settles disputes
+  ncbi.py                   NCBI Datasets harvest and taxonomy lookups (resumable, cached)
+  hosts.py                  Host names and taxids placed in the vocabulary through their NCBI lineage
+  batch.py                  Message Batches transport with a hard budget, a spend ledger and resumable batches
+  test_catalogue.py         Unit tests (NCBI and the API faked)
 
 tools/             Bundled EcoSim
   ecosim.jar, bin/          EcoSim and its native helpers (macOS arm64)
@@ -679,4 +721,5 @@ If this pipeline contributes to published work, please cite the tools it runs:
 - **Ecotype Simulation**: Koeppel A. *et al.* (2008). Identifying the fundamental units of bacterial diversity: a paradigm shift to incorporate ecology into bacterial systematics. *PNAS*.
 - **Gubbins** (`--mask-recombination`): Croucher N.J. *et al.* (2015). Rapid phylogenetic analysis of large samples of recombinant bacterial whole genome sequences using Gubbins. *Nucleic Acids Research*.
 - **FastANI** (`--ani`): Jain C. *et al.* (2018). High throughput ANI analysis of 90K prokaryotic genomes reveals clear species boundaries. *Nature Communications*.
+- **MIxS** (`--curated-metadata` source categories): Yilmaz P. *et al.* (2011). Minimum information about a marker gene sequence (MIMARKS) and minimum information about any (x) sequence (MIxS) specifications. *Nature Biotechnology*. The vocabulary also uses ids from ENVO, UBERON, the Plant Ontology, FoodOn and NCBI Taxonomy, and the tiered design follows the Olm lab's Microbiome Repo (microbiomerepo.com).
 - **NCBI Datasets**: O'Leary N.A. *et al.* (2024). Exploring and retrieving sequence and metadata for species across the tree of life with NCBI Datasets. *Scientific Data*.

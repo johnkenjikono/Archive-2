@@ -33,7 +33,8 @@ except ImportError:  # run as a script: python steps/niche_metadata.py
 LLM_MODEL = "claude-opus-5"
 # Fields Claude sees; country and year are parsed without it.
 LLM_FIELDS = ("host", "host_disease", "isolation_source", "sample_type", "source_type",
-              "env_broad_scale", "env_local_scale", "env_medium", "host_tissue_sampled", "host_body_site")
+              "env_broad_scale", "env_local_scale", "env_medium", "host_tissue_sampled", "host_body_site",
+              "host_taxid")
 CHUNK = 200  # distinct field combinations per Claude request
 PERMUTATIONS = 2000
 UNKNOWN = "unknown"
@@ -182,7 +183,7 @@ def run_niche_analysis(ecosim_out_dir, species, labeler=label_with_claude, fetch
 
     meta = fetcher(sorted(ecotype_of))
     keys = sorted({_llm_key(meta.get(a, {})) for a in ecotype_of})
-    print(f"Asking {LLM_MODEL} to label {len(keys)} distinct metadata record(s)")
+    print(f"Asking {getattr(labeler, 'name', LLM_MODEL)} to label {len(keys)} distinct metadata record(s)")
     labels = labeler(species, keys)
 
     columns = {"host": {}, "niche": {}, "country": {}}

@@ -61,3 +61,6 @@ tools/intel/
 
 # Secrets (API keys)
 .env
+
+# Isolate metadata catalogue work directory (python -m catalogue.build)
+catalogue_work/

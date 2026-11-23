@@ -37,6 +37,7 @@ from steps.recombination import mask_recombinant_regions, find_presence_absence,
 from steps.visualize_ecotypes import plot_folder
 from steps.outputs import KEEP_ITEMS, DEFAULT_KEEP, resolve_keep
 from steps.niche_metadata import run_niche_analysis
+from steps.metadata_curation import run_curated_niche_analysis
 from steps.dotenv import load_dotenv
 from steps.ani import run_fastani, summarize_ani
 from steps.papers import run_paper_lookup
@@ -807,7 +808,8 @@ def write_run_parameters(base_dir, species_name, outgroup_name, args):
         **{k: v for k, v in vars(args).items()
            if k in ("sample_size", "seed", "start_step", "threads", "no_dedup", "clone_threshold", "no_full_core",
                     "gene_counts", "replicates", "each_gene", "outgroup_id", "db",
-                    "stop_step", "ani", "papers", "niche", "oversample", "mask_recombination")},
+                    "stop_step", "ani", "papers", "niche", "curated_metadata", "oversample",
+                    "mask_recombination")},
         # The settings above do not pin the software, and the tools and the Bakta database are
         # both unpinned, so without these a result cannot be reproduced or even diagnosed later.
         "software": collect_provenance(getattr(args, "db", None)),
@@ -1009,7 +1011,7 @@ def run_pipeline_for_species(species_name, outgroup_name, args):
         if args.niche:
             print("\n--- Ecotype x niche association (Claude-labelled BioSample metadata) ---")
             try:
-                run_niche_analysis(ecosim_dir, species_name)
+                (run_curated_niche_analysis if args.curated_metadata else run_niche_analysis)(ecosim_dir, species_name)
             except Exception as exc:
                 print(f"Warning: niche analysis failed: {exc}", file=sys.stderr)
 
@@ -1133,6 +1135,10 @@ def main():
     parser.add_argument("--niche", action="store_true",
                         help="After the run, fetch NCBI BioSample metadata, have Claude label host/niche, and test "
                              "ecotype x niche association. Needs ANTHROPIC_API_KEY.")
+    parser.add_argument("--curated-metadata", action="store_true",
+                        help="Turns on --niche and labels the metadata with the tiered curation instead of one Claude "
+                             "pass: rules, Haiku, two agreeing Sonnet runs, Opus for disagreements, a fixed MIxS/ENVO "
+                             "vocabulary and a quote for every value (steps/metadata_curation.py).")
     parser.add_argument("--ani", action="store_true",
                         help="Run FastANI all-vs-all on the genomes (step 2) and compare ANI within vs. between "
                              "ecotypes (ecotype_ani.csv). Needs fastANI on PATH.")
@@ -1156,6 +1162,8 @@ def main():
         args.oversample = 0
     if args.replicates < 1 or any(n < 1 for n in args.gene_counts):
         parser.error("--replicates and --gene-counts must be positive")
+    if args.curated_metadata:
+        args.niche = True
     # Check now rather than after hours of annotation.
     if args.mask_recombination and args.start_step <= 4 and not gubbins_command():
         parser.error(f"--mask-recombination needs Gubbins: conda env create -f environment-gubbins.yml "
