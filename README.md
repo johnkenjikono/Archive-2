@@ -473,8 +473,10 @@ Each method writes `<method>_membership.csv` in `ecotype_membership.csv`'s colum
 file per threshold (`treecluster_t0.01_membership.csv`). With `--niche`, every method's clusters are tested
 against host, niche and country beside EcoSim's ecotypes; the same goes for GMYC's and MED's.
 The tests are in `method_niche_association.csv` and the counts behind them in `method_niche_crosstab.csv`,
-both in the EcoSim output folder. The genome methods (PopPUNK, PopCOGenT) run on the ingroup only, since an
-outgroup's distances would set their thresholds. The tools are not in `environment.yml`; they need their own
+both in the EcoSim output folder. PopPUNK, PopCOGenT and fastbaps run on the ingroup only, since an outgroup's
+distances would set their thresholds. With the *C. muridarum* outgroup in its alignment, fastbaps split 23
+*C. trachomatis* genomes 22 + 1; without it, it found 4 populations, which refine PopPUNK's 3 lineages.
+The tools are not in `environment.yml`; they need their own
 conda environments, added to the end of `PATH` so they don't hide the pipeline's own Python:
 
 ```bash

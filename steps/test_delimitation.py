@@ -87,6 +87,24 @@ class PopPUNKTest(unittest.TestCase):
             self.assertEqual(sorted(load_membership(out)[1]), ["GCA_1.1", "GCA_2.1"])
 
 
+class FastbapsIngroupTest(unittest.TestCase):
+    def test_the_outgroup_is_left_out_of_the_alignment(self):
+        seen = {}
+
+        def fake_run(cmd, **kwargs):  # Rscript -e <script> <alignment> <out csv>
+            seen["fasta"] = Path(cmd[3]).read_text()
+            Path(cmd[4]).write_text("genome,cluster\nGCA_1.1,1\nGCA_2.1,2\n")
+
+        with tempfile.TemporaryDirectory() as d, mock.patch.object(delimitation, "_run", fake_run):
+            aln = Path(d) / "aln.fasta"
+            aln.write_text(">GCA_1.1\nACGT\n>outgroup\nTTTT\n>GCA_2.1 a description\nACGA\n")
+            out = run_fastbaps(aln, d, outgroup="outgroup")
+            self.assertEqual(seen["fasta"], ">GCA_1.1\nACGT\n>GCA_2.1 a description\nACGA\n")
+            self.assertEqual(sorted(load_membership(out)[1]), ["GCA_1.1", "GCA_2.1"])
+            run_fastbaps(aln, d)  # without an outgroup (a type strain root) every record stays
+            self.assertIn(">outgroup", seen["fasta"])
+
+
 class StaleOutputTest(unittest.TestCase):
     def test_a_failed_rerun_leaves_no_earlier_membership(self):
         def broken(cmd, **kwargs):

@@ -145,11 +145,30 @@ def run_mptp(tree, out_dir, outgroup=None, clone_map=None):
     return write_membership(membership, "mptp", parse_mptp(raw / "mptp.txt"), clone_map, outgroup)
 
 
+def _without(fasta, drop, out_path):
+    """A copy of an alignment without the records named in drop. Returns how many records were left out."""
+    keep, dropped = True, 0
+    with open(fasta) as src, open(out_path, "w") as dst:
+        for line in src:
+            if line.startswith(">"):
+                keep = line[1:].split()[0] not in drop if line[1:].split() else True
+                dropped += not keep
+            if keep:
+                dst.write(line)
+    return dropped
+
+
 def run_fastbaps(fasta, out_dir, outgroup=None, clone_map=None):
-    """fastbaps (R) best BAPS partition of the core alignment."""
+    """fastbaps (R) best BAPS partition of the core alignment, on the ingroup only. Another species' sequence
+    takes over BAPS's partition: with the C. muridarum outgroup in the alignment, 23 C. trachomatis genomes
+    split 22 + 1; without it, into 4 populations that refine PopPUNK's 3 lineages."""
     raw = Path(out_dir) / "fastbaps"
     raw.mkdir(parents=True, exist_ok=True)
     membership = _fresh(out_dir, "fastbaps")
+    if outgroup:
+        ingroup = raw / "ingroup.fasta"
+        _without(fasta, {outgroup}, ingroup)
+        fasta = ingroup
     out = raw / "fastbaps_clusters.csv"
     _run(["Rscript", "-e", FASTBAPS_R, str(fasta), str(out)])
     with open(out, newline="") as f:
