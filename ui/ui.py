@@ -176,7 +176,7 @@ class FormValues:
 
 # pipeline.py's optional delimitation methods, with their checkbox labels.
 DELIMITATION = {
-    "treecluster": "TreeCluster on the rerooted tree (threshold 0.01)",
+    "treecluster": "TreeCluster on the rerooted tree (thresholds 0.001-0.03)",
     "mptp": "mPTP on the rerooted tree",
     "fastbaps": "fastbaps on the core alignment (needs R)",
     "poppunk": "PopPUNK on the genomes (step 2)",

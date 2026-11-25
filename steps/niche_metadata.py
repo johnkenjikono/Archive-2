@@ -9,6 +9,10 @@ Writes into the EcoSim output folder:
   genome_metadata.csv           one row per genome: host, niche, country, year + the raw_* fields Claude saw
   ecotype_x_<variable>.csv      ecotype x category counts (host, niche, country)
   ecotype_niche_association.csv chi-squared, Cramer's V and permutation p-value per variable
+With other delimitations (TreeCluster, fastbaps, PopPUNK, GMYC, MED ...; see delimitation.find_memberships),
+the same tests for each of them beside EcoSim's ecotypes:
+  method_niche_association.csv  one row per method and variable
+  method_niche_crosstab.csv     method, variable, cluster, category, genomes
 
 Needs ANTHROPIC_API_KEY.
 
@@ -169,32 +173,43 @@ def write_crosstab(path, ecotype_of, category_of):
             writer.writerow([eco] + [table[(eco, c)] for c in categories])
 
 
-def run_niche_analysis(ecosim_out_dir, species, labeler=label_with_claude, fetcher=fetch_biosamples):
-    """Run the whole step on one EcoSim output folder. Returns the association CSV path, or None."""
+def _genomes(cluster_of):
+    return {a: c for a, c in cluster_of.items() if a.startswith(("GCA_", "GCF_"))}
+
+
+def run_niche_analysis(ecosim_out_dir, species, labeler=label_with_claude, fetcher=fetch_biosamples,
+                       memberships=None):
+    """Run the whole step on one EcoSim output folder. Returns the association CSV path, or None.
+    memberships: {method: membership csv} of other delimitations, tested against the same labels."""
     out = Path(ecosim_out_dir)
     membership_csv = out / "ecotype_membership.csv"
     if not membership_csv.exists():
         print(f"No {membership_csv.name} in {out}; skipping niche analysis.")
         return None
     xml_used, ecotype_of = load_membership(membership_csv)
-    ecotype_of = {a: e for a, e in ecotype_of.items() if a.startswith(("GCA_", "GCF_"))}
-    print(f"Niche analysis on {xml_used}: {len(ecotype_of)} genomes")
+    ecotype_of = _genomes(ecotype_of)
+    others = {method: _genomes(load_membership(path)[1]) for method, path in (memberships or {}).items()}
+    genomes = set(ecotype_of).union(*others.values())  # usually the same genomes; labelled once either way
+    print(f"Niche analysis on {xml_used}: {len(ecotype_of)} genomes"
+          + (f"; also {', '.join(others)} ({len(genomes)} genomes in all)" if others else ""))
 
-    meta = fetcher(sorted(ecotype_of))
-    keys = sorted({_llm_key(meta.get(a, {})) for a in ecotype_of})
+    meta = fetcher(sorted(genomes))
+    keys = sorted({_llm_key(meta.get(a, {})) for a in genomes})
     print(f"Asking {LLM_MODEL} to label {len(keys)} distinct metadata record(s)")
     labels = labeler(species, keys)
 
     columns = {"host": {}, "niche": {}, "country": {}}
+    for acc in genomes:
+        attrs = meta.get(acc, {})
+        columns["host"][acc], columns["niche"][acc] = labels.get(_llm_key(attrs), (UNKNOWN, UNKNOWN))
+        columns["country"][acc] = country_and_year(attrs)[0]
     with open(out / "genome_metadata.csv", "w", newline="") as f:
         writer = csv.writer(f)
         writer.writerow(["accession", "ecotype", "host", "niche", "country", "year", *(f"raw_{k}" for k in LLM_FIELDS)])
         for acc in sorted(ecotype_of):
             attrs = meta.get(acc, {})
-            host, niche = labels.get(_llm_key(attrs), (UNKNOWN, UNKNOWN))
-            country, year = country_and_year(attrs)
-            columns["host"][acc], columns["niche"][acc], columns["country"][acc] = host, niche, country
-            writer.writerow([acc, ecotype_of[acc], host, niche, country, year, *(attrs.get(k, "") for k in LLM_FIELDS)])
+            writer.writerow([acc, ecotype_of[acc], columns["host"][acc], columns["niche"][acc], columns["country"][acc],
+                             country_and_year(attrs)[1], *(attrs.get(k, "") for k in LLM_FIELDS)])
 
     assoc_path = out / "ecotype_niche_association.csv"
     with open(assoc_path, "w", newline="") as f:
@@ -207,7 +222,32 @@ def run_niche_analysis(ecosim_out_dir, species, labeler=label_with_claude, fetch
             writer.writerow([variable, xml_used, *stats])
             print(f"  {variable}: n={stats[0]}, V={stats[4]}, p={stats[5]}")
     print(f"Saved {assoc_path}")
+    if others:
+        write_method_association(out, {"ecosim": ecotype_of, **others}, columns)
     return assoc_path
+
+
+def write_method_association(out, clusters, columns):
+    """Each delimitation's clusters against each variable, side by side (method_niche_association.csv),
+    and the counts behind them (method_niche_crosstab.csv). clusters: {method: {accession: cluster}}."""
+    out = Path(out)
+    with open(out / "method_niche_association.csv", "w", newline="") as f, \
+            open(out / "method_niche_crosstab.csv", "w", newline="") as g:
+        stats_out, table_out = csv.writer(f), csv.writer(g)
+        stats_out.writerow(["method", "variable", "genomes_with_data", "clusters", "categories", "chi2", "cramers_v",
+                            "permutation_p"])
+        table_out.writerow(["method", "variable", "cluster", "category", "genomes"])
+        for method, cluster_of in clusters.items():
+            for variable, category_of in columns.items():
+                stats = association(cluster_of, category_of)
+                stats_out.writerow([method, variable, *stats])
+                table = Counter((cluster_of[a], category_of.get(a, UNKNOWN)) for a in cluster_of)
+                table_out.writerows([method, variable, c, cat, n] for (c, cat), n in sorted(table.items()))
+            niche = association(cluster_of, columns["niche"])
+            print(f"  {method}: {len(set(cluster_of.values()))} clusters over {len(cluster_of)} genomes; "
+                  f"niche n={niche[0]}, V={niche[4]}, p={niche[5]}")
+    print(f"Saved {out / 'method_niche_association.csv'}")
+    return out / "method_niche_association.csv"
 
 
 def _self_test():
@@ -235,6 +275,12 @@ if __name__ == "__main__":
     if args.self_test:
         _self_test()
     elif args.ecosim_out_dir and args.species:
-        run_niche_analysis(args.ecosim_out_dir, args.species)
+        try:  # python -m steps.niche_metadata: also test the run's other delimitations
+            from steps.delimitation import find_memberships
+            out_dir = Path(args.ecosim_out_dir)
+            others = find_memberships(out_dir.parent, out_dir)
+        except ImportError:
+            others = None
+        run_niche_analysis(args.ecosim_out_dir, args.species, memberships=others)
     else:
         parser.error("give ecosim_out_dir and species, or --self-test")
