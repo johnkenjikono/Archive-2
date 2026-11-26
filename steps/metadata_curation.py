@@ -75,7 +75,10 @@ HOST_FIELDS = ("host",)
 VAGUE_HOSTS = ("other_animal", "other_plant", "no_host")
 # Engine tiers, not calibrated probabilities.
 CONFIDENCE = {"rule": "high", "haiku": "medium", "sonnet x2": "medium", "opus": "low",
-              "withheld": "none", "no evidence": "none"}
+              "withheld": "none", "no evidence": "none",
+              # The catalogue's later tiers: the Fable judge's decision between two model answers, and facts read
+              # from a linked paper, about that isolate ("paper") or about the study's isolates as a whole.
+              "fable judge": "medium", "paper": "medium", "paper (study)": "low"}
 CURATION_COLUMNS = ("source_category", "mixs_extension", "source_term", "source_term_id", "body_site",
                     "food", "environment", "source_evidence_field", "source_quote", "source_tier",
                     "source_model", "source_confidence", "host_taxid", "host_evidence_field", "host_quote",

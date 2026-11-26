@@ -19,6 +19,8 @@ python -m catalogue.build run --budget 150              # every record the rules
 python -m catalogue.build verify --budget 30 --sample 500  # pilot: Claude Fable 5.2 cross-checks 500 records
 python -m catalogue.build verify --budget 200 --effort high  # Fable cross-checks every model label, judges disputes
 python -m catalogue.build rejudge --budget 100 --sample 300  # Opus 5.5 judges 300 of those disputes again
+python -m catalogue.build papers-pilot --budget 146 --sample 200  # Fable reads 200 linked papers
+python -m catalogue.build papers-fill --budget 600 --dry-run  # price reading unknown-field genomes' papers
 python -m catalogue.build assemble                      # the catalogue table, species summary and manifest
 python -m catalogue.build status                        # what has run and what it has cost
 ```
@@ -204,7 +206,7 @@ code, while Opus answers unknown. Checked against EBI OLS, the codes support Fab
 parts; `envo_00002262`, for example, is clay soil. So Fable's judge does lean toward Fable's answers, but its extra
 changes are more often right than wrong, and the catalogue keeps its decisions.
 
-## Papers pilot (`papers-pilot`)
+## Papers (`papers-pilot`, `papers-fill`)
 
 NCBI links many genomes' BioProjects to PubMed papers. The pilot measures what reading those papers would add,
 before anyone pays to read all of them (`catalogue/papers.py`).
@@ -279,6 +281,48 @@ in waves of 100. Each wave is checked against the budget at its worst case, ever
 are cached in `papers/` and `papers_batches.json`. The report is `reports/papers_pilot_*.json`, and
 `reports/papers_pilot_*.tsv` has one row per linked genome.
 
+### Targeted run (`papers-fill`)
+
+`papers-fill` reads the papers linked to every genome whose host or source the catalogue does not know, so that
+`assemble` can fill those fields. It sends, budgets, caches and handles refusals as the pilot does, and keeps its
+answers in `papers/answers_fill/`. Each request lists only the genomes to fill, up to 30 per paper. Options:
+
+- `--full-text-only` skips papers that have only an abstract.
+- `--core-only` asks only for host, source, country and year.
+- `--narrow-refused` asks refused papers the narrow way.
+- `--dry-run` prices the run for free.
+
+Priced on 2026-11-26:
+
+| | |
+|---|---|
+| Genomes with an unknown host or source | 17,167 |
+| Of those, genomes with a linked paper | 4,673 (27%) |
+| Distinct papers | 2,760: 1,129 full texts, 1,589 abstracts, 42 with neither |
+| Expected cost, at the pilot's measured cost per paper ($0.222 a full text, $0.098 an abstract) | about $405 |
+| Expected cost, full texts only | about $250 |
+| Worst case, every request using all of its output allowance | $775 |
+
+At the pilot's rates, reading these papers would give a host or source to roughly 1,500–2,200 more genomes.
+
+### Merged into the catalogue
+
+`assemble` reads every saved paper answer, from `papers-pilot` and `papers-fill`. For each genome a paper's
+request listed, it fills the host, source, country and collection year that the catalogue does not know, and
+never replaces a known value.
+
+- **Several papers for one genome:** a paper that names the isolate wins over a study-wide statement, then full
+  text over methods-only text over an abstract, then the lowest PMID.
+- **How a filled value is marked:** a filled host or source gets tier `paper` (medium confidence) or
+  `paper (study)` (low confidence). Its evidence field is `PMID <id>` and its quote is the paper's. Its
+  category, niche and MIxS extension follow from the term, as for any other tier.
+- **Disagreements:** these are flagged in `paper_conflicts` and never applied. Every fact also goes to
+  `paper_facts.tsv.gz`.
+
+With the pilot's 178 answered papers (2026-11-25), papers gave facts for 1,701 genomes. They filled 64
+sources, 59 hosts, 35 countries and 25 collection years. The 491 host or source facts that disagree with the
+catalogue were left as flags.
+
 ## Cost
 
 Measured on 2026-11-21 (vocabulary 2026.11.2): of 30,249 distinct records the rules settle 11,018 (63,883
@@ -321,11 +365,23 @@ brings the work directory's spending to $96.91.
 | `host`, `host_taxid` | Vocabulary host (a species such as `human` or a group such as `insect`) and its NCBI taxid |
 | `host_ncbi_name`, `host_ncbi_taxid` | The exact taxon the record names, when NCBI recognises it |
 | `source_category`, `mixs_extension`, `niche`, `source_term`, `source_term_id`, `body_site` / `food` / `environment` | Where the isolate came from: one of 18 source categories, one of 41 niches, and an ENVO, UBERON, PO or FoodOn term |
-| `*_evidence_field`, `*_quote`, `*_tier`, `*_model`, `*_confidence` | For host and source: the field and the exact words each value rests on, the tier that decided it (`rule`, `haiku`, `sonnet x2`, `opus`, `fable judge`, `withheld`, `withheld by judge`, `not curated`, `no evidence`), the model, and the tier's confidence (`high`, `medium`, `low`, `none`) |
+| `*_evidence_field`, `*_quote`, `*_tier`, `*_model`, `*_confidence` | For host and source: the field and the exact words each value rests on, the tier that decided it, the model, and the tier's confidence. Tiers and confidences: `rule` high; `haiku`, `sonnet x2` and `fable judge` medium; `opus` low; `paper` medium and `paper (study)` low; `withheld`, `withheld by judge`, `not curated` and `no evidence` none. A paper's evidence field is `PMID <id>` |
 | `host_crosscheck`, `source_crosscheck`, `fable_host`, `fable_source_term`, `crosscheck_model` | The cross-check outcome per part (see "Cross-check"; `rules only` where the rules decided the whole record, `not checked` before `verify`), Fable's own answers, and the Fable model and effort |
-| `country`, `country_insdc`, `collection_year` | Parsed from `geo_loc_name` and `collection_date`; the country checked against the INSDC list |
+| `paper_pmids`, `paper_filled`, `paper_conflicts` | The linked papers read for this genome (see "Papers"), which unknown fields they filled (`host`, `source`, `country`, `collection_year`), and which fields a paper disagrees with |
+| `country`, `country_insdc`, `collection_year` | Parsed from `geo_loc_name` and `collection_date`; the country checked against the INSDC list. Filled from a paper only where BioSample gives none (see `paper_filled`) |
 | `raw_*` | The BioSample values the curation read |
 | `vocabulary_version` | Version of `steps/metadata_vocabulary.json` |
+
+`paper_facts.tsv.gz`, one row per fact a paper gave for a genome:
+- the PMID, the kind of text read, and the model;
+- whether the paper names the isolate (`genome`) or speaks for all its isolates (`study`);
+- the fact, its value and the quote;
+- the catalogue's own value, and how the two compare: `new`, `same`, `same niche`, `within range`,
+  `differs` or `in BioSample`;
+- whether the fact filled the catalogue.
+
+It also holds the facts the table has no column for (disease, isolation method, outbreak, phenotype),
+and every disagreement, for review.
 
 `species_summary.tsv`, one row per species: genomes, isolates, complete genomes, type material, genomes with a
 known source, number of source categories and their Shannon entropy, top categories, niches and hosts,

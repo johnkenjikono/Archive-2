@@ -37,10 +37,10 @@ import xml.etree.ElementTree as ET
 from pathlib import Path
 
 try:
-    from steps.metadata_curation import BATCH_DISCOUNT, PRICES, usage_cost
+    from steps.metadata_curation import BATCH_DISCOUNT, PRICES, Answer, usage_cost
     from steps.papers import _eutils, fetch_bioproject_papers, fetch_pubmed
 except ImportError:  # pragma: no cover - run from another directory
-    from metadata_curation import BATCH_DISCOUNT, PRICES, usage_cost
+    from metadata_curation import BATCH_DISCOUNT, PRICES, Answer, usage_cost
     from papers import _eutils, fetch_bioproject_papers, fetch_pubmed
 
 MODEL, EFFORT = "claude-fable-5-2", "high"
@@ -418,3 +418,120 @@ def catalogue_rows(release_tsv, accessions):
             if row["accession"] in want:
                 rows[row["accession"]] = row
     return rows
+
+
+# --- the targeted run and the merge into the catalogue ---------------------------------------------------
+KIND_RANK = {"full text": 0, "methods and tables": 1, "abstract": 2}
+
+
+def unknown_genomes(release_tsv):
+    """Accessions whose host or source the catalogue does not know from BioSample (a value a paper filled
+    counts as unknown here)."""
+    out = set()
+    with gzip.open(release_tsv, "rt", encoding="utf-8") as f:
+        for row in csv.DictReader(f, delimiter="\t"):
+            for value, tier in ((row["host"], row["host_tier"]), (row["source_term"], row["source_tier"])):
+                if value == "unknown" or tier.startswith("paper"):
+                    out.add(row["accession"])
+    return out
+
+
+def measured_costs(answers_dir, texts_dir):
+    """Mean USD per paper by text kind, from a run's saved answers (the pilot's measures the targeted run)."""
+    spent = collections.defaultdict(list)
+    for path in Path(answers_dir).glob("*.json"):
+        text = Path(texts_dir) / path.name
+        if text.exists():
+            spent[json.loads(text.read_text())["kind"]].append(json.loads(path.read_text())["usd"])
+    return {kind: sum(v) / len(v) for kind, v in spent.items() if v}
+
+
+def genome_facts(answers_dirs, texts_dir):
+    """{accession: [fact]} from every saved answer that kept the genomes its request listed. A fact is a dict:
+    pmid, kind (of the paper's text), model, scope ("genome" when the paper names the isolate, else "study"),
+    fact, value, quote. Facts whose quote is not in the paper are dropped, as in the run's report."""
+    out = collections.defaultdict(list)
+    for folder in answers_dirs:
+        for path in sorted(Path(folder).glob("*.json")) if Path(folder).exists() else ():
+            entry, pmid = json.loads(path.read_text()), path.stem
+            text_path = Path(texts_dir) / f"{pmid}.json"
+            if entry.get("answer") is None or not entry.get("listed") or not text_path.exists():
+                continue
+            paper = json.loads(text_path.read_text())
+            how = entry.get("how", "")
+            model = how.split("retried with ", 1)[1] if how.startswith("retried with ") else MODEL
+            kind = "methods and tables" if how == "narrow request" else paper["kind"]
+            for accession in entry["listed"]:
+                facts, scope, _ = facts_for(entry["answer"], accession, paper["text"])
+                for fact, (value, quote) in facts.items():
+                    out[accession].append({"pmid": pmid, "kind": kind, "model": model, "scope": scope,
+                                           "fact": fact, "value": value, "quote": quote})
+    return out
+
+
+def choose_facts(facts):
+    """One fact per field: the paper that names the isolate over a study-wide statement, then full text over
+    methods and tables over an abstract, then the lowest PMID."""
+    best = {}
+    for x in sorted(facts, key=lambda x: (x["scope"] != "genome", KIND_RANK.get(x["kind"], 3), int(x["pmid"]))):
+        best.setdefault(x["fact"], x)
+    return best
+
+
+def _key_by_label(table):
+    return {entry["label"]: key for key, entry in table.items()}
+
+
+def merge_paper_facts(d, country, year, host_disease, facts, vocab, final):
+    """Fill one genome's unknown host, source, country and collection year from its papers' facts, never
+    replacing a value the catalogue has. d: the catalogue's label columns (CuratedLabeler._final's dict);
+    final: CuratedLabeler._final, to rebuild them around a filled host or source. Returns (d, country, year,
+    {"paper_pmids", "paper_filled", "paper_conflicts"}, [rows for paper_facts.tsv])."""
+    columns = {"paper_pmids": "; ".join(sorted({x["pmid"] for x in facts}, key=int)), "paper_filled": "",
+               "paper_conflicts": ""}
+    if not facts:
+        return d, country, year, columns, []
+    catalogue = {"host": d["host"], "source_term": d["source_term"], "niche": d["niche"],
+                 "country": country or "unknown", "collection_year": year or "", "raw_host_disease": host_disease}
+    chosen = choose_facts(facts)
+    host = Answer(_key_by_label(vocab.hosts)[d["host"]], d["host_evidence_field"], d["host_quote"],
+                  d["host_tier"], d["host_model"])
+    source = Answer(_key_by_label(vocab.terms)[d["source_term"]], d["source_evidence_field"], d["source_quote"],
+                    d["source_tier"], d["source_model"])
+    filled, conflicts, rows = [], set(), []
+    for x in facts:
+        outcome = compare(catalogue, {x["fact"]: x["value"]}, vocab)[x["fact"]]
+        if outcome == "differs":
+            conflicts.add(x["fact"])
+        fill = chosen[x["fact"]] is x and outcome == "new" and x["fact"] in CORE
+        if fill:
+            tier = "paper" if x["scope"] == "genome" else "paper (study)"
+            if x["fact"] in ("host", "source"):
+                answer = Answer(x["value"], f"PMID {x['pmid']}", x["quote"], tier, x["model"])
+                host, source = (answer, source) if x["fact"] == "host" else (host, answer)
+            elif x["fact"] == "country":
+                name = vocab.country(x["value"]) or vocab.country(_country(x["value"]))
+                country, fill = (name, True) if name else (country, False)
+            elif re.fullmatch(r"(1[89]|20)\d\d", x["value"].strip()):
+                year = x["value"].strip()
+            else:
+                fill = False  # a range of years stays in paper_facts.tsv
+            if fill:
+                filled.append(x["fact"])
+        label = (vocab.hosts if x["fact"] == "host" else vocab.terms).get(x["value"], {}).get("label", x["value"]) \
+            if x["fact"] in ("host", "source") else x["value"]
+        rows.append({"pmid": x["pmid"], "paper_text": x["kind"], "model": x["model"], "scope": x["scope"],
+                     "fact": x["fact"], "value": label, "quote": x["quote"],
+                     "catalogue_value": {"host": d["host"], "source": d["source_term"], "country": catalogue["country"],
+                                         "collection_year": catalogue["collection_year"],
+                                         "disease": host_disease}.get(x["fact"], ""),
+                     "comparison": outcome, "filled": "yes" if fill else ""})
+    if {"host", "source"} & set(filled):
+        d = final(host, source)
+    columns.update(paper_filled="; ".join(f for f in CORE if f in filled),
+                   paper_conflicts="; ".join(f for f in FACTS if f in conflicts))
+    return d, country, year, columns, rows
+
+
+PAPER_FACT_COLUMNS = ["accession", "pmid", "paper_text", "model", "scope", "fact", "value", "quote", "catalogue_value",
+                      "comparison", "filled"]

@@ -17,7 +17,7 @@ from catalogue.crosscheck import (FABLE, CrossCheck, compare_judges, judged_item
 from catalogue.hosts import HostResolver, candidates
 from catalogue.ontology import OntologyResolver, codes_to_resolve, parse_codes, relation, resolve_codes
 from catalogue.ncbi import compact, harvest, iter_assemblies, mag_accessions, resolve_taxa
-from steps.metadata_curation import PRICES, CuratedLabeler, Vocabulary, usage_cost
+from steps.metadata_curation import PRICES, Answer, CuratedLabeler, Vocabulary, usage_cost
 from steps.test_metadata_curation import HAIKU, OPUS, SONNET, FakeClient, key, label
 
 
@@ -755,6 +755,82 @@ class PapersTest(unittest.TestCase):
         self.assertEqual(papers.parse_message(message), ({"a": 1}, "ok"))
         self.assertEqual(papers.parse_message(SimpleNamespace(stop_reason="max_tokens", content=[])),
                          (None, "max_tokens"))
+
+
+class PaperMergeTest(unittest.TestCase):
+    """Facts read from linked papers fill only what the catalogue does not know."""
+
+    def setUp(self):
+        self.vocab = Vocabulary()
+        self.labeler = CuratedLabeler(vocab=self.vocab, log=quiet)
+
+    def fact(self, fact, value, pmid="11", kind="full text", scope="genome", quote="q"):
+        return {"pmid": pmid, "kind": kind, "model": papers.MODEL, "scope": scope, "fact": fact, "value": value,
+                "quote": quote}
+
+    def test_unknowns_are_filled_and_known_values_kept(self):
+        unknown = self.labeler._final(Answer("unknown"), Answer("unknown"))
+        facts = [self.fact("host", "human", quote="bacteraemia patients"),
+                 self.fact("source", "feces", pmid="9", kind="abstract", scope="study"),  # loses to the next one
+                 self.fact("source", "blood", quote="bloodstream isolate"),
+                 self.fact("country", "United States"), self.fact("collection_year", "2010-2012"),
+                 self.fact("phenotype", "vancomycin resistant")]
+        d, country, year, cols, rows = papers.merge_paper_facts(unknown, "", "", "", facts, self.vocab,
+                                                                self.labeler._final)
+        self.assertEqual((d["host"], d["source_term"]), (self.vocab.hosts["human"]["label"],
+                                                         self.vocab.terms["blood"]["label"]))
+        self.assertEqual((d["source_tier"], d["source_confidence"], d["source_evidence_field"], d["source_quote"]),
+                         ("paper", "medium", "PMID 11", "bloodstream isolate"))
+        self.assertEqual(country, "USA")  # an alias, filled under its INSDC name
+        self.assertEqual(year, "")  # a range of years is kept in paper_facts.tsv only
+        self.assertEqual(cols, {"paper_pmids": "9; 11", "paper_filled": "host; source; country",
+                                "paper_conflicts": ""})
+        self.assertEqual([(r["fact"], r["filled"]) for r in rows],
+                         [("host", "yes"), ("source", ""), ("source", "yes"), ("country", "yes"),
+                          ("collection_year", ""), ("phenotype", "")])
+        study = papers.merge_paper_facts(unknown, "", "", "", [self.fact("source", "feces", scope="study")],
+                                         self.vocab, self.labeler._final)[0]
+        self.assertEqual((study["source_tier"], study["source_confidence"]), ("paper (study)", "low"))
+        known = self.labeler._final(Answer("cattle", "host", "bovine", "rule"),
+                                    Answer("cheese", "isolation_source", "cheese", "rule"))
+        d, country, year, cols, rows = papers.merge_paper_facts(
+            known, "France", "2015", "", [self.fact("host", "human"), self.fact("collection_year", "2015")],
+            self.vocab, self.labeler._final)
+        self.assertIs(d, known)  # nothing filled: the catalogue's own values stand
+        self.assertEqual((cols["paper_filled"], cols["paper_conflicts"]), ("", "host"))
+        self.assertEqual([r["comparison"] for r in rows], ["differs", "same"])
+        self.assertEqual(papers.merge_paper_facts(known, "France", "2015", "", [], self.vocab, self.labeler._final)[3],
+                         {"paper_pmids": "", "paper_filled": "", "paper_conflicts": ""})
+
+    def test_saved_answers_become_genome_facts(self):
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        answers, texts = Path(tmp.name) / "answers", Path(tmp.name) / "texts"
+        answers.mkdir()
+        texts.mkdir()
+        (texts / "11.json").write_text(json.dumps({"kind": "full text", "text": papers.jats_text(JATS)}))
+        (texts / "12.json").write_text(json.dumps({"kind": "abstract", "text": "Title: x"}))
+        answer = paper_answer(host="cattle", host_quote="bovine feces")
+        (answers / "11.json").write_text(json.dumps({"answer": answer, "listed": ["GCA_1.1", "GCA_2.1"],
+                                                     "how": "batch", "usd": 0.1, "reason": "ok"}))
+        (answers / "12.json").write_text(json.dumps({"answer": answer, "how": "batch", "usd": 0.1, "reason": "ok"}))
+        facts = papers.genome_facts([answers, Path(tmp.name) / "answers_fill"], texts)
+        self.assertEqual(sorted(facts), ["GCA_1.1", "GCA_2.1"])  # 12 has no listing kept: skipped
+        mine = {x["fact"]: (x["value"], x["scope"]) for x in facts["GCA_1.1"]}
+        self.assertEqual(mine["host"], ("cattle", "genome"))
+        self.assertEqual({x["fact"]: x["scope"] for x in facts["GCA_2.1"]}["source"], "study")
+        self.assertEqual(papers.measured_costs(answers, texts), {"full text": 0.1, "abstract": 0.1})
+
+    def test_genomes_with_an_unknown_host_or_source(self):
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        path = Path(tmp.name) / "catalogue.tsv.gz"
+        with gzip.open(path, "wt", encoding="utf-8") as f:
+            f.write("accession\thost\thost_tier\tsource_term\tsource_tier\n"
+                    "GCA_1.1\tunknown\tno evidence\tblood\trule\n"
+                    "GCA_2.1\thuman\trule\tblood\trule\n"
+                    "GCA_3.1\thuman\trule\tblood\tpaper\n")
+        self.assertEqual(papers.unknown_genomes(path), {"GCA_1.1", "GCA_3.1"})
 
 
 class CheckoutTest(unittest.TestCase):

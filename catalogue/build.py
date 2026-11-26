@@ -10,6 +10,7 @@ for every bacterial genome NCBI holds at complete-genome or chromosome level. Se
   python -m catalogue.build verify --budget 200 --effort high  # Fable cross-checks every model label, judges disputes
   python -m catalogue.build rejudge --budget 100 --sample 300  # Opus 5.5 judges 300 of those disputes again
   python -m catalogue.build papers-pilot --budget 146 --sample 200  # Fable reads 200 linked papers: what they add
+  python -m catalogue.build papers-fill --budget 300 --dry-run  # price reading the papers of unknown-field genomes
   python -m catalogue.build assemble                        # catalogue table, per-species summary, report
   python -m catalogue.build status                          # what each stage has done and what it has cost
 
@@ -460,6 +461,16 @@ def cmd_rejudge(args, paths, log):
 def cmd_papers_pilot(args, paths, log):
     """Read a sample of the papers NCBI links to the catalogue's genomes and measure what they add (see
     catalogue/papers.py). Needs `assemble` first: genomes are compared with the release table."""
+    return _papers(args, paths, log, "pilot")
+
+
+def cmd_papers_fill(args, paths, log):
+    """Read the papers linked to every genome whose host or source the catalogue does not know; `assemble`
+    then fills those fields from them. --dry-run prices it."""
+    return _papers(args, paths, log, "fill")
+
+
+def _papers(args, paths, log, mode):
     _require_harvest(paths)
     release = paths.release / "isolate_catalogue.tsv.gz"
     if not release.exists():
@@ -471,12 +482,26 @@ def cmd_papers_pilot(args, paths, log):
         if a.get("bioproject"):
             genome_project[a["accession"]] = a["bioproject"]
             project_genomes[a["bioproject"]].append(a["accession"])
-    log(f"Sampling genomes until {args.sample} distinct linked papers (budget ${args.budget:.2f} for everything "
-        "spent in this work directory)")
-    chosen, links, tried, with_paper = papers.sample_papers(genome_project, folder / "links.json", args.sample,
-                                                            args.seed)
-    log(f"  {tried:,} genomes tried, {with_paper:,} with a linked paper ({with_paper / tried:.0%}); "
-        f"{len(chosen):,} distinct papers")
+    if mode == "pilot":
+        log(f"Sampling genomes until {args.sample} distinct linked papers (budget ${args.budget:.2f} for everything "
+            "spent in this work directory)")
+        chosen, links, tried, with_paper = papers.sample_papers(genome_project, folder / "links.json", args.sample,
+                                                                args.seed)
+        log(f"  {tried:,} genomes tried, {with_paper:,} with a linked paper ({with_paper / tried:.0%}); "
+            f"{len(chosen):,} distinct papers")
+    else:  # every genome whose host or source is unknown, with every paper its BioProject links
+        targets = papers.unknown_genomes(release)
+        log(f"{len(targets):,} genomes have an unknown host or source; finding their BioProjects' papers (budget "
+            f"${args.budget:.2f} for everything spent in this work directory)")
+        links = papers.ensure_links({genome_project[g] for g in targets if g in genome_project}, folder / "links.json")
+        chosen = collections.defaultdict(list)
+        for g in sorted(targets):
+            for pmid in links.get(genome_project.get(g, ""), []):
+                chosen[pmid].append(g)
+        chosen = dict(chosen)
+        tried, with_paper = len(targets), sum(1 for g in targets if links.get(genome_project.get(g, "")))
+        log(f"  {with_paper:,} of them ({with_paper / max(tried, 1):.0%}) have a linked paper; {len(chosen):,} "
+            "distinct papers")
     texts = papers.paper_texts(sorted(chosen), folder / "texts")
     kinds = collections.Counter(t["kind"] for t in texts.values())
     log("  texts: " + ", ".join(f"{k} {v:,}" for k, v in kinds.most_common()))
@@ -487,38 +512,57 @@ def cmd_papers_pilot(args, paths, log):
                 pmid_projects[pmid].add(project)
     rng = random.Random(args.seed)
     listed, more = {}, {}
-    for pmid, sampled in chosen.items():
-        first = list(dict.fromkeys(sampled))
+    for pmid, focus in chosen.items():
+        first = list(dict.fromkeys(focus))
         others = sorted({g for p in pmid_projects[pmid] for g in project_genomes[p]} - set(first))
-        rng.shuffle(others)
-        listed[pmid] = (first + others)[:max(papers.MAX_GENOMES, len(first))]
+        if mode == "pilot":  # the sampled genomes, then others of the same BioProject
+            rng.shuffle(others)
+            listed[pmid] = (first + others)[:max(papers.MAX_GENOMES, len(first))]
+        else:  # the genomes to fill only
+            listed[pmid] = first[:papers.MAX_GENOMES]
         more[pmid] = len(first) + len(others) - len(listed[pmid])
     rows = papers.catalogue_rows(release, {g for gs in listed.values() for g in gs})
+    full_text_only, facts = getattr(args, "full_text_only", False), papers.FACTS
+    if getattr(args, "core_only", False):
+        facts = papers.CORE
     requests, genome_lists = {}, {}
     for pmid in sorted(chosen):
-        if texts[pmid]["kind"] == "none":
+        if texts[pmid]["kind"] == "none" or (full_text_only and texts[pmid]["kind"] != "full text"):
             continue
         genome_lists[pmid] = genomes = [{"accession": g, "organism": rows[g]["organism_name"],
                                          "strain": rows[g]["strain"], "isolate": rows[g]["isolate"]}
                                         for g in listed[pmid] if g in rows]
         requests[pmid] = {"custom_id": f"pmid{pmid}",
-                          "params": papers.build_request(vocab, pmid, texts[pmid], genomes, more[pmid])}
+                          "params": papers.build_request(vocab, pmid, texts[pmid], genomes, more[pmid], facts=facts)}
     worst = papers.worst_case_usd(list(requests.values()))
-    sampled = sum(len(set(s)) for s in chosen.values())
-    log(f"  {len(requests):,} papers to read, {sampled:,} sampled genomes, "
-        f"{sum(len(listed[p]) for p in requests):,} genomes listed; worst case ${worst:.2f} at Batch prices "
+    focused = len({g for p in requests for g in chosen[p]})
+    log(f"  {len(requests):,} papers to read, {focused:,} {'sampled' if mode == 'pilot' else 'unknown-field'} "
+        f"genomes, {sum(len(listed[p]) for p in requests):,} genomes listed; worst case ${worst:.2f} at Batch prices "
         "(every request using all of max_tokens)")
     if args.dry_run:
-        return {"papers": len(requests), "texts": dict(kinds), "worst_case_usd": round(worst, 2)}
-    # Each paper's answer is kept in papers/answers/, so a rerun (or a new report) pays nothing for it again. The
-    # waves are always the same papers in the same order, so their batches resume instead of being sent again.
-    answers_dir = folder / "answers"
+        measured = papers.measured_costs(folder / "answers", folder / "texts")
+        by_kind = collections.Counter(texts[p]["kind"] for p in requests)
+        expected = sum(n * measured.get(kind, 0.0) for kind, n in by_kind.items())
+        if measured:
+            log(f"  expected ${expected:,.2f} at the pilot's measured cost per paper ("
+                + ", ".join(f"{kind} ${usd:.3f}" for kind, usd in sorted(measured.items())) + ")")
+        return {"papers": len(requests), "texts": dict(by_kind), "worst_case_usd": round(worst, 2),
+                "expected_usd": round(expected, 2), "genomes": focused}
+    # Each paper's answer is kept in papers/answers/ (papers/answers_fill/ for the targeted run), so a rerun (or a
+    # new report) pays nothing for it again. The waves are always the same papers in the same order, so their
+    # batches resume instead of being sent again. Each answer keeps the genomes its request listed, for assemble.
+    answers_dir = folder / ("answers" if mode == "pilot" else "answers_fill")
     answers_dir.mkdir(parents=True, exist_ok=True)
     saved = {p: json.loads((answers_dir / f"{p}.json").read_text())
              for p in requests if (answers_dir / f"{p}.json").exists()}
+    for p, entry in saved.items():  # answers saved before the listing was kept
+        if "listed" not in entry:
+            entry["listed"] = [g["accession"] for g in genome_lists[p]]
+            (answers_dir / f"{p}.json").write_text(json.dumps(entry))
 
     def keep(pmid, answer, reason, usd, how):
-        saved[pmid] = {"answer": answer, "reason": reason, "usd": usd, "how": how}
+        saved[pmid] = {"answer": answer, "reason": reason, "usd": usd, "how": how,
+                       "listed": [g["accession"] for g in genome_lists[pmid]]}
         (answers_dir / f"{pmid}.json").write_text(json.dumps(saved[pmid]))
 
     smoke = next(iter(sorted(requests, key=lambda p: len(texts[p]["text"]))), None)
@@ -549,12 +593,12 @@ def cmd_papers_pilot(args, paths, log):
             except anthropic.BadRequestError as e:
                 sys.exit(f"The API rejected the paper request: {e.message}")
             cost = usage_cost(papers.MODEL, message.usage)
-            ledger.add(stage="papers pilot first paper", kind="sync", model=papers.MODEL, usd=round(cost, 9),
+            ledger.add(stage=f"papers {mode} first paper", kind="sync", model=papers.MODEL, usd=round(cost, 9),
                        requests=1)
             keep(smoke, *papers.parse_message(message), cost, "sync")
             log(f"  first paper (PMID {smoke}) answered synchronously for ${cost:.3f}")
         transport = BatchTransport(paths.root, args.budget, client=client, log=log, poll_seconds=args.poll,
-                                   stage_prefix="papers pilot ", state_name="papers_batches.json")
+                                   stage_prefix=f"papers {mode} ", state_name="papers_batches.json")
         recorder = CuratedLabeler(vocab=vocab, log=lambda *_: None)
         try:
             for start in range(0, len(rest), papers.WAVE):
@@ -635,7 +679,7 @@ def cmd_papers_pilot(args, paths, log):
     per_kind = collections.defaultdict(list)
     for pmid, cost in usd.items():
         per_kind[texts[pmid]["kind"]].append(cost)
-    report = {"run": "papers pilot", "finished": _now(), "model": papers.MODEL, "effort": papers.EFFORT,
+    report = {"run": f"papers {mode}", "finished": _now(), "model": papers.MODEL, "effort": papers.EFFORT,
               "seed": args.seed, "genomes tried": tried, "genomes with a linked paper": with_paper,
               "share of genomes with a linked paper": round(with_paper / tried, 3),
               "papers": len(chosen), "texts": dict(kinds), "papers answered": answered,
@@ -657,7 +701,7 @@ def cmd_papers_pilot(args, paths, log):
               "usd per paper": {k: round(sum(v) / len(v), 4) for k, v in per_kind.items()},
               "usd_ledger_total": round(Ledger(paths.root / "spend.jsonl").total, 4)}
     paths.reports.mkdir(parents=True, exist_ok=True)
-    stem = f"papers_pilot_{_now().replace(':', '')}"
+    stem = f"papers_{mode}_{_now().replace(':', '')}"
     (paths.reports / f"{stem}.json").write_text(json.dumps(report, indent=1))
     if out_rows:
         with open(paths.reports / f"{stem}.tsv", "w", encoding="utf-8", newline="") as f:
@@ -701,6 +745,7 @@ COLUMNS = ["accession", "paired_accession", "biosample", "bioproject", "organism
            "source_category", "mixs_extension", "niche", "source_term", "source_term_id", "body_site", "food",
            "environment", "source_evidence_field", "source_quote", "source_tier", "source_model", "source_confidence",
            "host_crosscheck", "source_crosscheck", "fable_host", "fable_source_term", "crosscheck_model",
+           "paper_pmids", "paper_filled", "paper_conflicts",
            "country", "country_insdc", "collection_year",
            *(f"raw_{f}" for f in CATALOGUE_FIELDS), "raw_geo_loc_name", "raw_collection_date", "vocabulary_version"]
 
@@ -747,15 +792,27 @@ def cmd_assemble(args, paths, log):
     table = paths.release / "isolate_catalogue.tsv.gz"
     species = {}
     totals = collections.Counter()
+    # Facts read from linked papers (papers-pilot, papers-fill) fill fields the catalogue does not know; every
+    # fact, with how it compares, goes to paper_facts.tsv.gz.
+    paper_dir = paths.root / "papers"
+    paper_facts = papers.genome_facts([paper_dir / "answers", paper_dir / "answers_fill"], paper_dir / "texts")
+    facts_path = paths.release / "paper_facts.tsv.gz"
     tmp = Path(f"{table}.tmp")
-    with gzip.open(tmp, "wt", encoding="utf-8", newline="") as f:
+    with gzip.open(tmp, "wt", encoding="utf-8", newline="") as f, \
+            gzip.open(f"{facts_path}.tmp", "wt", encoding="utf-8", newline="") as pf:
         writer = csv.writer(f, delimiter="\t", lineterminator="\n")
         writer.writerow(COLUMNS)
+        facts_out = csv.DictWriter(pf, fieldnames=papers.PAPER_FACT_COLUMNS, delimiter="\t", lineterminator="\n")
+        facts_out.writeheader()
         for a in iter_assemblies(paths.ncbi):
             attrs = canonical(a["attributes"])
             d, cross = crosschecked(record_key(a["attributes"]))
             lineage = _lineage(taxa, a.get("tax_id"))
             country, year = country_and_year(a["attributes"])
+            d, country, year, paper_cols, fact_rows = papers.merge_paper_facts(
+                d, country, year, attrs.get("host_disease", ""), paper_facts.get(a["accession"], []), vocab,
+                labeler._final)
+            facts_out.writerows({"accession": a["accession"], **r} for r in fact_rows)
             host_taxid, host_name = resolver.exact(attrs, HOST_PRIORITY)
             row = {**{k: a.get(k) for k in ("accession", "paired_accession", "biosample", "bioproject",
                                             "organism_name", "tax_id", "strain", "isolate", "serovar",
@@ -763,7 +820,7 @@ def cmd_assemble(args, paths, log):
                                             "checkm_completeness", "checkm_contamination", "taxonomy_check")},
                    **{rank: lineage.get(rank, {}).get("name", "") for rank in RANKS},
                    "species_taxid": lineage.get("species", {}).get("id", ""),
-                   "is_mag": a["accession"] in mags, **d, **cross,
+                   "is_mag": a["accession"] in mags, **d, **cross, **paper_cols,
                    "host_ncbi_name": host_name, "host_ncbi_taxid": host_taxid,
                    "country": country, "country_insdc": vocab.country(country), "collection_year": year,
                    **{f"raw_{f}": attrs.get(f, "") for f in CATALOGUE_FIELDS},
@@ -777,6 +834,9 @@ def cmd_assemble(args, paths, log):
             totals[f"host_crosscheck {cross['host_crosscheck']}"] += 1
             totals["source known"] += d["source_category"] != "unknown"
             totals["host known"] += d["host"] != "unknown"
+            totals["genomes with paper facts"] += bool(paper_cols["paper_pmids"])
+            for filled in filter(None, paper_cols["paper_filled"].split("; ")):
+                totals[f"filled from papers: {filled}"] += 1
             sp_key = row["species_taxid"] or row["organism_name"]
             s = species.setdefault(sp_key, {"species": row["species"] or row["organism_name"],
                                             "species_taxid": row["species_taxid"], "genus": row["genus"],
@@ -801,6 +861,7 @@ def cmd_assemble(args, paths, log):
             if a.get("bioproject"):
                 s["bioprojects"].add(a["bioproject"])
     os.replace(tmp, table)
+    os.replace(f"{facts_path}.tmp", facts_path)
 
     def top(counter, n=5):
         return "; ".join(f"{k} {v}" for k, v in counter.most_common(n))
@@ -838,6 +899,10 @@ def cmd_assemble(args, paths, log):
     if checked:
         log("  source cross-check: " + ", ".join(f"{k.split(' ', 1)[1]} {v:,}" for k, v in sorted(totals.items())
                                               if k.startswith("source_crosscheck")))
+    if totals["genomes with paper facts"]:
+        log(f"  paper facts for {totals['genomes with paper facts']:,} genomes; filled from papers: "
+            + (", ".join(f"{k.split(': ', 1)[1]} {v:,}" for k, v in sorted(totals.items())
+                         if k.startswith("filled from papers")) or "nothing") + f" -> {facts_path}")
     log(f"  per-species summary -> {summary_path}")
     return manifest
 
@@ -924,6 +989,19 @@ def main(argv=None):
                                           "(e.g. claude-opus-5-5)")
     p.add_argument("--dry-run", action="store_true",
                    help="sample, fetch the texts and price the requests without calling the Claude API (free)")
+    p = sub.add_parser("papers-fill", help="read the papers linked to every genome whose host or source is unknown, "
+                                           "so `assemble` can fill those fields (costs money; --dry-run prices it)")
+    p.add_argument("--budget", type=float, required=True, help="hard cap in USD for everything spent in this workdir")
+    p.add_argument("--full-text-only", action="store_true", help="skip papers PubMed Central serves no full text for")
+    p.add_argument("--core-only", action="store_true",
+                   help="ask only for host, source, country and year (no disease, method, outbreak or phenotype)")
+    p.add_argument("--narrow-refused", action="store_true",
+                   help="ask the papers refused once more, the narrow way (methods and tables, core facts)")
+    p.add_argument("--retry-model", help="send the papers Fable refused or cut off once more with this model")
+    p.add_argument("--seed", type=int, default=1, help="random seed (default 1)")
+    p.add_argument("--poll", type=int, default=60, help="seconds between batch status checks (default 60)")
+    p.add_argument("--dry-run", action="store_true",
+                   help="find the papers, fetch their texts and price the run without calling the Claude API (free)")
     sub.add_parser("assemble", help="write the catalogue table, per-species summary and manifest")
     sub.add_parser("status", help="progress and spend")
     args = parser.parse_args(argv)
@@ -937,7 +1015,8 @@ def main(argv=None):
         print(message, flush=True)
 
     commands = {"harvest": cmd_harvest, "prepare": cmd_prepare, "run": cmd_run, "verify": cmd_verify,
-                "rejudge": cmd_rejudge, "papers-pilot": cmd_papers_pilot, "assemble": cmd_assemble,
+                "rejudge": cmd_rejudge, "papers-pilot": cmd_papers_pilot, "papers-fill": cmd_papers_fill,
+                "assemble": cmd_assemble,
                 "status": cmd_status}
     return commands[args.command](args, paths, log)
 
