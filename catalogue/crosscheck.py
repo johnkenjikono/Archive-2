@@ -41,6 +41,8 @@ LABEL_CHUNK = {"low": 40, "medium": 40, "high": 25, "xhigh": 20}
 JUDGE_EFFORT, JUDGE_CHUNK = "high", 15
 AGREEING = ("agrees", "same niche")
 JUDGED = ("judge kept curation", "judge took Fable's", "judge: unknown", "judge chose another")
+# Second judges, in order of preference: Opus 5.5, and Sonnet 5.5 for the disputes Opus curated itself.
+SECOND_JUDGES = ("claude-opus-5-5", "claude-sonnet-5-5")
 
 
 def tiers(effort, judge_model=FABLE):
@@ -57,6 +59,24 @@ def open_records(main, keys):
         source = main.rule_source(fields)
         if source is not None and main.rule_host(fields, source) is not None:
             continue
+        norm = {k: normalize(v) for k, v in fields.items()}
+        ck = main._cache_key(norm)
+        records.setdefault(ck, (key, norm))
+        key_to_ck[key] = ck
+    return records, key_to_ck
+
+
+def rule_records(main, keys):
+    """The records the rules settle on their own and that hold some text to read: ({main cache key: (key,
+    normalized fields)}, {key: main cache key}), for audit-rules."""
+    records, key_to_ck = {}, {}
+    for key in keys:
+        fields = {k: v for k, v in key if main.vocab.informative(v)}
+        if not fields:
+            continue
+        source = main.rule_source(fields)
+        if source is None or main.rule_host(fields, source) is None:
+            continue  # open: the models decide, and verify checks that
         norm = {k: normalize(v) for k, v in fields.items()}
         ck = main._cache_key(norm)
         records.setdefault(ck, (key, norm))
@@ -133,13 +153,14 @@ class CrossCheck:
 
     # --- comparison --------------------------------------------------------------------------------
     def curated(self, key, norm):
-        """The curation's final answer per part, as the catalogue reports it, or None before `run` answered."""
+        """The curation's final answer per part, as the catalogue reports it, or None before `run` answered. A
+        record the rules settle on their own (audit-rules) answers with the rules' answers."""
         cached = self.main.cache.get(self.main._cache_key(norm))
-        if not cached:
-            return None
         fields = {k: v for k, v in key if self.vocab.informative(v)}
         source = self.main.rule_source(fields)
         rule = {"source": source, "host": self.main.rule_host(fields, source)}
+        if not cached:
+            return rule if None not in rule.values() else None
         # As in CuratedLabeler.curate: a rule answer beats a model answer.
         return {p: rule[p] if rule[p] is not None and rule[p].tier == "rule" else Answer(*cached[p]) for p in PARTS}
 
@@ -155,11 +176,13 @@ class CrossCheck:
             return "same niche"
         return "disagrees"
 
-    def check(self, records, offline=False):
+    def check(self, records, offline=False, judge_rules=False):
         """Label records with Fable (unless offline), compare with the curation and judge the model-decided
         disagreements (offline: only decisions already cached). Returns {main cache key: result}, with None
         where the curation or Fable has not answered yet. result["parts"][part] has "ours" (Answer), "fable"
-        ([key, field, quote], or None), "status" and "final" (the Answer the catalogue reports)."""
+        ([key, field, quote], or None), "status" and "final" (the Answer the catalogue reports). judge_rules
+        (audit-rules): the judge also hears the disagreements with a rule, to find wrong rules; the rule's
+        answer stands, and the status records the judge's verdict ("rule disputed: judge took Fable's")."""
         if not offline:
             self.label(records)
         results, disputed = {}, {}
@@ -174,6 +197,8 @@ class CrossCheck:
                 status = self.compare(p, ours[p], fable[p])
                 if status == "disagrees" and ours[p].tier == "rule":
                     status = "rule disputed"
+                    if judge_rules:
+                        disputed.setdefault(ck, {})[p] = (ours[p], fable[p])
                 elif status == "disagrees":
                     disputed.setdefault(ck, {})[p] = (ours[p], fable[p])
                 result["parts"][p] = {"ours": ours[p], "fable": fable[p], "status": status, "final": ours[p]}
@@ -181,6 +206,14 @@ class CrossCheck:
         for ck, parts in disputed.items():
             for p, (ours, theirs) in parts.items():
                 part, decision = results[ck]["parts"][p], decisions.get(ck, {}).get(p)
+                if part["status"] == "rule disputed":  # audited, not applied: the rule's answer stands
+                    if decision is not None:
+                        part["judge"] = decision
+                        part["status"] = "rule disputed: " + (
+                            "judge kept rule" if decision.key == ours.key else "judge: unknown"
+                            if decision.key == "unknown" else "judge took Fable's" if decision.key == theirs[0]
+                            else "judge chose another")
+                    continue
                 if decision is None:
                     part["status"] = "disagrees (not judged)"
                 elif decision.key == ours.key:
@@ -367,3 +400,42 @@ def write_judge_comparison(rows, path, vocab):
             writer.writerow(["; ".join(f"{k}={v}" for k, v in r["norm"].items()), p, label(ours.key, p), ours.tier,
                              ours.quote, label(fable[0], p), fable[2], r["fable_certain"], label(r["first"].key, p),
                              r["first_side"], label(second.key, p), r["second_side"], second.quote, second.model])
+
+
+def contested_parts(result, second):
+    """The parts whose judged decision a second judge (its decisions for this record, {part: Answer}) did not
+    share: the catalogue marks these low confidence."""
+    if not result or not second:
+        return set()
+    return {p for p, part in result["parts"].items()
+            if part["status"] in JUDGED and p in second and second[p].key != part["final"].key}
+
+
+def rule_audit(results, genomes):
+    """audit-rules' report: per part, the outcomes weighted by records and by genomes, and the rule disputes
+    grouped by the rule's evidence (field and quote), most genomes first. genomes: {main cache key: genomes}."""
+    out = {"records": sum(r is not None for r in results.values()), "parts": {}}
+    patterns = {}
+    for p in PARTS:
+        by_records, by_genomes = Counter(), Counter()
+        for ck, r in results.items():
+            if r is None:
+                continue
+            part = r["parts"][p]
+            by_records[part["status"]] += 1
+            by_genomes[part["status"]] += genomes.get(ck, 0)
+            if part["status"].startswith("rule disputed"):
+                ours = part["ours"]
+                key = (p, ours.field, ours.quote, ours.key)
+                row = patterns.setdefault(key, {"part": p, "field": ours.field, "value": ours.quote,
+                                                "rule": ours.key, "records": 0, "genomes": 0,
+                                                "fable": Counter(), "judge": Counter()})
+                row["records"] += 1
+                row["genomes"] += genomes.get(ck, 0)
+                row["fable"][(part["fable"] or ["?"])[0]] += 1
+                row["judge"][part["status"].split(": ", 1)[1] if ": " in part["status"] else "not judged"] += 1
+        out["parts"][p] = {"records": dict(by_records.most_common()), "genomes": dict(by_genomes.most_common())}
+    out["disputed rule patterns"] = [
+        {**row, "fable": dict(row["fable"].most_common()), "judge": dict(row["judge"].most_common())}
+        for row in sorted(patterns.values(), key=lambda r: (-r["genomes"], -r["records"], r["value"]))]
+    return out

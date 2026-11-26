@@ -33,9 +33,9 @@ import sys
 from pathlib import Path
 
 from catalogue.batch import BatchTransport, BudgetExceeded, Ledger, estimate_usd
-from catalogue.crosscheck import (EFFORTS, FABLE, JUDGE_EFFORT, PARTS, CrossCheck, compare_judges, judged_items,
-                                  open_records, summarize, summarize_judges, third_party_sample, write_disagreements,
-                                  write_judge_comparison)
+from catalogue.crosscheck import (EFFORTS, FABLE, JUDGE_EFFORT, PARTS, SECOND_JUDGES, CrossCheck, compare_judges,
+                                  contested_parts, judged_items, open_records, rule_audit, rule_records, summarize,
+                                  summarize_judges, third_party_sample, write_disagreements, write_judge_comparison)
 from catalogue import papers
 from catalogue.hosts import HostResolver
 from catalogue.ontology import OntologyResolver, codes_to_resolve, resolve_codes
@@ -397,6 +397,64 @@ def cmd_verify(args, paths, log):
     return report
 
 
+def cmd_audit_rules(args, paths, log):
+    """Fable labels the records the rules settle on their own, and the judge hears every disagreement with a
+    rule. The verdicts are reported, not applied: a wrong rule is fixed in the rules or the vocabulary."""
+    _require_harvest(paths)
+    _require_key()
+    vocab = Vocabulary()
+    resolver, _ = load_resolver(paths, vocab)
+    counts = distinct_keys(paths)
+    main = make_labeler(paths, vocab, resolver, log=lambda *_: None)
+    records, key_to_ck = rule_records(main, sorted(counts))
+    genomes = collections.Counter()
+    for key, ck in key_to_ck.items():
+        genomes[ck] += counts[key]
+    total, label = len(records), f"audit-{args.effort}"
+    if args.sample:
+        chosen = random.Random(args.seed).sample(sorted(records), min(args.sample, total))
+        records = {ck: records[ck] for ck in chosen}
+        label = f"audit{len(records)}-{args.effort}"
+    log(f"{total:,} records ({sum(genomes.values()):,} genomes) are settled by the rules alone and hold text to "
+        f"read; this run audits {len(records):,} with {FABLE} (budget ${args.budget:.2f} for everything spent "
+        "in this work directory)")
+    import anthropic
+    client = anthropic.Anthropic()
+    transport = BatchTransport(paths.root, args.budget, client=client, log=log, poll_seconds=args.poll,
+                               stage_prefix=f"{label} ", state_name="crosscheck_batches.json")
+    xc = CrossCheck(main, paths.crosscheck, effort=args.effort, client=client, transport=transport, log=log)
+    started = _now()
+    try:
+        xc.label(records)
+        results = xc.check(records, judge_rules=True)
+    except BudgetExceeded as e:
+        sys.exit(f"Stopped before spending more: {e}")
+    except anthropic.BadRequestError as e:
+        sys.exit(f"The API rejected a {FABLE} request: {e.message}")
+    audit = rule_audit(results, genomes)
+    report = {"run": label, "started": started, "finished": _now(), "model": FABLE, "effort": args.effort,
+              "rule-settled records": total, **audit, "stats": dict(xc.stats), "usd_this_run": round(xc.cost(), 4),
+              "usd_ledger_total": round(Ledger(paths.root / "spend.jsonl").total, 4)}
+    paths.reports.mkdir(parents=True, exist_ok=True)
+    stem = f"audit_rules_{label}_{started.replace(':', '')}"
+    (paths.reports / f"{stem}.json").write_text(json.dumps(report, indent=1))
+    with open(paths.reports / f"{stem}_patterns.tsv", "w", encoding="utf-8", newline="") as f:
+        writer = csv.writer(f, delimiter="\t", lineterminator="\n")
+        writer.writerow(["part", "field", "value", "rule", "records", "genomes", "fable", "judge"])
+        for row in audit["disputed rule patterns"]:
+            table = vocab.hosts if row["part"] == "host" else vocab.terms
+            writer.writerow([row["part"], row["field"], row["value"], table[row["rule"]]["label"], row["records"],
+                             row["genomes"], "; ".join(f"{k} {v}" for k, v in row["fable"].items()),
+                             "; ".join(f"{k} {v}" for k, v in row["judge"].items())])
+    for p in PARTS:
+        g = audit["parts"][p]["genomes"]
+        n = max(sum(g.values()), 1)
+        log(f"  {p}, by genomes: " + ", ".join(f"{k} {v:,} ({v / n:.1%})" for k, v in g.items()))
+    log(f"  cost this run ${xc.cost():.2f}; spent in this work directory ${report['usd_ledger_total']:.2f}")
+    log(f"Report: {paths.reports / stem}.json (disputed rule patterns in {stem}_patterns.tsv)")
+    return report
+
+
 def cmd_rejudge(args, paths, log):
     """A second model judges a random sample of the disputes Fable's judge settled, from the same prompts, so the
     two judges differ only in the model: a check on Fable's judge favouring Fable's own answers. Nothing it
@@ -413,6 +471,8 @@ def cmd_rejudge(args, paths, log):
     first = CrossCheck(main, paths.crosscheck, lookup=tuple(reversed(EFFORTS)), log=lambda *_: None)
     results = first.check(records, offline=True)
     items = judged_items(results)
+    if args.curated_by:  # e.g. Sonnet for the disputes Opus curated, which Opus cannot judge as a third party
+        items = {ck: v for ck, v in items.items() if all(ours.model == args.curated_by for ours, _ in v[1].values())}
     sample, eligible = third_party_sample(items, args.model, args.sample, args.seed)
     log(f"Fable's judge settled {len(items):,} records; {eligible:,} have no curated answer from {args.model}; "
         f"{len(sample):,} sampled for it to judge again (budget ${args.budget:.2f} for everything spent in this "
@@ -745,7 +805,7 @@ COLUMNS = ["accession", "paired_accession", "biosample", "bioproject", "organism
            "source_category", "mixs_extension", "niche", "source_term", "source_term_id", "body_site", "food",
            "environment", "source_evidence_field", "source_quote", "source_tier", "source_model", "source_confidence",
            "host_crosscheck", "source_crosscheck", "fable_host", "fable_source_term", "crosscheck_model",
-           "paper_pmids", "paper_filled", "paper_conflicts",
+           "judge_contested", "paper_pmids", "paper_filled", "paper_conflicts",
            "country", "country_insdc", "collection_year",
            *(f"raw_{f}" for f in CATALOGUE_FIELDS), "raw_geo_loc_name", "raw_collection_date", "vocabulary_version"]
 
@@ -762,6 +822,15 @@ def cmd_assemble(args, paths, log):
     xc = CrossCheck(labeler, paths.crosscheck, lookup=tuple(reversed(EFFORTS)), log=lambda *_: None)
     open_recs, key_to_ck = open_records(labeler, sorted(counts))
     checked = xc.check(open_recs, offline=True) if paths.crosscheck.exists() else {}
+    # A second judge's decisions (rejudge), where one heard the dispute: the Fable judge's decisions it does not
+    # share are marked low confidence and listed in judge_contested.
+    second = {}
+    if checked:
+        disputes = judged_items(checked)
+        for model in SECOND_JUDGES:
+            again = CrossCheck(labeler, paths.crosscheck, judge_model=model, log=lambda *_: None)
+            for ck, parts in again.judge(disputes, offline=True).items():
+                second.setdefault(ck, parts)
     finals = {}
 
     def crosschecked(rkey):
@@ -784,6 +853,10 @@ def cmd_assemble(args, paths, log):
                          "fable_host": vocab.hosts[fable["host"]]["label"] if fable["host"] else "",
                          "fable_source_term": vocab.terms[fable["source"]]["label"] if fable["source"] else "",
                          "crosscheck_model": f"{r['fable_model']}, {r['fable_effort']} effort"}
+                contested = contested_parts(r, second.get(ck))
+                if contested:
+                    d = {**d, **{f"{p}_confidence": "low" for p in contested}}
+                cross["judge_contested"] = "; ".join(p for p in PARTS if p in contested)
             finals[rkey] = (d, cross)
         return finals[rkey]
 
@@ -835,6 +908,8 @@ def cmd_assemble(args, paths, log):
             totals["source known"] += d["source_category"] != "unknown"
             totals["host known"] += d["host"] != "unknown"
             totals["genomes with paper facts"] += bool(paper_cols["paper_pmids"])
+            for part in filter(None, cross.get("judge_contested", "").split("; ")):
+                totals[f"judge contested: {part}"] += 1
             for filled in filter(None, paper_cols["paper_filled"].split("; ")):
                 totals[f"filled from papers: {filled}"] += 1
             sp_key = row["species_taxid"] or row["organism_name"]
@@ -969,11 +1044,19 @@ def main(argv=None):
     p.add_argument("--sample", type=int, help="pilot: only this many randomly chosen open records")
     p.add_argument("--seed", type=int, default=1, help="random seed for --sample (default 1)")
     p.add_argument("--poll", type=int, default=60, help="seconds between batch status checks (default 60)")
+    p = sub.add_parser("audit-rules", help=f"{FABLE} labels the records the rules settle alone; the judge hears each "
+                                           "disagreement with a rule (reported, not applied; costs money)")
+    p.add_argument("--budget", type=float, required=True, help="hard cap in USD for everything spent in this workdir")
+    p.add_argument("--effort", choices=EFFORTS, default="high", help="Fable's effort for its labels (default high)")
+    p.add_argument("--sample", type=int, help="only this many randomly chosen rule-settled records")
+    p.add_argument("--seed", type=int, default=1, help="random seed for --sample (default 1)")
+    p.add_argument("--poll", type=int, default=60, help="seconds between batch status checks (default 60)")
     p = sub.add_parser("rejudge", help="a second model judges a sample of the disputes Fable's judge settled, to "
                                        "check it for self-preference (costs money; run after `verify`)")
     p.add_argument("--budget", type=float, required=True, help="hard cap in USD for everything spent in this workdir")
     p.add_argument("--model", default="claude-opus-5-5", help="the second judge (default claude-opus-5-5)")
     p.add_argument("--sample", type=int, default=300, help="records to judge again (default 300)")
+    p.add_argument("--curated-by", help="only disputes whose curated answers all came from this model")
     p.add_argument("--seed", type=int, default=1, help="random seed for --sample (default 1)")
     p.add_argument("--poll", type=int, default=60, help="seconds between batch status checks (default 60)")
     p = sub.add_parser("papers-pilot", help="read a sample of the papers linked to the genomes with Claude Fable 5.2 "
@@ -1015,7 +1098,7 @@ def main(argv=None):
         print(message, flush=True)
 
     commands = {"harvest": cmd_harvest, "prepare": cmd_prepare, "run": cmd_run, "verify": cmd_verify,
-                "rejudge": cmd_rejudge, "papers-pilot": cmd_papers_pilot, "papers-fill": cmd_papers_fill,
+                "audit-rules": cmd_audit_rules, "rejudge": cmd_rejudge, "papers-pilot": cmd_papers_pilot, "papers-fill": cmd_papers_fill,
                 "assemble": cmd_assemble,
                 "status": cmd_status}
     return commands[args.command](args, paths, log)

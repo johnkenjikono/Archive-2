@@ -19,6 +19,7 @@ python -m catalogue.build run --budget 150              # every record the rules
 python -m catalogue.build verify --budget 30 --sample 500  # pilot: Claude Fable 5.2 cross-checks 500 records
 python -m catalogue.build verify --budget 200 --effort high  # Fable cross-checks every model label, judges disputes
 python -m catalogue.build rejudge --budget 100 --sample 300  # Opus 5.5 judges 300 of those disputes again
+python -m catalogue.build audit-rules --budget 225  # Fable checks every record the rules settle; reported only
 python -m catalogue.build papers-pilot --budget 146 --sample 200  # Fable reads 200 linked papers
 python -m catalogue.build papers-fill --budget 600 --dry-run  # price reading unknown-field genomes' papers
 python -m catalogue.build assemble                      # the catalogue table, species summary and manifest
@@ -206,6 +207,64 @@ code, while Opus answers unknown. Checked against EBI OLS, the codes support Fab
 parts; `envo_00002262`, for example, is clay soil. So Fable's judge does lean toward Fable's answers, but its extra
 changes are more often right than wrong, and the catalogue keeps its decisions.
 
+### Every dispute, judged twice (2026-11-26)
+
+`rejudge --sample 100000` then had Opus 5.5 judge every settled dispute it can judge as a third party, for
+$5.91. That was 2,379 records with 2,568 disputed parts. Opus decided as Fable's judge did on 84% of parts
+(host 75%, source 86%). It disagreed in both directions: Fable's judge alone took Fable's answer 273 times, and
+Opus alone took it 112 times.
+
+`rejudge --model claude-sonnet-5-5 --curated-by claude-opus-5-5` gave the 431 disputes Opus had curated to Sonnet
+5.5 instead, for $0.74. These records are the hardest: the two Sonnet runs had disagreed on them before Opus
+settled them. Sonnet decided as Fable's judge did on only 51% of their 461 parts.
+
+`assemble` lowers to `low` the confidence of every Fable-judge decision a second judge did not share, and lists
+those parts in `judge_contested`: the source of 926 genomes and the host of 390.
+
+## Rule audit (`audit-rules`)
+
+The rules settle half the catalogue (about 54,000 genomes) and the cross-check never saw those records. A wrong
+rule is wrong for every genome it touches. `audit-rules` has Fable label every record the rules settle on their
+own and that holds some text (7,876 records, 53,659 genomes), with the same prompt, effort and cache as `verify`.
+Each disagreement with a rule goes to the Fable judge, but the rule's answer always stands; the audit only
+reports. `reports/audit_rules_*.json` gives the outcomes per part, weighted by records and by genomes, and
+`*_patterns.tsv` groups the disputes by the rule's evidence (field and value), most genomes first, with Fable's
+answers and the judge's verdicts. That is the list a wrong rule shows up in.
+
+Audit run on 2026-11-26 ($31.79). It is weighted by genomes and judged by the Fable judge, so it is another
+model's view, not ground truth:
+
+| | Genomes the rules decide | The judge sided against the rule |
+|---|---|---|
+| Host | 50,371 | 206 (0.4%) |
+| Source | 41,771 | 1,429 (3.4%) |
+
+Most source disputes are rules that are vague, not wrong. The rules take the first informative field, and when
+that field is broad, a later field often says more:
+
+- env_medium "water" (390 genomes) is lake, sea or river water in another field.
+- sample_type "tissue sample" (169) is a plant part.
+- isolation_source "Plant" (103) is a root.
+- "human", "patient" and "animal" (about 70) name a body site elsewhere in the record.
+
+Some rules are plainly wrong:
+
+- isolation_source "hospital" means a clinical isolate, not the hospital environment (31 of 31 records judged).
+- Oyster and shrimp are hosts, not food, in aquaculture studies.
+- The wild goat, *Capra aegagrus*, maps to "other mammal" rather than goat.
+
+The rules also miss hosts the text states:
+
+- "canine" in metagenome_source (691 genomes are dogs).
+- A rhizosphere sample whose host can only be a plant (310 genomes).
+
+None of these fixes has been applied yet. A rule change is free, and its effect on the catalogue can be checked
+against these verdicts first, as for the ontology-code rule.
+
+The missed sources the audit reports are mostly not misses. 3,483 of 3,633 genomes are records that name only
+a host, and the catalogue already labels those "host sample, site not stated" or "plant, part not stated", as
+Fable does; the audit compares with the rules alone.
+
 ## Papers (`papers-pilot`, `papers-fill`)
 
 NCBI links many genomes' BioProjects to PubMed papers. The pilot measures what reading those papers would add,
@@ -367,6 +426,7 @@ brings the work directory's spending to $96.91.
 | `source_category`, `mixs_extension`, `niche`, `source_term`, `source_term_id`, `body_site` / `food` / `environment` | Where the isolate came from: one of 18 source categories, one of 41 niches, and an ENVO, UBERON, PO or FoodOn term |
 | `*_evidence_field`, `*_quote`, `*_tier`, `*_model`, `*_confidence` | For host and source: the field and the exact words each value rests on, the tier that decided it, the model, and the tier's confidence. Tiers and confidences: `rule` high; `haiku`, `sonnet x2` and `fable judge` medium; `opus` low; `paper` medium and `paper (study)` low; `withheld`, `withheld by judge`, `not curated` and `no evidence` none. A paper's evidence field is `PMID <id>` |
 | `host_crosscheck`, `source_crosscheck`, `fable_host`, `fable_source_term`, `crosscheck_model` | The cross-check outcome per part (see "Cross-check"; `rules only` where the rules decided the whole record, `not checked` before `verify`), Fable's own answers, and the Fable model and effort |
+| `judge_contested` | The parts (`host`, `source`) whose Fable-judge decision a second judge did not share; their confidence is lowered to `low` (see "A second judge") |
 | `paper_pmids`, `paper_filled`, `paper_conflicts` | The linked papers read for this genome (see "Papers"), which unknown fields they filled (`host`, `source`, `country`, `collection_year`), and which fields a paper disagrees with |
 | `country`, `country_insdc`, `collection_year` | Parsed from `geo_loc_name` and `collection_date`; the country checked against the INSDC list. Filled from a paper only where BioSample gives none (see `paper_filled`) |
 | `raw_*` | The BioSample values the curation read |

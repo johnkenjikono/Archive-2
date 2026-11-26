@@ -12,8 +12,9 @@ from types import SimpleNamespace
 
 from catalogue import build, papers
 from catalogue.batch import BatchTransport, BudgetExceeded, Ledger, estimate_usd
-from catalogue.crosscheck import (FABLE, CrossCheck, compare_judges, judged_items, mcnemar, open_records, summarize,
-                                  summarize_judges, third_party_sample, write_disagreements)
+from catalogue.crosscheck import (FABLE, CrossCheck, compare_judges, contested_parts, judged_items, mcnemar,
+                                  open_records, rule_audit, rule_records, summarize, summarize_judges,
+                                  third_party_sample, write_disagreements)
 from catalogue.hosts import HostResolver, candidates
 from catalogue.ontology import OntologyResolver, codes_to_resolve, parse_codes, relation, resolve_codes
 from catalogue.ncbi import compact, harvest, iter_assemblies, mag_accessions, resolve_taxa
@@ -755,6 +756,45 @@ class PapersTest(unittest.TestCase):
         self.assertEqual(papers.parse_message(message), ({"a": 1}, "ok"))
         self.assertEqual(papers.parse_message(SimpleNamespace(stop_reason="max_tokens", content=[])),
                          (None, "max_tokens"))
+
+
+class RuleAuditTest(unittest.TestCase):
+    def test_rule_settled_records_are_audited_and_the_rule_stands(self):
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        d = Path(tmp.name)
+        main = CuratedLabeler(vocab=Vocabulary(), cache_path=d / "main.json", log=quiet)
+        keys = [key(isolation_source="blood", host="Homo sapiens"), key(isolation_source="feces", host="Bos taurus"),
+                key(isolation_source="pond scum")]
+        records, key_to_ck = rule_records(main, keys)
+        self.assertEqual(len(records), 2)  # pond scum is left to the models (verify checks those)
+
+        def answer(model, rid, fields, call):  # Fable, labelling and judging alike
+            if fields.get("isolation_source") == "blood":
+                return label(rid, "human", "host", "homo sapiens", "blood", "isolation_source", "blood")
+            return label(rid, "cattle", "host", "bos taurus", "soil", "isolation_source", "feces")
+
+        fake = RecordingFake(answer)
+        results = CrossCheck(main, d / "crosscheck.json", effort="high", client=fake, log=quiet).check(
+            records, judge_rules=True)
+        parts = {r["norm"]["isolation_source"]: r["parts"] for r in results.values()}
+        self.assertEqual((parts["blood"]["host"]["status"], parts["blood"]["source"]["status"]), ("agrees", "agrees"))
+        feces = parts["feces"]["source"]
+        self.assertEqual(feces["status"], "rule disputed: judge took Fable's")
+        self.assertEqual((feces["final"].key, feces["final"].tier), ("feces", "rule"))  # reported, not applied
+        self.assertTrue(any("disputed source" in c["messages"][0]["content"] for c in fake.calls))
+        audit = rule_audit(results, {ck: 3 for ck in key_to_ck.values()})
+        top = audit["disputed rule patterns"][0]
+        self.assertEqual((top["part"], top["value"], top["rule"], top["genomes"], top["fable"], top["judge"]),
+                         ("source", "feces", "feces", 3, {"soil": 1}, {"judge took Fable's": 1}))
+        self.assertEqual(audit["parts"]["source"]["genomes"], {"agrees": 3, "rule disputed: judge took Fable's": 3})
+
+    def test_a_second_judge_that_disagrees_contests_the_decision(self):
+        result = {"parts": {"host": {"status": "agrees", "final": Answer("human")},
+                            "source": {"status": "judge took Fable's", "final": Answer("blood")}}}
+        self.assertEqual(contested_parts(result, {"source": Answer("feces")}), {"source"})
+        self.assertEqual(contested_parts(result, {"source": Answer("blood")}), set())
+        self.assertEqual(contested_parts(result, None), set())
 
 
 class PaperMergeTest(unittest.TestCase):
