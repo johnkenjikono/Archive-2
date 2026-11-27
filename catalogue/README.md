@@ -22,6 +22,7 @@ python -m catalogue.build rejudge --budget 100 --sample 300  # Opus 5.5 judges 3
 python -m catalogue.build audit-rules --budget 225  # Fable checks every record the rules settle; reported only
 python -m catalogue.build papers-pilot --budget 146 --sample 200  # Fable reads 200 linked papers
 python -m catalogue.build papers-fill --budget 600 --dry-run  # price reading unknown-field genomes' papers
+python -m catalogue.build structure-pilot --budget 175 --species "Prochlorococcus marinus"  # published lineages
 python -m catalogue.build assemble                      # the catalogue table, species summary and manifest
 python -m catalogue.build status                        # what has run and what it has cost
 ```
@@ -403,6 +404,44 @@ never replaces a known value.
 With the pilot's 178 answered papers (2026-11-25), papers gave facts for 1,701 genomes. They filled 64
 sources, 59 hosts, 35 countries and 25 collection years. The 491 host or source facts that disagree with the
 catalogue were left as flags.
+
+## Population structure (`structure-pilot`)
+
+A yardstick for the ecotype methods (EcoSim, TreeCluster, fastbaps, PopPUNK) is a set of genomes whose
+published group is known. `structure-pilot` builds one per species (`catalogue/structure.py`).
+
+1. **Papers.** It searches PubMed for the species' population structure: reviews with the species in the title
+   first, then other papers. A genus with only one named species in the catalogue is searched by the genus, so
+   papers on "Prochlorococcus" count. It reads 15 papers: abstracts, plus the PubMed Central full text of two.
+2. **Read.** In one Batch request per species, Claude Fable 5.2 lists the groups the papers define:
+   subspecies, genomovars, lineages, phylogroups, clades, clonal complexes, sequence types, serotypes and
+   ecotypes. For each it gives how the groups nest, what defines them, the reference strains named in them,
+   and the ecology the papers report. Every group needs a verbatim quote from a cited paper.
+3. **Match.** The reference strains are matched to the species' catalogue genomes by strain or isolate name.
+   The species name, the type-strain mark and `=` aliases are handled: "KT2440 (mt-2 = DSM 6125)" is either
+   name.
+
+A species refused with full texts can be asked again from the abstracts alone with `--retry-refused`. The
+report is `reports/structure_pilot_*.json`; `*_groups.tsv` holds the groups and `*_genomes.tsv` the matched
+genomes.
+
+Pilot run on 2026-11-27 for five species, $1.39 in all:
+
+| Species | Read | Groups | Reference strains matched | Genomes with a known group |
+|---|---|---|---|---|
+| *Prochlorococcus marinus* | 15 papers, 2 in full | 7: high- and low-light ecotypes, with HLI, HLII, LLVII and LLVIII | 4 of 10 | 3 |
+| *Pseudomonas putida* | 15 papers, 2 in full | 25: genomospecies, clonal complexes, sequence types | 20 of 69 | 26 |
+| *Bacillus subtilis* | 15 papers, 2 in full | 5: subspecies *subtilis* and *spizizenii*, putative ecotype PE15 | 2 of 4 | 12 |
+| *Escherichia coli* | 15 abstracts (the full texts were refused) | 22: phylogroups A–F, sequence types such as ST131 and ST1193, serogroups | none named | 0 |
+| *Listeria monocytogenes* | refused, with full texts and from abstracts alone | | | |
+
+Every quote was found in its paper. The groups and their ecology are sound, but few genomes get a known group,
+because the papers name only a handful of reference strains each.
+
+For typed pathogens, in-silico typing gives every genome its group without a model and without refusals:
+MLST sequence types and clonal complexes, or ClermonTyping for *E. coli* phylogroups. The papers then say which
+of those groups matter ecologically. Paper reading remains the only yardstick for species without a typing
+scheme, such as the ecotypes of *Prochlorococcus* and *B. subtilis*.
 
 ## Cost
 

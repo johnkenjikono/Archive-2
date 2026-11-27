@@ -10,7 +10,7 @@ import unittest.mock
 from pathlib import Path
 from types import SimpleNamespace
 
-from catalogue import build, papers
+from catalogue import build, papers, structure
 from catalogue.batch import BatchTransport, BudgetExceeded, Ledger, estimate_usd
 from catalogue.crosscheck import (FABLE, CrossCheck, compare_judges, contested_parts, judged_items, mcnemar,
                                   open_records, rule_audit, rule_records, summarize, summarize_judges,
@@ -871,6 +871,59 @@ class PaperMergeTest(unittest.TestCase):
                     "GCA_2.1\thuman\trule\tblood\trule\n"
                     "GCA_3.1\thuman\trule\tblood\tpaper\n")
         self.assertEqual(papers.unknown_genomes(path), {"GCA_1.1", "GCA_3.1"})
+
+
+class StructureTest(unittest.TestCase):
+    def test_papers_reviews_first_and_the_full_text_allowance(self):
+        found = {True: ["3", "1"], False: ["1", "2", "4", "5"]}
+        pmids = structure.search("Listeria monocytogenes", total=4,
+                                 esearch=lambda term, n: found["review[pt]" in term][:n])
+        self.assertEqual(pmids, ["3", "1", "2", "4"])
+        full = {"kind": "full text", "text": "Title: t\n\nAbstract: a\n\nResults: long"}
+        texts = {"3": full, "1": full, "2": full, "4": {"kind": "none", "text": ""}}
+        chosen = structure.species_texts(pmids, texts)
+        self.assertEqual([chosen[p]["kind"] for p in chosen], ["full text", "full text", "abstract"])
+        self.assertEqual(chosen["2"]["text"], "Title: t\n\nAbstract: a")  # beyond the allowance: title, abstract
+        schema = structure.build_request("L. monocytogenes", chosen)["output_config"]["format"]["schema"]
+        evidence = schema["properties"]["groups"]["items"]["properties"]["evidence"]["items"]["properties"]
+        self.assertEqual(evidence["pmid"]["enum"], ["1", "2", "3"])
+
+    def test_quotes_are_checked_against_the_cited_paper(self):
+        chosen = {"1": {"kind": "abstract", "text": "Lineage I contains serotype 4b strains such as F2365."},
+                  "2": {"kind": "abstract", "text": "Lineage II is common in food."}}
+        answer = {"groups": [
+            {"name": "lineage I", "kind": "lineage", "parent": "", "defined_by": "MLST", "ecology": "",
+             "reference_strains": ["F2365"], "evidence": [{"pmid": "1", "quote": "serotype 4b strains such as F2365"},
+                                                          {"pmid": "2", "quote": "serotype 4b strains"}]},
+            {"name": "lineage III", "kind": "lineage", "parent": "", "defined_by": "", "ecology": "",
+             "reference_strains": [], "evidence": [{"pmid": "2", "quote": "rare in food"}]}]}
+        groups, dropped = structure.verified(answer, chosen)
+        self.assertEqual(dropped, 2)  # one quote cites the wrong paper, one is not in its paper
+        self.assertEqual([(g["name"], g["supported"], len(g["evidence"])) for g in groups],
+                         [("lineage I", True, 1), ("lineage III", False, 0)])
+
+    def test_reference_strains_match_catalogue_genomes(self):
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        path = Path(tmp.name) / "catalogue.tsv.gz"
+        with gzip.open(path, "wt", encoding="utf-8") as f:
+            f.write("accession\tspecies\tstrain\tisolate\n"
+                    "GCA_1.1\tListeria monocytogenes\tEGD-e\t\n"
+                    "GCA_2.1\tListeria monocytogenes\t\tF2365; ATCC 19115\n"
+                    "GCA_3.1\tBacillus subtilis\t168\t\n")
+        strains = structure.catalogue_strains(path, ["Listeria monocytogenes"])["Listeria monocytogenes"]
+        groups = [{"name": "lineage II", "reference_strains": ["EGD e", "10403S"]},
+                  {"name": "lineage I", "reference_strains": ["F2365", "4b"]}]
+        self.assertEqual(structure.match_strains(groups, strains),
+                         {"lineage II": {"EGD e": ["GCA_1.1"]}, "lineage I": {"F2365": ["GCA_2.1"]}})
+        self.assertEqual(structure.strain_names("Bacillus subtilis subsp. subtilis str. 168"), ["168"])
+        self.assertEqual(structure.strain_names("KT2440 (mt-2 = DSM 6125 = ATCC 47054)"),
+                         ["KT2440", "mt-2", "DSM 6125", "ATCC 47054"])
+        self.assertEqual(structure.strain_names("P. alloputida Kh7 T"), ["Kh7"])
+        self.assertEqual(structure.strain_names("MED4"), ["MED4"])
+        aliased = [{"name": "lineage I", "reference_strains": ["L. monocytogenes ATCC 19115 (= F2365)"]}]
+        self.assertEqual(structure.match_strains(aliased, strains), {"lineage I": {
+            "L. monocytogenes ATCC 19115 (= F2365)": ["GCA_2.1"]}})
 
 
 class CheckoutTest(unittest.TestCase):

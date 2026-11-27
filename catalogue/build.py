@@ -36,7 +36,7 @@ from catalogue.batch import BatchTransport, BudgetExceeded, Ledger, estimate_usd
 from catalogue.crosscheck import (EFFORTS, FABLE, JUDGE_EFFORT, PARTS, SECOND_JUDGES, CrossCheck, compare_judges,
                                   contested_parts, judged_items, open_records, rule_audit, rule_records, summarize,
                                   summarize_judges, third_party_sample, write_disagreements, write_judge_comparison)
-from catalogue import papers
+from catalogue import papers, structure
 from catalogue.hosts import HostResolver
 from catalogue.ontology import OntologyResolver, codes_to_resolve, resolve_codes
 from catalogue.ncbi import harvest, iter_assemblies, mag_accessions, resolve_taxa
@@ -779,6 +779,124 @@ def _papers(args, paths, log, mode):
     return report
 
 
+def cmd_structure_pilot(args, paths, log):
+    """Each species' published population structure, read from its most relevant papers, with the reference
+    strains matched to the catalogue's genomes (see catalogue/structure.py)."""
+    _require_harvest(paths)
+    release = paths.release / "isolate_catalogue.tsv.gz"
+    if not release.exists():
+        sys.exit("No catalogue yet: run `python -m catalogue.build assemble` first.")
+    folder = paths.root / "structure"
+    folder.mkdir(parents=True, exist_ok=True)
+    lists_path = folder / "papers.json"
+    lists = json.loads(lists_path.read_text()) if lists_path.exists() else {}
+    with open(paths.release / "species_summary.tsv", encoding="utf-8") as f:
+        per_genus = collections.Counter(r["genus"] for r in csv.DictReader(f, delimiter="\t")
+                                        if " sp." not in r["species"])  # named species only
+    for species in args.species:
+        if species not in lists:  # a genus with one species in the catalogue is searched by the genus name
+            genus = species.split()[0]
+            lists[species] = structure.search(species, name=genus if per_genus.get(genus) == 1 else None)
+    lists_path.write_text(json.dumps(lists, indent=1))
+    texts = papers.paper_texts(sorted({p for sp in args.species for p in lists[sp]}), paths.root / "papers" / "texts")
+    answers_dir = folder / "answers"
+    answers_dir.mkdir(parents=True, exist_ok=True)
+
+    def path_of(sp):
+        return answers_dir / (re.sub(r"\W+", "_", sp).strip("_") + ".json")
+
+    saved = {sp: json.loads(path_of(sp).read_text()) for sp in args.species if path_of(sp).exists()}
+    # A species refused with its full texts is asked again from the abstracts alone (--retry-refused).
+    abstracts_only = {sp for sp in args.species if saved.get(sp, {}).get("full_texts") == 0 or (
+        args.retry_refused and saved.get(sp, {}).get("reason") == "refusal")}
+    chosen = {sp: structure.species_texts(lists[sp], texts, 0 if sp in abstracts_only else structure.FULL_TEXTS)
+              for sp in args.species}
+    requests = {sp: {"custom_id": f"species{i}", "params": structure.build_request(sp, chosen[sp])}
+                for i, sp in enumerate(args.species) if chosen[sp]}
+    for sp in args.species:
+        kinds = collections.Counter(p["kind"] for p in chosen[sp].values())
+        log(f"  {sp}: {len(lists[sp])} papers found; reading " + (", ".join(f"{k} {v}" for k, v in kinds.items())
+                                                                  or "nothing"))
+    worst = structure.worst_case_usd(list(requests.values()))
+    log(f"  {len(requests)} species to read; worst case ${worst:.2f} at Batch prices (budget ${args.budget:.2f} for "
+        "everything spent in this work directory)")
+    if args.dry_run:
+        return {"species": len(requests), "worst_case_usd": round(worst, 2)}
+    todo = [sp for sp in requests if sp not in saved or saved[sp]["pmids"] != sorted(chosen[sp])
+            or (sp in abstracts_only and saved[sp].get("full_texts") != 0)]
+    ledger_before = Ledger(paths.root / "spend.jsonl").total
+    if todo:
+        _require_key()
+        import anthropic
+        client = anthropic.Anthropic()
+        transport = BatchTransport(paths.root, args.budget, client=client, log=log, poll_seconds=args.poll,
+                                   stage_prefix="structure pilot ", state_name="structure_batches.json")
+        recorder = CuratedLabeler(vocab=Vocabulary(), log=lambda *_: None)
+        wave = [requests[sp] for sp in todo]
+        try:
+            got = transport.run_requests("species", wave, recorder, estimate=structure.worst_case_usd(wave))
+        except BudgetExceeded as e:
+            sys.exit(f"Stopped before spending more: {e}")
+        for sp in todo:
+            kind, message = got.get(requests[sp]["custom_id"], ("missing", None))
+            ok = kind == "succeeded" and message is not None
+            answer, reason = papers.parse_message(message) if ok else (None, kind)
+            saved[sp] = {"answer": answer, "reason": reason, "pmids": sorted(chosen[sp]),
+                         "full_texts": sum(p["kind"] == "full text" for p in chosen[sp].values()),
+                         "usd": usage_cost(structure.MODEL, message.usage, batch=True) if ok else 0.0}
+            path_of(sp).write_text(json.dumps(saved[sp]))
+    strains = structure.catalogue_strains(release, list(requests))
+    report = {"run": "structure pilot", "finished": _now(), "model": structure.MODEL, "effort": structure.EFFORT,
+              "species": {}, "usd_this_run": round(Ledger(paths.root / "spend.jsonl").total - ledger_before, 4),
+              "usd_ledger_total": round(Ledger(paths.root / "spend.jsonl").total, 4)}
+    group_rows, genome_rows = [], []
+    for sp in requests:
+        entry = saved.get(sp, {})
+        answer = entry.get("answer")
+        if answer is None:
+            report["species"][sp] = {"answered": False, "reason": entry.get("reason", "not sent")}
+            log(f"  {sp}: no answer ({entry.get('reason', 'not sent')})")
+            continue
+        groups, dropped = structure.verified(answer, chosen[sp])
+        matches = structure.match_strains(groups, strains.get(sp, {}))
+        named = sum(len(g.get("reference_strains") or []) for g in groups)
+        matched = {acc for hits in matches.values() for accs in hits.values() for acc in accs}
+        report["species"][sp] = {
+            "answered": True, "papers": len(chosen[sp]), "summary": answer.get("summary", ""),
+            "certain": answer.get("certain"), "groups": len(groups),
+            "groups by kind": dict(collections.Counter(g["kind"] for g in groups)),
+            "groups without a verified quote": sum(not g["supported"] for g in groups),
+            "quotes dropped": dropped, "reference strains named": named,
+            "reference strains matched": sum(len(h) for h in matches.values()),
+            "catalogue genomes with a known group": len(matched), "usd": round(entry.get("usd", 0.0), 4)}
+        for g in groups:
+            group_rows.append({"species": sp, "group": g["name"], "kind": g["kind"], "parent": g["parent"],
+                               "defined_by": g["defined_by"], "ecology": g["ecology"],
+                               "reference_strains": "; ".join(g.get("reference_strains") or []),
+                               "matched": "; ".join(f"{s}: {', '.join(a)}" for s, a in matches[g["name"]].items()),
+                               "pmids": "; ".join(sorted({e["pmid"] for e in g["evidence"]})),
+                               "supported": g["supported"]})
+            for strain, accessions in matches[g["name"]].items():
+                genome_rows.extend({"species": sp, "accession": acc, "strain": strain, "group": g["name"],
+                                    "kind": g["kind"], "parent": g["parent"]} for acc in accessions)
+        r = report["species"][sp]
+        log(f"  {sp}: {r['groups']} groups (" + ", ".join(f"{k} {v}" for k, v in r["groups by kind"].items())
+            + f"); {r['reference strains matched']} of {r['reference strains named']} reference strains matched to "
+            f"{r['catalogue genomes with a known group']} genomes; {r['quotes dropped']} quotes dropped")
+    paths.reports.mkdir(parents=True, exist_ok=True)
+    stem = f"structure_pilot_{_now().replace(':', '')}"
+    (paths.reports / f"{stem}.json").write_text(json.dumps(report, indent=1))
+    for suffix, rows in (("groups", group_rows), ("genomes", genome_rows)):
+        if rows:
+            with open(paths.reports / f"{stem}_{suffix}.tsv", "w", encoding="utf-8", newline="") as f:
+                writer = csv.DictWriter(f, fieldnames=list(rows[0]), delimiter="\t", lineterminator="\n")
+                writer.writeheader()
+                writer.writerows(rows)
+    log(f"  cost this run ${report['usd_this_run']:.2f}; spent in this work directory ${report['usd_ledger_total']:.2f}")
+    log(f"Report: {paths.reports / stem}.json (groups in {stem}_groups.tsv, genomes in {stem}_genomes.tsv)")
+    return report
+
+
 def _lineage(taxa, tax_id):
     record = taxa.get(str(tax_id)) if tax_id else None
     if not record or "ambiguous" in record:
@@ -1085,6 +1203,14 @@ def main(argv=None):
     p.add_argument("--poll", type=int, default=60, help="seconds between batch status checks (default 60)")
     p.add_argument("--dry-run", action="store_true",
                    help="find the papers, fetch their texts and price the run without calling the Claude API (free)")
+    p = sub.add_parser("structure-pilot", help="read each species' published population structure from its most "
+                                               "relevant papers and match it to the catalogue (costs money)")
+    p.add_argument("--budget", type=float, required=True, help="hard cap in USD for everything spent in this workdir")
+    p.add_argument("--species", nargs="+", required=True, help="species names, as in the catalogue")
+    p.add_argument("--poll", type=int, default=60, help="seconds between batch status checks (default 60)")
+    p.add_argument("--retry-refused", action="store_true",
+                   help="ask a species refused with its full texts again, from the abstracts alone")
+    p.add_argument("--dry-run", action="store_true", help="find and fetch the papers and price it (free)")
     sub.add_parser("assemble", help="write the catalogue table, per-species summary and manifest")
     sub.add_parser("status", help="progress and spend")
     args = parser.parse_args(argv)
@@ -1098,7 +1224,7 @@ def main(argv=None):
         print(message, flush=True)
 
     commands = {"harvest": cmd_harvest, "prepare": cmd_prepare, "run": cmd_run, "verify": cmd_verify,
-                "audit-rules": cmd_audit_rules, "rejudge": cmd_rejudge, "papers-pilot": cmd_papers_pilot, "papers-fill": cmd_papers_fill,
+                "audit-rules": cmd_audit_rules, "rejudge": cmd_rejudge, "papers-pilot": cmd_papers_pilot, "papers-fill": cmd_papers_fill, "structure-pilot": cmd_structure_pilot,
                 "assemble": cmd_assemble,
                 "status": cmd_status}
     return commands[args.command](args, paths, log)
