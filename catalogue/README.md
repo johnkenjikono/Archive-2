@@ -110,8 +110,15 @@ only from a host taxid or a host field naming a particular host. A vague host ("
 host word in another field (`source_type` "animal") is left to the model reading the whole record, which names
 the pig in "Rectum of pig". Fable's cross-check found the rules losing these cases to the record's own text.
 
+When the rules can read the sample, they also take a host from:
+- a field that is just a host name ("bovine");
+- NCBI's metagenome names: "canine gut metagenome" is a dog, and "soil metagenome" has no host;
+- a plant part or the rhizosphere, which give the host "plant, species not stated" (Fable's audit found these
+  plant hosts missing in 310 genomes).
+
 A record that names a living host but has no source field at all gets the source "host sample, site not
-stated" (or "plant, part not stated"), with the host field as its evidence. Its source category (human-,
+stated" (or "plant, part not stated"), with the host field as its evidence. A host field that names an
+environment instead ("soil", "water") gives that environment as the source. Its source category (human-,
 animal- or plant-associated) is then known even though the body site is not. This applies to the catalogue
 only; the pipeline's `--curated-metadata` leaves such sources unknown.
 
@@ -258,8 +265,23 @@ The rules also miss hosts the text states:
 - "canine" in metagenome_source (691 genomes are dogs).
 - A rhizosphere sample whose host can only be a plant (310 genomes).
 
-None of these fixes has been applied yet. A rule change is free, and its effect on the catalogue can be checked
-against these verdicts first, as for the ontology-code rule.
+Fixes applied on 2026-11-26 (vocabulary rules_revision 3):
+1. **Refinement.** A first field that gives only a broad term ("water, type not stated", "host sample, site
+   not stated", "plant, part not stated", "tissue, type not stated", "environmental sample", "food") is refined
+   by a later field the rules can read, if that field names a more specific term of the same kind. Water is
+   refined only by a kind of water: env_medium "water" with env_local_scale "lake water" is lake water.
+2. **Host names in metagenome names.** NCBI's metagenome names carry the host ("canine gut metagenome").
+3. **Plant hosts.** A plant part or the rhizosphere gives the host "plant, species not stated".
+4. **Goat.** *Capra aegagrus* is a goat.
+5. **Environments in host fields.** A host field that names an environment, on a record with no source
+   field, gives the source.
+6. **"hospital".** It is no longer a synonym of the hospital environment. Fable read it as a clinical isolate
+   when the record names a patient or a disease, and as the building otherwise, so the models read each such
+   record in context.
+
+Checked against the audit's verdicts, which were saved before the change, the fixes improve the host of 1,026
+genomes and the source of 320, and make none worse. 267 genomes with "hospital" went to the models. Oyster and
+shrimp stay as they were: in a record they are food as often as hosts.
 
 The missed sources the audit reports are mostly not misses. 3,483 of 3,633 genomes are records that name only
 a host, and the catalogue already labels those "host sample, site not stated" or "plant, part not stated", as

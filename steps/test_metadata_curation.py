@@ -138,9 +138,30 @@ class RulesTest(unittest.TestCase):
 
     def test_no_host_field(self):
         self.assertEqual(self.rules(isolation_source="cheese")[1].key, "no_host")  # food
-        for source in ("blood", "laboratory strain", "rhizosphere"):  # body site, lab strain, plant: host not stated
+        for source in ("blood", "laboratory strain"):  # body site, lab strain: host not stated
             host = self.rules(isolation_source=source)[1]
             self.assertEqual((host.key, host.tier), ("unknown", "no evidence"), source)
+        for source in ("rhizosphere", "leaf"):  # a plant part or the rhizosphere: some plant (Fable's audit)
+            host = self.rules(isolation_source=source)[1]
+            self.assertEqual((host.key, host.tier, host.field), ("other_plant", "rule", "isolation_source"), source)
+        # NCBI's metagenome names carry the host: "canine gut metagenome" is a dog
+        self.assertEqual(self.rules(isolation_source="feces", sample_type="canine gut metagenome")[1].key, "dog")
+        self.assertEqual(self.rules(isolation_source="feces", sample_type="gut metagenome")[1].key, "unknown")
+        self.assertEqual(self.rules(isolation_source="feces", host="Capra aegagrus")[1].key, "goat")
+
+    def test_a_vague_first_field_is_refined_by_a_later_one(self):
+        source = self.rules(env_medium="water", env_local_scale="lake water")[0]
+        self.assertEqual((source.key, source.field), ("lake_water", "env_local_scale"))
+        source = self.rules(isolation_source="human", host_body_site="blood")[0]
+        self.assertEqual((source.key, source.field), ("blood", "host_body_site"))
+        # only by a term of the same kind: soil does not refine water
+        self.assertEqual(self.rules(env_medium="water", env_local_scale="soil")[0].key, "water")
+        self.assertEqual(self.rules(isolation_source="blood", host_body_site="feces")[0].key, "blood")  # specific
+        # no source field at all: a host field that names an environment is the source
+        source, host = self.rules(host="soil")
+        self.assertEqual((source.key, source.field, host.key), ("soil", "host", "no_host"))
+        # "hospital" alone means a patient as often as a building: the models read the record
+        self.assertIsNone(self.rules(isolation_source="hospital")[0])
 
     def test_body_site_category_follows_the_host(self):
         vocab = self.labeler.vocab

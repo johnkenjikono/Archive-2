@@ -124,6 +124,21 @@ class Vocabulary:
                 if normalize(s):
                     self.host_synonyms.setdefault(normalize(s), key)
         self.host_by_taxid = {str(h["taxid"]): k for k, h in self.hosts.items() if h["taxid"]}
+        # Terms that say only the broad kind ("water, type not stated", "host sample, site not stated"): a rule
+        # that reaches one from a record's first field looks for a more specific term in its later fields.
+        self.broad_terms = {k for k, t in self.terms.items() if t["label"].endswith("not stated")}
+
+    def refines(self, broad, key):
+        """Whether a specific term can stand for a broad one: water only by a kind of water, a tissue by a body
+        site or plant part, a plant by a plant part or the rhizosphere, anything else by a term of its kind."""
+        b, t = self.terms[broad], self.terms[key]
+        if b.get("category") == "water":
+            return t.get("category") == "water"
+        if broad == "tissue":
+            return t["kind"] in ("body_site", "plant_part")
+        if b.get("category") == "plant_associated":
+            return t.get("category") == "plant_associated"
+        return t["kind"] == b["kind"]
 
     def problems(self):
         """Internal consistency problems (no network): an empty list means the file is usable."""
@@ -321,23 +336,44 @@ class CuratedLabeler:
         return {k: (d["host"], d["niche"]) for k, d in self.details.items()}
 
     # --- rules -------------------------------------------------------------------------------
+    def _term_by_rule(self, f, value, fields):
+        """The term one source field's value names by the rules, or None when the rules cannot read it."""
+        key = self.vocab.match_term(value)
+        if key is None and self.term_resolver is not None:  # "clay soil [ENVO:00002262]" -> soil
+            others = [fields[g] for g in self.source_fields if g != f and self.vocab.informative(fields.get(g, ""))]
+            key = self.term_resolver.key_for_value(value, others)
+        if key:
+            return key
+        host = self.vocab.match_host(value)  # e.g. isolation_source "human": a host, site not stated
+        if host and self.vocab.hosts[host]["kind"] in ("human", "animal"):
+            return "host_sample"
+        if host and self.vocab.hosts[host]["kind"] == "plant":
+            return "plant_unspecified"
+        return None
+
     def rule_source(self, fields):
-        for f in self.source_fields:
+        for i, f in enumerate(self.source_fields):
             value = fields.get(f, "")
             if not self.vocab.informative(value):
                 continue
-            key = self.vocab.match_term(value)
-            if key is None and self.term_resolver is not None:  # "clay soil [ENVO:00002262]" -> soil
-                others = [fields[g] for g in self.source_fields if g != f and self.vocab.informative(fields.get(g, ""))]
-                key = self.term_resolver.key_for_value(value, others)
-            if key:
-                return Answer(key, f, value.strip(), "rule")
-            host = self.vocab.match_host(value)  # e.g. isolation_source "human": a host, site not stated
-            if host and self.vocab.hosts[host]["kind"] in ("human", "animal"):
-                return Answer("host_sample", f, value.strip(), "rule")
-            if host and self.vocab.hosts[host]["kind"] == "plant":
-                return Answer("plant_unspecified", f, value.strip(), "rule")
-            return None  # the first informative field is not understood: a model reads it
+            key = self._term_by_rule(f, value, fields)
+            if key is None:
+                return None  # the first informative field is not understood: a model reads it
+            if key in self.vocab.broad_terms:  # "water", "human", "Plant": a later field may say which
+                for g in self.source_fields[i + 1:]:
+                    later = fields.get(g, "")
+                    if self.vocab.informative(later):
+                        specific = self._term_by_rule(g, later, fields)
+                        if specific and specific not in self.vocab.broad_terms and self.vocab.refines(key, specific):
+                            return Answer(specific, g, later.strip(), "rule")
+            return Answer(key, f, value.strip(), "rule")
+        # No source field at all: a host field that names an environment ("soil", "water") is the source.
+        for hf in self.host_fields:
+            value = fields.get(hf, "")
+            if self.vocab.informative(value) and self.vocab.match_host(value, loose=True) == "no_host":
+                key = self.vocab.match_term(value)
+                if key and self.vocab.terms[key]["kind"] == "environment":
+                    return Answer(key, hf, value.strip(), "rule")
         return Answer("unknown")
 
     def rule_host(self, fields, source):
@@ -359,13 +395,21 @@ class CuratedLabeler:
         if source is None:  # a model reads the sample's description anyway ("Rectum of pig"), so it also names
             return None  # the host, rather than a generic word in another field (source_type "animal")
         for f in self.source_fields:  # no host field: a field that is just a host name ("human", "bovine")
-            key = self.vocab.match_host(fields.get(f, "")) if self.vocab.informative(fields.get(f, "")) else None
+            value = fields.get(f, "")
+            if not self.vocab.informative(value):
+                continue
+            key = self.vocab.match_host(value)
+            if not key and normalize(value).endswith(" metagenome"):  # NCBI's "canine gut metagenome"
+                words = normalize(value)[:-len(" metagenome")].split()
+                key = self.vocab.match_host(" ".join(words)) or (self.vocab.match_host(words[0]) if words else None)
             if key:
-                return Answer(key, f, fields[f].strip(), "rule")
+                return Answer(key, f, value.strip(), "rule")
         term = self.vocab.terms[source.key]
-        if term["kind"] in ("food", "environment") and term.get("category") != "plant_associated":
+        if term.get("category") == "plant_associated":  # a plant part or the rhizosphere: some plant
+            return Answer("other_plant", source.field, source.quote, "rule")
+        if term["kind"] in ("food", "environment"):
             return Answer("no_host", source.field, source.quote, "rule")  # food, soil, water: no living host
-        return Answer("unknown")  # a body site, a plant part or a lab strain: the host is not stated
+        return Answer("unknown")  # a body site or a lab strain: the host is not stated
 
     # --- model tiers -------------------------------------------------------------------------
     def _schema(self, record_fields):

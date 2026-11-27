@@ -1,6 +1,6 @@
 {
   "version": "2026.11.2",
-  "rules_revision": 2,
+  "rules_revision": 3,
   "about": "Fixed vocabulary for isolate source metadata, shared by every species. Specific terms carry ontology ids (ENVO environments and materials, UBERON body sites, PO plant parts, FoodOn foods, NCBITaxon hosts); every id and its ontology_label were checked against EBI OLS4 on verified_on (python steps/metadata_curation.py --verify-vocabulary re-checks them). A term's niche and source category are fixed groupings of terms, so labels mean the same thing in every species. Body-site terms take their source category from the host (human, animal, plant or not stated). Bump version whenever a term, host, label or grouping changes, i.e. anything the models are shown: cached model answers are keyed on it. Bump rules_revision instead when only synonyms, the missing / uninformative value lists or not_placed_by_descent change: those decide which records the rules settle and which fields the models see, and cached answers stay valid because they are keyed on the exact fields each model was shown.",
   "verified_on": "2026-11-08",
   "not_placed_by_descent": {
@@ -74,7 +74,7 @@
     {"key": "cattle", "label": "cattle", "taxid": 9913, "ncbi_name": "Bos taurus", "kind": "animal", "synonyms": ["cattle", "cow", "cows", "bovine", "bos taurus", "calf", "dairy cow", "dairy cattle", "beef cattle"]},
     {"key": "water_buffalo", "label": "water buffalo", "taxid": 89462, "ncbi_name": "Bubalus bubalis", "kind": "animal", "synonyms": ["water buffalo", "buffalo", "bubalus bubalis"]},
     {"key": "sheep", "label": "sheep", "taxid": 9940, "ncbi_name": "Ovis aries", "kind": "animal", "synonyms": ["sheep", "ovine", "ovis aries"]},
-    {"key": "goat", "label": "goat", "taxid": 9925, "ncbi_name": "Capra hircus", "kind": "animal", "synonyms": ["goat", "goats", "caprine", "capra hircus", "capra aegagrus hircus"]},
+    {"key": "goat", "label": "goat", "taxid": 9925, "ncbi_name": "Capra hircus", "kind": "animal", "synonyms": ["goat", "goats", "caprine", "capra hircus", "capra aegagrus hircus", "capra aegagrus"]},
     {"key": "pig", "label": "pig", "taxid": 9823, "ncbi_name": "Sus scrofa", "kind": "animal", "synonyms": ["pig", "pigs", "piglet", "swine", "porcine", "hog", "sus scrofa", "sus scrofa domesticus"]},
     {"key": "chicken", "label": "chicken", "taxid": 9031, "ncbi_name": "Gallus gallus", "kind": "animal", "synonyms": ["chicken", "chickens", "broiler", "hen", "gallus gallus", "gallus gallus domesticus"]},
     {"key": "turkey", "label": "turkey", "taxid": 9103, "ncbi_name": "Meleagris gallopavo", "kind": "animal", "synonyms": ["turkey", "meleagris gallopavo"]},
@@ -226,7 +226,7 @@
     {"key": "dairy_farm", "label": "dairy farm", "id": "ENVO:03501120", "ontology_label": "dairy farm", "kind": "environment", "niche": "farm", "category": "food_production", "mixs": "FoodFarmEnvironment", "synonyms": ["dairy farm"]},
     {"key": "manure", "label": "manure", "id": "ENVO:03501300", "ontology_label": "manure", "kind": "environment", "niche": "farm", "category": "food_production", "mixs": "FoodFarmEnvironment", "synonyms": ["manure", "animal manure", "cow manure", "slurry"]},
     {"key": "silage", "label": "silage", "id": "ENVO:00003030", "ontology_label": "silage", "kind": "environment", "niche": "farm", "category": "food_production", "mixs": "FoodFarmEnvironment", "synonyms": ["silage"]},
-    {"key": "hospital", "label": "hospital environment", "id": "ENVO:00002173", "ontology_label": "hospital", "kind": "environment", "niche": "built_other", "category": "built_environment", "mixs": "BuiltEnvironment", "synonyms": ["hospital", "hospital environment"]},
+    {"key": "hospital", "label": "hospital environment", "id": "ENVO:00002173", "ontology_label": "hospital", "kind": "environment", "niche": "built_other", "category": "built_environment", "mixs": "BuiltEnvironment", "synonyms": ["hospital environment"]},
     {"key": "house", "label": "house", "id": "ENVO:01000417", "ontology_label": "house", "kind": "environment", "niche": "built_other", "category": "built_environment", "mixs": "BuiltEnvironment", "synonyms": ["house", "household", "home"]},
     {"key": "kitchen", "label": "kitchen", "id": "ENVO:01000421", "ontology_label": "indoor kitchen", "kind": "environment", "niche": "built_other", "category": "built_environment", "mixs": "BuiltEnvironment", "synonyms": ["kitchen"]},
     {"key": "industrial_building", "label": "industrial building or factory", "id": "ENVO:00003861", "ontology_label": "industrial building", "kind": "environment", "niche": "built_other", "category": "built_environment", "mixs": "BuiltEnvironment", "synonyms": ["industrial building", "factory"]},
